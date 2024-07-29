@@ -38,6 +38,8 @@
             </fieldset> <!-- /usrInputsDiv -->
         </form>
         <hr/>
+
+        <div id="result_fields" style="display: none;">
         <fieldset id="YourPersonalInfo" style="margin-left: 10px;">
             <legend>Your Personal Info</legend>
                 <table style="margin-left: 15px;">
@@ -73,6 +75,7 @@
                         </tbody>
                     </table>
                 </fieldset> <!-- /YourInfo -->  
+            </div> <!-- /result_fields -->
 <hr/>
 <div style="height: 5em; padding: 10px; margin: 10px;"></div>
 
@@ -219,7 +222,7 @@
           var out_Yrly_amt_Inv = out_mon_amt_Inv*12.00;
           var out_wkly_amt_Inv = out_Yrly_amt_Inv/52.00;
           //Est Sav on date = FV(ROI/12, MonthToRetire,CurRetSav)
-          var out_ret_bday_savings = +FV(inp_ROI/1200.00, out_Months_Retire, out_mon_amt_Inv, inp_curRetSav, 0)*-1.00; //FV(ROI/12, MonthToRetire,CurRetSav)
+        var out_ret_bday_savings = +FV(inp_ROI/1200.00, out_Months_Retire, out_mon_amt_Inv, inp_curRetSav, 0)*-1.00; //FV(ROI/12, MonthToRetire,CurRetSav)
         var out_ret_Mon_LiveOff = (inp_pctLiveOff/100.00) * out_ret_bday_savings;
 
 
@@ -239,7 +242,11 @@ $('#out_Yrly_amt_Inv').val(out_Yrly_amt_Inv);
 $('#out_wkly_amt_Inv').val(out_wkly_amt_Inv);
 $('#out_ret_bday_savings').val(out_ret_bday_savings);
 $('#out_ret_Mon_LiveOff').val(out_ret_Mon_LiveOff);
-    } // /doCalculations
+    
+$('#result_fields').show();
+
+} // /doCalculations
+   
 </script>
 
 
