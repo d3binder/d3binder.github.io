@@ -11,10 +11,41 @@
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
         <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/moment.min.js"></script>
+
+<style>
+    div#result_fields input{border: none; color:navy; background-color: rgba(255,255,255,0.00);}
+    input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+th, td {
+  text-align: left;
+  padding: 8px;
+}
+
+tr:nth-child(even){background-color: #f2f2f2}
+
+th {
+  background-color: #04AA6D;
+  color: white;
+}
+
+</style>
+
     </head>
     <body>
+        <h1>Financial Independance Calculators</h1>
+        <h3 style="color:darkgray;">Simplified Retirement Calculator</h3>
+        <p style="color:darkred;">In Development</p>
        <form id="inputForm"> 
-        <fieldset id="usrInputsDiv" style="margin-left: 10px; background-color: rgba(250,250,200,0.7);">
+        <fieldset id="usrInputsDiv" style="margin-left: 10px; background-color: rgba(250,250,200,0.1);">
             <legend>User Inputs</legend>
                 <table style="margin-left: 15px;">
                     <thead></thead>
