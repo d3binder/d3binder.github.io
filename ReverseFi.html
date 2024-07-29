@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <title>Reverse FI Calculator</title>
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="">
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/moment.min.js"></script>
+    </head>
+    <body>
+       <form id="inputForm"> 
+        <fieldset id="usrInputsDiv" style="margin-left: 10px; background-color: rgba(250,250,200,0.7);">
+            <legend>User Inputs</legend>
+                <table style="margin-left: 15px;">
+                    <thead></thead>
+                    <tbody>
+                        <tr><td>Birhdate</td> <td> <input id="inp_bday" type="date" value="1970-08-28" min="1920-01-01" ></td></tr>
+                        <tr><td>Age you would like to retire </td> <td> <input id="inp_RetAgeWant" type="number" step="1"  value="65" min="21" max="125"></td></tr>
+                        <tr><td>Total Monthly Expenses</td> <td>$<input id="inp_monthlyExpenses" type="number" step="0.01"  value="7000.00" min="1" max="9999999.99"> </td></tr>
+                        <tr><td>Monthly retirememnt (401k,IRA) contributions 
+                            auto deducted from paycheck</td> <td>$<input id="inp_monRetContrib" type="number" step="0.01"  value="400.00" min="0" max="999999.99"></td></tr>
+                        <tr><td>Anticipated Monthly Social Security/Pension/Annuity Income</td> <td>$<input id="inp_ss_Income" type="number" step="0.01"  value="1.00" min="0" max="9999999"></td></tr>
+
+                        <tr><td>Current Total Retirment Savings</td> <td>$<input id="inp_curRetSav" type="number" step="0.01"  value="50000.00" min="0.00" max="99999999.99"></td></tr>
+                        
+                        <tr><td>% of Investments to live off after retiremet? - 4% recommended*</td> <td><input id="inp_pctLiveOff" type="number" step="0.01"  value="4.00" min="0.01" max="100.00">%</td></tr>
+                        <tr><td>Anticipated Return on Investments (ROI)</td> <td><input id="inp_ROI" type="number" step="0.01"  value="10.00" min="0.01" max="200.00">%</td></tr>
+                        <tr><td>Anticipated Inflation %(2.6-3.0)</td> <td><input id="inp_inflation" type="number" step="0.01"  value="2.8" min="0.01" max="100.00" width="7">%</td></tr>
+                        <tr><td></td> <td></td></tr>
+                    </tbody>
+                </table>
+                <input type="button" value="Calculate" class="btn btn-primary" onclick="doCalculations();">
+            </fieldset> <!-- /usrInputsDiv -->
+        </form>
+        <hr/>
+        <fieldset id="YourPersonalInfo" style="margin-left: 10px;">
+            <legend>Your Personal Info</legend>
+                <table style="margin-left: 15px;">
+                    <thead></thead>
+                    <tbody>
+                        <tr><td>Current Age</td> <td><input id="out_CurAge" value="" class="form-control" type="number" min="0" max="125" readonly="true"></td></tr>
+                        <tr><td>Annual Expenses (todays $)</td> <td>$<input id="out_annualExpenses" type="number" step="0.01"  value="" min="0" max="9999999.99"> </td></tr>
+                        <tr><td>Expenses at Retirement Age due to inflation </td> <td>$<input id="out_Exp_at_Retire_W_Inflation" type="number" step="0.01"  value="" min="0" max="99999999.99">  </td></tr>
+                        <tr><td>Future Annual Exp.</td> <td>$<input id="out_Fut_Annual_Expenses" type="number" step="0.01"  value="" min="0" max="99999999.99"> </td></tr>
+                        <tr><td>Current Annual Retirement contributions</td> <td>$<input id="out_Cur_Annual_Ret_Contributions" type="number" step="0.01"  value="" min="0" max="99999999.99"> </td></tr>
+
+                        <tr><td></td> <td></td></tr>
+
+                    </tbody>
+                </table>
+            </fieldset> <!-- /YourInfo -->   
+<hr/>
+
+            <fieldset id="YourRetirmentInfo" style="margin-left: 10px;">
+                <legend>Your Retirment Info</legend>
+                    <table style="margin-left: 15px;">
+                        <thead></thead>
+                        <tbody>
+                            <tr><td>Birthday of Retirement Age</td> <td><input id="out_Bday_Retire" value="" class="form-control" type="date" readonly="true"></td></tr>
+                            <tr><td>Months To Retirement</td> <td><input id="out_Months_Retire" value="" class="form-control" type="number" min="0" max="9999" readonly="true"></td></td></tr>
+                            <tr><td>Minimum Savings Needed to live off [<span id="out_pct_txt" style="color:darkblue;"></span>%] withdrawal annually for Future Expenses.</td> <td> $<input id="out_MinSavings" value=""  type="number" min="0" max="99999999.99" readonly="true"></td></tr>
+                            <tr><td>Weekly Amount to Invest for Inflated Value   </td> <td>$<input id="out_wkly_amt_Inv" value="" type="number" min="0" max="9999999.99" readonly="true"></td></tr>
+                            <tr><td>Monthly Amount to Invest for Inflated Value	 </td> <td>$<input id="out_mon_amt_Inv" value=""  type="number" min="0" max="9999999.99" readonly="true"></td></tr>
+                            <tr><td>Annual Amount to Invest for Inflated Value	 </td> <td>$<input id="out_Yrly_amt_Inv" value=""  type="number" min="0" max="9999999.99" readonly="true"></td></tr>
+                            <tr><td></td> <td></td></tr>
+                            <tr><td>Estimated Savings on <span class="out_bday_ret_txt" style="color:darkblue;"></span></td> <td>$<input id="out_ret_bday_savings" value="" type="number" min="0" max="99999999999" readonly="true"></td></tr>
+                            <tr><td>Estimated Annual Income on <span class="out_bday_ret_txt" style="color:darkblue;"></span></td> <td>$<input id="out_ret_Mon_LiveOff" value="" type="number" min="0" max="99999999999" readonly="true"></td></tr>
+                        </tbody>
+                    </table>
+                </fieldset> <!-- /YourInfo -->  
+<hr/>
+<div style="height: 5em; padding: 10px; margin: 10px;"></div>
+
+    </body>
+
+    <script src="" async defer></script>
+    <script>
+            function addYears(iDate,iYrs) {
+                console.log(typeof(iDate));
+                console.log(typeof(iYrs));
+
+                if (isNaN(iYrs)){console.log('['+ iYrs + '] Is an invalid numbers');}
+             var myYrs = +iYrs;
+             var myDateCopy = new Date(iDate);
+             var myNewYear = myDateCopy.getFullYear() + myYrs;
+             myDateCopy.setFullYear(myNewYear);
+             return myDateCopy;
+            } // /addYears
+
+
+            function monthDiff(id1, id2) {
+                                        var d1 = new Date(id1);
+                                        var d2 = new Date(id2);
+                                        var months;
+                                        months = (d2.getFullYear() - d1.getFullYear()) * 12;
+                                        months -= d1.getMonth();
+                                        months += d2.getMonth();
+                                        return months <= 0 ? 0 : months;
+                                    } // /monthDiff
+
+            function calculate_age(dob) { 
+                                            // Calculate the difference in milliseconds between the current date and the provided date of birth
+                                            var diff_ms = Date.now() - dob.getTime();
+                                            // Create a new Date object representing the difference in milliseconds and store it in the variable age_dt (age Date object)
+                                            var age_dt = new Date(diff_ms); 
+                                        
+                                            // Calculate the absolute value of the difference in years between the age Date object and the year 1970 (UNIX epoch)
+                                            return Math.abs(age_dt.getUTCFullYear() - 1970);
+                                        } // /calculate_age
+
+            function FV(rate, nper, pmt, pv, type) {
+                                                    var pow = Math.pow(1 + rate, nper),
+                                                        fv;
+                                                    if (rate) {
+                                                    fv = (pmt*(1+rate*type)*(1-pow)/rate)-pv*pow;
+                                                    } else {
+                                                    fv = -1 * (pv + pmt * nper);
+                                                    }
+                                                    return fv.toFixed(2);
+                                                } // /FV
+
+                                                /*
+                                                Future value is just the principal amount plus all the accrued interest over the period outstanding.
+                                                In your example, the principal is 100 (B3), the time is 10 years (120 months -- B5), and the interest rate is B8. Are you sure that B6 does not equal .12, or 12%? That would be an annual interest rate of 12%, or about 1% per month (the actual formula for the monthly interest rate that would yield a 12% annual rate is 1.12 ^ (1/12) - 1).
+                                                The future value is simply principal times (1 + interest rate) ^ time, or in this case, roughly 100*(1.01)^120.
+                                                */
+
+
+            function PMT(ir,np, pv, fv = 0){ 
+                                                // ir: interest rate
+                                                // np: number of payment
+                                                // pv: present value or loan amount
+                                                // fv: future value. default is 0
+
+                                                var presentValueInterstFector = Math.pow((1 + ir), np);
+                                                var pmt = ir * pv  * (presentValueInterstFector + fv)/(presentValueInterstFector-1); 
+                                                return pmt;
+                                                }
+
+
+            function pmtWithAnnualRate(annualRate, monthlyPayments, presentValue, residualValue, advancedPayments) {
+                                        monthlyRate = annualRate / 1200;
+                                        t1 = 1 + monthlyRate;
+                                        t2 = Math.pow(t1,monthlyPayments);
+                                        t3 = Math.pow(t1,(monthlyPayments-advancedPayments));
+                                        return (presentValue-(residualValue/t2))/(((1-(1/(t3)))/monthlyRate)+advancedPayments);
+                                    }
+
+            function PMT2(Pv,Apr,n) {
+                        var R = Apr/12 ;
+                        var pmt = (Pv*R) / (1 - (1 + R)^(-n));
+                        return  pmt;               
+            }
+        
+
+            /*
+            PMT = (Pv*R) / [1 - (1 + R)^(-n)]
+                PMT = Monthly Payment
+                Pv = Present Value (starting value of the loan)
+                APR = Annual Percentage Rate
+                R = Periodic Interest Rate = APR/number of interest periods per year
+                n = Total number of interest periods (interest periods per year * number of years)
+
+            
+            */
+
+            function PMT3 (ir, np, pv, fv ) {
+                                            /*
+                                            ir - interest rate per month
+                                            np - number of periods (months)
+                                            pv - present value
+                                            fv - future value (residual value)
+                                            */
+                                            pmt = ( ir * ( pv * Math.pow ( (ir+1), np ) + fv ) ) / ( ( ir + 1 ) * ( Math.pow ( (ir+1), np) -1 ) );
+                                            return pmt;
+                                            }
+
+
+
+    </script>
+
+
+<script>
+    function doCalculations(){
+        var inp_bday          = new Date($('#inp_bday').val()+'T00:00:00');
+        var inp_RetAgeWant    = +$('#inp_RetAgeWant').val().trim();
+        var inp_monRetContrib = +$('#inp_monRetContrib').val().trim();
+        var inp_pctLiveOff    = parseFloat($('#inp_pctLiveOff').val().trim())*1.00;
+        var inp_ROI           = parseFloat($('#inp_ROI').val().trim())*1.00;
+        var inp_curRetSav     = +$('#inp_curRetSav').val().trim();
+        // var out_Bday_Retire = moment(addYears(inp_bday,inp_RetAgeWant)).format('YYYY-MM-DD');
+        var out_Bday_Retire   = moment(inp_bday).add('years',inp_RetAgeWant).format('YYYY-MM-DD');
+        var out_Bday_Retire_Dt = new Date(out_Bday_Retire + 'T00:00:00');
+        //console.log(out_Bday_Retire_Dt + " ["+typeof(out_Bday_Retire_Dt)+"]");
+        var now               = new Date();
+        var now_day           = ("0" + now.getDate()).slice(-2);
+        var now_month         = ("0" + (now.getMonth() + 1)).slice(-2);
+        var now_today         = now.getFullYear()+"-"+(now_month)+"-"+(now_day) ;
+        var out_Months_Retire = +monthDiff(Date.now(),out_Bday_Retire_Dt);
+        var out_Years_Retire    = out_Months_Retire/12.00;
+        var out_CurAge          = calculate_age(inp_bday);
+        var inp_monthlyExpenses = +$('#inp_monthlyExpenses').val().trim() 
+        var out_annualExpenses  = inp_monthlyExpenses * 12;
+        var inp_inflation       = parseFloat($('#inp_inflation').val().trim());
+        var out_Exp_at_Retire_W_Inflation = +FV((inp_inflation/100),out_Years_Retire,0,inp_monthlyExpenses,0)* -1.0;  //FV(AntInflationRate,MonthsToRetire/12,0,ExpenesToday) *-1
+        var out_Fut_Annual_Expenses = out_Exp_at_Retire_W_Inflation * 12.00;
+        var out_Cur_Annual_Ret_Contributions = inp_monRetContrib * 12.00;
+        var someSSNValue = 0.00;
+        var out_MinSavings = (out_Fut_Annual_Expenses-someSSNValue)/(inp_pctLiveOff/100.00);
+        // var out_mon_amt_Inv = PMT(((inp_ROI/100.00)/12.00) , out_Months_Retire, (inp_curRetSav*-1.00), out_MinSavings) * -1.00; // PMT( (ROI/12) , MonthToRetire , -CurRetSav, MinSavNeeded) *-1
+        // var out_mon_amt_Inv = pmtWithAnnualRate(inp_ROI, out_Months_Retire, (inp_curRetSav*-1.00), out_MinSavings, 0) * -1.00  ;
+        // var out_mon_amt_Inv = PMT2( (inp_curRetSav*-1),inp_ROI, out_Months_Retire/12 );
+          var out_mon_amt_Inv = PMT3 ((inp_ROI/1200), out_Months_Retire, inp_curRetSav, out_MinSavings ) ; // PMT3 (ir, np, pv, fv );
+          var out_Yrly_amt_Inv = out_mon_amt_Inv*12.00;
+          var out_wkly_amt_Inv = out_Yrly_amt_Inv/52.00;
+          //Est Sav on date = FV(ROI/12, MonthToRetire,CurRetSav)
+          var out_ret_bday_savings = +FV(inp_ROI/1200.00, out_Months_Retire, out_mon_amt_Inv, inp_curRetSav, 0)*-1.00; //FV(ROI/12, MonthToRetire,CurRetSav)
+        var out_ret_Mon_LiveOff = (inp_pctLiveOff/100.00) * out_ret_bday_savings;
+
+
+//alert("in:["+inp_bday + " ] out:[ " + out_Bday_Retire+"]");
+$('#out_pct_txt').text(inp_pctLiveOff) ;
+$('.out_bday_ret_txt').text(out_Bday_Retire) ;
+$('#out_Bday_Retire').val(out_Bday_Retire);
+$('#out_Months_Retire').val(out_Months_Retire);          
+$('#out_CurAge').val(out_CurAge);
+$('#out_annualExpenses').val(out_annualExpenses);
+$('#out_Exp_at_Retire_W_Inflation').val(out_Exp_at_Retire_W_Inflation);
+$('#out_Fut_Annual_Expenses').val(out_Fut_Annual_Expenses);
+$('#out_Cur_Annual_Ret_Contributions').val(out_Cur_Annual_Ret_Contributions);
+$('#out_MinSavings').val(out_MinSavings);
+$('#out_mon_amt_Inv').val(out_mon_amt_Inv);
+$('#out_Yrly_amt_Inv').val(out_Yrly_amt_Inv);
+$('#out_wkly_amt_Inv').val(out_wkly_amt_Inv);
+$('#out_ret_bday_savings').val(out_ret_bday_savings);
+$('#out_ret_Mon_LiveOff').val(out_ret_Mon_LiveOff);
+    } // /doCalculations
+</script>
+
+
+    </html>
