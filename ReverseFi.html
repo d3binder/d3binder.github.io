@@ -71,6 +71,22 @@ th {
         <hr/>
 
         <div id="result_fields" style="display: none;">
+
+            <fieldset id="ActionItems">
+                <legend>Action Items</legend>
+                <table>
+                    <thead></thead>
+                    <tbody>
+                        <tr> <td>Additional Monthly Amount to Save for Retirement</td> <td></td> </tr>
+                        <tr> <td></td> <td></td> </tr>
+                        <tr> <td></td> <td></td> </tr>
+                    </tbody>
+                </table>
+            </fieldset>
+            
+            <hr/>
+
+
         <fieldset id="YourPersonalInfo" style="margin-left: 10px;">
             <legend>Your Personal Info</legend>
                 <table style="margin-left: 15px;">
@@ -101,15 +117,30 @@ th {
                             <tr><td>Monthly Amount to Invest for Inflated Value	 </td> <td>$<input id="out_mon_amt_Inv" value=""  type="number" min="0" max="9999999.99" readonly="true"></td></tr>
                             <tr><td>Annual Amount to Invest for Inflated Value	 </td> <td>$<input id="out_Yrly_amt_Inv" value=""  type="number" min="0" max="9999999.99" readonly="true"></td></tr>
                             <tr><td></td> <td></td></tr>
+                            <tr><td>Future Monthly Social Security income with inflation</td> <td></td></tr>
+                            <tr><td>Future Annual Social Security income with inflation</td> <td></td></tr>
+                            <tr><td></td> <td></td></tr>
                             <tr><td>Estimated Savings on <span class="out_bday_ret_txt" style="color:darkblue;"></span></td> <td>$<input id="out_ret_bday_savings" value="" type="number" min="0" max="99999999999" readonly="true"></td></tr>
                             <tr><td>Estimated Annual Income on <span class="out_bday_ret_txt" style="color:darkblue;"></span></td> <td>$<input id="out_ret_Mon_LiveOff" value="" type="number" min="0" max="99999999999" readonly="true"></td></tr>
                         </tbody>
                     </table>
                 </fieldset> <!-- /YourInfo -->  
             </div> <!-- /result_fields -->
-<hr/>
-<div style="height: 5em; padding: 10px; margin: 10px;"></div>
 
+<hr/>
+
+<div style="height: 5em; padding: 10px; margin: 10px;"></div>
+<div id="helpfulTipsDiv">
+   <fieldset>
+    <legend>Helpful Resources</legend>
+    <ul>
+        <li>Your forecasted Social Security benefit: <a href="https://www.ssa.gov/myaccount/">https://www.ssa.gov/myaccount</a></li>
+        <li></li>
+    </ul>
+</div>
+
+
+<hr/>
     </body>
 
     <script src="" async defer></script>
