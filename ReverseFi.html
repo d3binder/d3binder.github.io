@@ -320,8 +320,8 @@ table tbody tr:hover {background-color: #FFFFCC;}
         var out_ret_bday_savings = +FV(inp_ROI/1200.00, out_Months_Retire, out_mon_amt_Inv, inp_curRetSav, 0)*-1.00; //FV(ROI/12, MonthToRetire,CurRetSav)
         var out_ret_Mon_LiveOff = (inp_pctLiveOff/100.00) * out_ret_bday_savings;
         var out_ss_IncomeAnnual = (inp_ss_Income * 12.00);
-        var out_ss_Income_Monthly_wInflation = 0.00; //todo
-        var out_ss_Income_Annual_wInflation  = 0.00; //todo
+        var out_ss_Income_Monthly_wInflation = +FV(inp_inflation,(out_Months_Retire/12.00),0,inp_ss_Income); //=FV(Inflation,Months/12,0,SS)*-1
+        var out_ss_Income_Annual_wInflation  = out_ss_Income_Monthly_wInflation * 12.00; //todo
 
 //alert("in:["+inp_bday + " ] out:[ " + out_Bday_Retire+"]");
 $('#out_pct_txt').text(inp_pctLiveOff) ;
