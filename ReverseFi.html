@@ -30,6 +30,10 @@ th, td {
   padding: 8px;
 }
 
+fieldset#usrInputsDiv table tbody tr:nth-child(even){background-color: #b3fbe0}
+fieldset#usrInputsDiv table tbody tr:nth-child(odd){background-color: #ddfdf1}
+fieldset#usrInputsDiv table tbody tr:hover{background-color: #fdd5ee;}
+
 tr:nth-child(even){background-color: #f2f2f2}
 
 th {
@@ -52,19 +56,19 @@ table tbody tr:hover {background-color: #FFFFCC;}
                 <table style="margin-left: 15px;">
                     <thead></thead>
                     <tbody>
-                        <tr><td>Birhdate</td> <td> <input id="inp_bday" type="date" value="1970-08-28" min="1920-01-01" ></td></tr>
-                        <tr><td>Age you would like to retire </td> <td> <input id="inp_RetAgeWant" type="number" step="1"  value="65" min="21" max="125"></td></tr>
-                        <tr><td>Total Monthly Expenses</td> <td>$<input id="inp_monthlyExpenses" type="number" step="0.01"  value="7000.00" min="1" max="9999999.99"> </td></tr>
-                        <tr><td>Monthly retirememnt (401k,IRA) contributions 
+                        <tr><td>UI.01</td><td>Birhdate</td> <td> <input id="inp_bday" type="date" value="1970-08-28" min="1920-01-01" ></td></tr>
+                        <tr><td>UI.02</td><td>Age to retire </td> <td> <input id="inp_RetAgeWant" type="number" step="1"  value="65" min="21" max="125"></td></tr>
+                        <tr><td>UI.03</td><td>Total Monthly Expenses</td> <td>$<input id="inp_monthlyExpenses" type="number" step="0.01"  value="7000.00" min="1" max="9999999.99"> </td></tr>
+                        <tr><td>UI.04</td><td>Monthly retirememnt (401k,IRA) contributions 
                             auto deducted from paycheck</td> <td>$<input id="inp_monRetContrib" type="number" step="0.01"  value="400.00" min="0" max="999999.99"></td></tr>
-                        <tr><td>Anticipated Monthly Social Security/Pension/Annuity Income</td> <td>$<input id="inp_ss_Income" type="number" step="0.01"  value="1.00" min="0" max="9999999"></td></tr>
+                        <tr><td>UI.05</td><td>Anticipated Monthly Social Security/Pension/Annuity Income</td> <td>$<input id="inp_ss_Income" type="number" step="0.01"  value="1.00" min="0" max="9999999"></td></tr>
 
-                        <tr><td>Current Total Retirment Savings</td> <td>$<input id="inp_curRetSav" type="number" step="0.01"  value="50000.00" min="0.00" max="99999999.99"></td></tr>
+                        <tr><td>UI.06</td><td>Current Total Retirment Savings</td> <td>$<input id="inp_curRetSav" type="number" step="0.01"  value="50000.00" min="0.00" max="99999999.99"></td></tr>
                         
-                        <tr><td>% of Investments to live off after retiremet? - 4% recommended*</td> <td><input id="inp_pctLiveOff" type="number" step="0.01"  value="4.00" min="0.01" max="100.00">%</td></tr>
-                        <tr><td>Anticipated Return on Investments (ROI)</td> <td><input id="inp_ROI" type="number" step="0.01"  value="10.00" min="0.01" max="200.00">%</td></tr>
-                        <tr><td>Anticipated Inflation %(2.6-3.0)</td> <td><input id="inp_inflation" type="number" step="0.01"  value="2.8" min="0.01" max="100.00" width="7">%</td></tr>
-                        <tr><td></td> <td></td></tr>
+                        <tr><td>UI.07</td><td>% of Investments to live off after retiremet? - 4% recommended*</td> <td><input id="inp_pctLiveOff" type="number" step="0.01"  value="4.00" min="0.01" max="100.00">%</td></tr>
+                        <tr><td>UI.08</td><td>Anticipated Return on Investments (ROI)</td> <td><input id="inp_ROI" type="number" step="0.01"  value="10.00" min="0.01" max="200.00">%</td></tr>
+                        <tr><td>UI.09</td><td>Anticipated Inflation %(2.6-3.0)</td> <td><input id="inp_inflation" type="number" step="0.01"  value="2.8" min="0.01" max="100.00" width="7">%</td></tr>
+                        <tr><td> </td><td></td> <td></td></tr>
                     </tbody>
                 </table>
                 <input type="button" value="Calculate" class="btn btn-primary" onclick="doCalculations();">
@@ -79,9 +83,9 @@ table tbody tr:hover {background-color: #FFFFCC;}
                 <table>
                     <thead></thead>
                     <tbody>
-                        <tr> <td>Additional Monthly Amount to Save for Retirement</td> <td></td> </tr>
-                        <tr> <td></td> <td></td> </tr>
-                        <tr> <td></td> <td></td> </tr>
+                        <tr><td>AI.01</td> <td>Additional Monthly Amount to Save for Retirement</td> <td></td> </tr>
+                        <tr><td>AI.02</td> <td></td> <td></td> </tr>
+                        <tr><td>AI.03</td> <td></td> <td></td> </tr>
                     </tbody>
                 </table>
             </fieldset>
@@ -94,11 +98,11 @@ table tbody tr:hover {background-color: #FFFFCC;}
                 <table style="margin-left: 15px;">
                     <thead></thead>
                     <tbody>
-                        <tr><td>Current Age</td> <td><input id="out_CurAge" value="" class="form-control" type="number" min="0" max="125" readonly="true"></td></tr>
-                        <tr><td>Annual Expenses (todays $)</td> <td>$<input id="out_annualExpenses" type="number" step="0.01"  value="" min="0" max="9999999.99"> </td></tr>
-                        <tr><td>Expenses at Retirement Age due to inflation </td> <td>$<input id="out_Exp_at_Retire_W_Inflation" type="number" step="0.01"  value="" min="0" max="99999999.99">  </td></tr>
-                        <tr><td>Future Annual Exp.</td> <td>$<input id="out_Fut_Annual_Expenses" type="number" step="0.01"  value="" min="0" max="99999999.99"> </td></tr>
-                        <tr><td>Current Annual Retirement contributions</td> <td>$<input id="out_Cur_Annual_Ret_Contributions" type="number" step="0.01"  value="" min="0" max="99999999.99"> </td></tr>
+                        <tr><td>PI.01</td><td>Current Age</td> <td><input id="out_CurAge" value="" class="form-control" type="number" min="0" max="125" readonly="true"></td></tr>
+                        <tr><td>PI.02</td><td>Annual Expenses (todays $)</td> <td>$<input id="out_annualExpenses" type="number" step="0.01"  value="" min="0" max="9999999.99"> </td></tr>
+                        <tr><td>PI.03</td><td>Expenses at Retirement Age due to inflation </td> <td>$<input id="out_Exp_at_Retire_W_Inflation" type="number" step="0.01"  value="" min="0" max="99999999.99">  </td></tr>
+                        <tr><td>PI.04</td><td>Future Annual Exp.</td> <td>$<input id="out_Fut_Annual_Expenses" type="number" step="0.01"  value="" min="0" max="99999999.99"> </td></tr>
+                        <tr><td>PI.05</td><td>Current Annual Retirement contributions</td> <td>$<input id="out_Cur_Annual_Ret_Contributions" type="number" step="0.01"  value="" min="0" max="99999999.99"> </td></tr>
 
                         <tr><td></td> <td></td></tr>
 
@@ -112,18 +116,19 @@ table tbody tr:hover {background-color: #FFFFCC;}
                     <table style="margin-left: 15px;">
                         <thead></thead>
                         <tbody>
-                            <tr><td>Birthday of Retirement Age</td> <td><input id="out_Bday_Retire" value="" class="form-control" type="date" readonly="true"></td></tr>
-                            <tr><td>Months To Retirement</td> <td><input id="out_Months_Retire" value="" class="form-control" type="number" min="0" max="9999" readonly="true"></td></td></tr>
-                            <tr><td>Minimum Savings Needed to live off [<span id="out_pct_txt" style="color:darkblue;"></span>%] withdrawal annually for Future Expenses.</td> <td> $<input id="out_MinSavings" value=""  type="number" min="0" max="99999999.99" readonly="true"></td></tr>
-                            <tr><td>Weekly Amount to Invest for Inflated Value   </td> <td>$<input id="out_wkly_amt_Inv" value="" type="number" min="0" max="9999999.99" readonly="true"></td></tr>
-                            <tr><td>Monthly Amount to Invest for Inflated Value	 </td> <td>$<input id="out_mon_amt_Inv" value=""  type="number" min="0" max="9999999.99" readonly="true"></td></tr>
-                            <tr><td>Annual Amount to Invest for Inflated Value	 </td> <td>$<input id="out_Yrly_amt_Inv" value=""  type="number" min="0" max="9999999.99" readonly="true"></td></tr>
-                            <tr><td></td> <td></td></tr>
-                            <tr><td>Future Monthly Social Security income with inflation</td> <td></td></tr>
-                            <tr><td>Future Annual Social Security income with inflation</td> <td></td></tr>
-                            <tr><td></td> <td></td></tr>
-                            <tr><td>Estimated Savings on <span class="out_bday_ret_txt" style="color:darkblue;"></span></td> <td>$<input id="out_ret_bday_savings" value="" type="number" min="0" max="99999999999" readonly="true"></td></tr>
-                            <tr><td>Estimated Annual Income on <span class="out_bday_ret_txt" style="color:darkblue;"></span></td> <td>$<input id="out_ret_Mon_LiveOff" value="" type="number" min="0" max="99999999999" readonly="true"></td></tr>
+                            <tr><td>RI.01</td><td>Birthday of Retirement Age</td> <td><input id="out_Bday_Retire" value="" class="form-control" type="date" readonly="true"></td></tr>
+                            <tr><td>RI.02</td><td>Months To Retirement</td> <td><input id="out_Months_Retire" value="" class="form-control" type="number" min="0" max="9999" readonly="true"></td></td></tr>
+                            <tr><td>RI.03</td><td>Minimum Savings Needed to live off [<span id="out_pct_txt" style="color:darkblue;"></span>%] withdrawal annually for Future Expenses.</td> <td> $<input id="out_MinSavings" value=""  type="number" min="0" max="99999999.99" readonly="true"></td></tr>
+                            <tr><td>RI.04</td><td>Weekly Amount to Invest for Inflated Value   </td> <td>$<input id="out_wkly_amt_Inv" value="" type="number" min="0" max="9999999.99" readonly="true"></td></tr>
+                            <tr><td>RI.05</td><td>Monthly Amount to Invest for Inflated Value	 </td> <td>$<input id="out_mon_amt_Inv" value=""  type="number" min="0" max="9999999.99" readonly="true"></td></tr>
+                            <tr><td>RI.06</td><td>Annual Amount to Invest for Inflated Value	 </td> <td>$<input id="out_Yrly_amt_Inv" value=""  type="number" min="0" max="9999999.99" readonly="true"></td></tr>
+                            <tr><td>RI.07</td><td></td> <td></td></tr>
+                            <tr><td>RI.08</td><td>Future Annual Social Security income </td> <td>$<input id="out_ss_IncomeAnnual" value=""  type="number" min="0" max="9999999.99" readonly="true"></td></tr>
+                            <tr><td>RI.09</td><td>Future Monthly Social Security income with inflation</td> <td>$<input id="out_ss_Income_Monthly_wInflation" value=""  type="number" min="0" max="9999999.99" readonly="true"></td></tr>
+                            <tr><td>RI.10</td><td>Future Annual Social Security income with inflation</td> <td>$<input  id="out_ss_Income_Annual_wInflation" value=""  type="number" min="0" max="9999999.99" readonly="true"></td></tr>
+                            <tr><td>RI.11</td><td></td> <td></td></tr>
+                            <tr><td>RI.12</td><td>Estimated Savings on <span class="out_bday_ret_txt" style="color:darkblue;"></span></td> <td>$<input id="out_ret_bday_savings" value="" type="number" min="0" max="99999999999" readonly="true"></td></tr>
+                            <tr><td>RI.13</td><td>Estimated Annual Income on <span class="out_bday_ret_txt" style="color:darkblue;"></span></td> <td>$<input id="out_ret_Mon_LiveOff" value="" type="number" min="0" max="99999999999" readonly="true"></td></tr>
                         </tbody>
                     </table>
                 </fieldset> <!-- /YourInfo -->  
@@ -136,7 +141,7 @@ table tbody tr:hover {background-color: #FFFFCC;}
    <fieldset>
     <legend>Helpful Resources</legend>
     <ul>
-        <li>Your forecasted Social Security benefit: <a href="https://www.ssa.gov/myaccount/">https://www.ssa.gov/myaccount</a></li>
+        <li>Social Security benefit: <a href="https://www.ssa.gov/myaccount/">https://www.ssa.gov/myaccount</a></li>
         <li></li>
     </ul>
 </div>
@@ -260,6 +265,7 @@ table tbody tr:hover {background-color: #FFFFCC;}
         var inp_pctLiveOff    = parseFloat($('#inp_pctLiveOff').val().trim())*1.00;
         var inp_ROI           = parseFloat($('#inp_ROI').val().trim())*1.00;
         var inp_curRetSav     = +$('#inp_curRetSav').val().trim();
+        var inp_ss_Income     = +$('#inp_ss_Income').val().trim();
         // var out_Bday_Retire = moment(addYears(inp_bday,inp_RetAgeWant)).format('YYYY-MM-DD');
         var out_Bday_Retire   = moment(inp_bday).add('years',inp_RetAgeWant).format('YYYY-MM-DD');
         var out_Bday_Retire_Dt = new Date(out_Bday_Retire + 'T00:00:00');
@@ -288,7 +294,9 @@ table tbody tr:hover {background-color: #FFFFCC;}
           //Est Sav on date = FV(ROI/12, MonthToRetire,CurRetSav)
         var out_ret_bday_savings = +FV(inp_ROI/1200.00, out_Months_Retire, out_mon_amt_Inv, inp_curRetSav, 0)*-1.00; //FV(ROI/12, MonthToRetire,CurRetSav)
         var out_ret_Mon_LiveOff = (inp_pctLiveOff/100.00) * out_ret_bday_savings;
-
+        var out_ss_IncomeAnnual = (inp_ss_Income * 12.00);
+        var out_ss_Income_Monthly_wInflation = 0.00; //todo
+        var out_ss_Income_Annual_wInflation  = 0.00; //todo
 
 //alert("in:["+inp_bday + " ] out:[ " + out_Bday_Retire+"]");
 $('#out_pct_txt').text(inp_pctLiveOff) ;
@@ -306,6 +314,10 @@ $('#out_Yrly_amt_Inv').val(out_Yrly_amt_Inv);
 $('#out_wkly_amt_Inv').val(out_wkly_amt_Inv);
 $('#out_ret_bday_savings').val(out_ret_bday_savings);
 $('#out_ret_Mon_LiveOff').val(out_ret_Mon_LiveOff);
+
+$('#out_ss_IncomeAnnual').val(out_ss_IncomeAnnual);
+$('#out_ss_Income_Monthly_wInflation').val(out_ss_Income_Monthly_wInflation);
+$('#out_ss_Income_Annual_wInflation').val(out_ss_Income_Annual_wInflation);
     
 $('#result_fields').show();
 
