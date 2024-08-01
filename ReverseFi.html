@@ -14,8 +14,16 @@
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
         <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/moment.min.js"></script>
+        
 
 <style>
+    @media print {
+                    #printMenu{display: none! important;}
+   }
+</style>
+
+<style>
+
     div#result_fields input{border: none; color:navy; background-color: rgba(255,255,255,0.00);}
     input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button {
@@ -52,7 +60,7 @@ table tbody tr:hover {background-color: #FFFFCC;}
     <body>
         <h1>Financial Independance Calculators</h1>
         <h3 style="color:darkgray;">Simplified Retirement Calculator</h3>
-        <p style="color:darkred;">In Development v.Alpha.001 (2024-07-30 0604)</p>
+        <p style="color:darkred;">In Development v.Alpha.001 (2024-07-31 2101)</p>
         <p style="color:grey; font-size: x-small;">See terms of Use & User Agreement at the bottom of the page</p>
        <form id="inputForm"> 
         <fieldset id="usrInputsDiv" style="margin: 10px 30px 10px 10px; background-color: rgba(250,250,200,0.1); border: 2px solid #04AA6D !important; padding: 10px 30px 10px 10px; ">
@@ -75,7 +83,8 @@ table tbody tr:hover {background-color: #FFFFCC;}
                         <tr><td> </td><td></td> <td></td></tr>
                     </tbody>
                 </table>
-                <input type="button" value="Calculate" class="btn btn-primary" onclick="doCalculations();">
+                <input id="btnSubmit" type="button" value="Calculate" class="btn btn-primary" onclick="doCalcClick();">
+                <div id="updateMsg" style="display: none; font-size: xx-small; color: darkgray;">Results Will Auto update as you update your inputs</div>
             </fieldset> <!-- /usrInputsDiv -->
         </form>
         <hr/>
@@ -87,7 +96,7 @@ table tbody tr:hover {background-color: #FFFFCC;}
                 <table>
                     <thead></thead>
                     <tbody>
-                        <tr><td>AI.01</td> <td>Additional Monthly Amount to Save for Retirement</td> <td></td> </tr>
+                        <tr><td>AI.01</td> <td>Additional Monthly Amount to Save for Retirement</td> <td> $<input id="out_Add_Amt_To_Save" type="number" step="0.01"  value="" min="0" max="99999999.99"> </td> </tr>
                         <tr><td>AI.02</td> <td></td> <td></td> </tr>
                         <tr><td>AI.03</td> <td></td> <td></td> </tr>
                     </tbody>
@@ -173,6 +182,7 @@ table tbody tr:hover {background-color: #FFFFCC;}
     </ul>
 </div>
 <hr/>
+<div id="printMenu" style="float:right; position:absolute; top:20px; right:20px; padding: 0; margin: 0;"><input type="button" class="btn btn-secondary" value = "Print" onclick = "window.print()" /></div>
     </body>
 
     <script src="" async defer></script>
@@ -283,6 +293,20 @@ table tbody tr:hover {background-color: #FFFFCC;}
 
 
 <script>
+
+$("form#inputForm").keyup(function(){
+    doCalculations();
+});
+
+function doCalcClick() {
+    doCalculations();
+    $('#result_fields').show();
+    //$('#btnSubmit').val('Update');
+    $('#btnSubmit').hide();
+     $('#updateMsg').show();
+
+}
+
     function doCalculations(){
         var inp_bday          = new Date($('#inp_bday').val()+'T00:00:00');
         var inp_RetAgeWant    = +$('#inp_RetAgeWant').val().trim();
@@ -322,6 +346,8 @@ table tbody tr:hover {background-color: #FFFFCC;}
         var out_ss_IncomeAnnual = (inp_ss_Income * 12.00);
         var out_ss_Income_Monthly_wInflation = +FV((inp_inflation/100),(out_Months_Retire/12),0,inp_ss_Income,0)*-1.00; //=FV(Inflation,Months/12,0,SS)*-1
         var out_ss_Income_Annual_wInflation  = out_ss_Income_Monthly_wInflation * 12.00; //todo
+        var out_Add_Amt_To_Save = out_mon_amt_Inv - inp_monRetContrib;
+        if(out_Add_Amt_To_Save <= 0){out_Add_Amt_To_Save == 0.00;}
 
 //alert("in:["+inp_bday + " ] out:[ " + out_Bday_Retire+"]");
 $('#out_pct_txt').text(inp_pctLiveOff) ;
@@ -343,8 +369,8 @@ $('#out_ret_Mon_LiveOff').val(out_ret_Mon_LiveOff);
 $('#out_ss_IncomeAnnual').val(out_ss_IncomeAnnual);
 $('#out_ss_Income_Monthly_wInflation').val(out_ss_Income_Monthly_wInflation);
 $('#out_ss_Income_Annual_wInflation').val(out_ss_Income_Annual_wInflation);
-    
-$('#result_fields').show();
+$('#out_Add_Amt_To_Save').val(out_Add_Amt_To_Save);
+
 
 } // /doCalculations
    
