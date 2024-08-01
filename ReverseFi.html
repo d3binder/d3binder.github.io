@@ -16,10 +16,31 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/moment.min.js"></script>
         
 
+        <style type="text/css" media="print">
+            .page
+            {
+             -webkit-transform: rotate(-90deg); 
+             -moz-transform:rotate(-90deg);
+             filter:progid:DXImageTransform.Microsoft.BasicImage(rotation=3);
+            }
+        </style>
+
 <style>
     @media print {
                     #printMenu{display: none! important;}
+                    @page {
+                                size: landscape;
+                            }
+                    right {
+                            page: right;
+                        }
    }
+ 
+   @page right {
+  size: landscape;
+  page-orientation: rotate-right;
+}
+
 </style>
 
 <style>
@@ -41,7 +62,7 @@ table {
 
 th, td {
   text-align: left;
-  padding: 8px;
+  padding: 1px;
 }
 
 fieldset#usrInputsDiv table tbody tr:nth-child(even){background-color: #b3fbe0}
@@ -60,7 +81,7 @@ table tbody tr:hover {background-color: #FFFFCC;}
 </style>
 
     </head>
-    <body>
+    <body class="right">
         <div style="width: 100%; background-color: black; padding-left: 10px; padding-bottom: 10px;">
         <h1 style="color:white; padding-bottom:0; margin-bottom: 0;">Financial Independance Calculators</h1>
         <h3 style="color:darkgray; margin-top: 0; padding-top: 0; margin-bottom: 0; padding-bottom: 0;">Simplified Retirement Calculator</h3>
@@ -99,7 +120,7 @@ table tbody tr:hover {background-color: #FFFFCC;}
 
             
             
-            <fieldset id="ActionItems" style="margin-left: 10px;">
+            <fieldset id="ActionItems" style="margin-left: 10px; page-break-after: always;">
                 <legend>Action Items</legend>
                 <table style="margin-left: 15px;">
                     <thead></thead>
@@ -131,7 +152,7 @@ table tbody tr:hover {background-color: #FFFFCC;}
             </fieldset> <!-- /YourInfo -->   
 <hr/>
 
-            <fieldset id="YourRetirmentInfo" style="margin-left: 10px;">
+            <fieldset id="YourRetirmentInfo" style="margin-left: 10px; page-break-after: always;">
                 <legend>Your Retirment Info</legend>
                     <table style="margin-left: 15px;">
                         <thead></thead>
@@ -156,7 +177,7 @@ table tbody tr:hover {background-color: #FFFFCC;}
 
 <hr/>
 
-<div style="height: 5em; padding: 10px; margin: 10px;"></div>
+<div style="height: 2em; padding: 1px; margin: 1px;"></div>
 <div id="helpfulTipsDiv">
    <fieldset>
     <legend>Helpful Resources</legend>
@@ -168,7 +189,7 @@ table tbody tr:hover {background-color: #FFFFCC;}
 
 <hr/>
 
-<div style="height: 5em; padding: 10px; margin: 10px;"></div>
+<div style="height: 2em; padding: 1px; margin: 1px;"></div>
 <div id="UserAgreementDiv">
    <fieldset>
     <legend>User Agreement / Terms of Use </legend>
