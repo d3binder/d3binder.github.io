@@ -160,7 +160,7 @@
   <audio id="caneSound" src="cane.mp3" preload="auto"></audio>
 
   <script>
-    const line1Text = "INITIALIZING SYSTEM...";
+    const line1Text = "INITIALIZING SYSTEM (Version 2025.10.16.001) ...";
     const line3Text = "LOADING PLAYER PROFILE...";
     const line4Text = "PLAYER ACQUIRED.";
     const line5Text = "WELCOME TO THE GAMES [PRESTON LOVELAND]";
@@ -206,20 +206,22 @@
       });
     }
 
-    function startBootSequence() {
-      document.removeEventListener("keydown", handleKeyOrTap);
-      document.removeEventListener("touchstart", handleKeyOrTap);
-      document.getElementById("line2").style.display = "none";
-      bootSequence.style.display = "block";
-      startSequence();
-    }
+   function startBootSequence() {
+  document.removeEventListener("keydown", handleInteraction);
+  document.removeEventListener("touchstart", handleInteraction);
+  document.removeEventListener("click", handleInteraction);
+  document.getElementById("line2").style.display = "none";
+  bootSequence.style.display = "block";
+  startSequence();
+}
 
-    function handleKeyOrTap() {
-      startBootSequence();
-    }
+function handleInteraction() {
+  startBootSequence();
+}
 
-    document.addEventListener("keydown", handleKeyOrTap);
-    document.addEventListener("touchstart", handleKeyOrTap);
+document.addEventListener("keydown", handleInteraction);
+document.addEventListener("touchstart", handleInteraction);
+document.addEventListener("click", handleInteraction);
   </script>
 </body>
 </html>
