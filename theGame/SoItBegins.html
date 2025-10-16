@@ -52,7 +52,7 @@
       width: 400px;
       image-rendering: pixelated;
       filter: blur(6px) brightness(0.5);
-      animation: glitchReveal 5s ease-out forwards, flicker 0.5s ease-in-out 2;
+      animation: glitchReveal 2s ease-out forwards, flicker 0.5s ease-in-out 2;
       z-index: 1;
     }
 
@@ -135,14 +135,14 @@
 <body>
   <div class="terminal">
     <div>READY PLAYER 2</div>
-    <div id="presskey">PRESS ANY KEY TO CONTINUE<span class="cursor"></span></div>
+    <div id="line2">PRESS ANY KEY TO CONTINUE<span class="cursor"></span></div>
   </div>
 
   <div id="bootSequence" style="display: none;">
     <div class="terminal">
       <div><span id="line1"></span></div>
-      <div><span id="line2"></span></div>
       <div><span id="line3"></span></div>
+      <div><span id="line4"></span></div>
     </div>
 
     <div id="imageContainer">
@@ -152,7 +152,7 @@
     </div>
 
     <div class="terminal">
-      <div><span id="line4"></span><span class="cursor"></span></div>
+      <div><span id="line5"></span><span class="cursor"></span></div>
     </div>
   </div>
 
@@ -161,14 +161,14 @@
 
   <script>
     const line1Text = "INITIALIZING SYSTEM...";
-    const line2Text = "LOADING PLAYER PROFILE...";
-    const line3Text = "PLAYER ACQUIRED.";
-    const line4Text = "WELCOME TO THE GAMES [PRESTON LOVELAND]";
+    const line3Text = "LOADING PLAYER PROFILE...";
+    const line4Text = "PLAYER ACQUIRED.";
+    const line5Text = "WELCOME TO THE GAMES [PRESTON LOVELAND]";
 
     const line1 = document.getElementById("line1");
-    const line2 = document.getElementById("line2");
     const line3 = document.getElementById("line3");
     const line4 = document.getElementById("line4");
+    const line5 = document.getElementById("line5");
 
     const typeSound = document.getElementById("typeSound");
     const caneSound = document.getElementById("caneSound");
@@ -192,22 +192,34 @@
       }
     }
 
-    document.addEventListener("keydown", function handleKey() {
-      document.removeEventListener("keydown", handleKey);
-    document.getElementById("presskey").style.display = "none";
-      bootSequence.style.display = "block";
+    function startSequence() {
       typeLine(line1Text, line1, () => {
-        setTimeout(() => typeLine(line2Text, line2, () => {
-          setTimeout(() => typeLine(line3Text, line3, () => {
+        setTimeout(() => typeLine(line3Text, line3, () => {
+          setTimeout(() => typeLine(line4Text, line4, () => {
             setTimeout(() => {
               imageContainer.style.opacity = 1;
               caneSound.play();
-              setTimeout(() => typeLine(line4Text, line4), 1000);
+              setTimeout(() => typeLine(line5Text, line5), 1000);
             }, 500);
           }), 500);
         }), 500);
       });
-    });
+    }
+
+    function startBootSequence() {
+      document.removeEventListener("keydown", handleKeyOrTap);
+      document.removeEventListener("touchstart", handleKeyOrTap);
+      document.getElementById("line2").style.display = "none";
+      bootSequence.style.display = "block";
+      startSequence();
+    }
+
+    function handleKeyOrTap() {
+      startBootSequence();
+    }
+
+    document.addEventListener("keydown", handleKeyOrTap);
+    document.addEventListener("touchstart", handleKeyOrTap);
   </script>
 </body>
 </html>
