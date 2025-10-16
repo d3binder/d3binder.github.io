@@ -135,7 +135,7 @@
 <body>
   <div class="terminal">
     <div>READY PLAYER 2</div>
-    <div id="line2">PRESS ANY KEY TO CONTINUE.<span class="cursor"></span></div>
+    <div id="line2">PRESS ANY KEY TO CONTINUE<span class="cursor"></span></div>
   </div>
 
   <div id="bootSequence" style="display: none;">
@@ -160,7 +160,7 @@
   <audio id="caneSound" src="cane.mp3" preload="auto"></audio>
 
   <script>
-    const line1Text = "INITIALIZING SYSTEM (Version 2025.10.16.001) ...";
+    const line1Text = "INITIALIZING SYSTEM (Version 2025.10.16.002) ...";
     const line3Text = "LOADING PLAYER PROFILE...";
     const line4Text = "PLAYER ACQUIRED.";
     const line5Text = "WELCOME TO THE GAMES [PRESTON LOVELAND]";
@@ -182,8 +182,10 @@
     function typeLine(text, element, callback) {
       if (index < text.length) {
         element.textContent += text.charAt(index);
-        typeSound.currentTime = 0;
-        typeSound.play();
+        // typeSound.currentTime = 0;
+        // typeSound.play();
+        const keySound = typeSound.cloneNode();
+        keySound.play();
         index++;
         setTimeout(() => typeLine(text, element, callback), 150);
       } else {
@@ -206,7 +208,7 @@
       });
     }
 
-   function startBootSequence() {
+    function startBootSequence() {
   document.removeEventListener("keydown", handleInteraction);
   document.removeEventListener("touchstart", handleInteraction);
   document.removeEventListener("click", handleInteraction);
