@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>READY PLAYER 2</title>
+  <style>
+    body {
+      background-color: black;
+      color: #00FF00;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 2em;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .terminal {
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+
+    .cursor {
+      display: inline-block;
+      width: 12px;
+      height: 1em;
+      background-color: #00FF00;
+      animation: blink 1s steps(1) infinite;
+      vertical-align: bottom;
+      margin-left: 5px;
+    }
+
+    @keyframes blink {
+      0%, 50% { opacity: 1; }
+      50.01%, 100% { opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="terminal">
+    <span id="typedText"></span><span class="cursor"></span>
+  </div>
+
+  <audio id="typeSound" src="typewriter-key.mp3" preload="auto"></audio>
+
+  <script>
+    const text = "READY PLAYER 2";
+    const typedText = document.getElementById("typedText");
+    const typeSound = document.getElementById("typeSound");
+    let index = 0;
+
+    function type() {
+      if (index < text.length) {
+        typedText.textContent += text.charAt(index);
+        typeSound.currentTime = 0;
+        typeSound.play();
+        index++;
+        setTimeout(type, 150); // Adjust typing speed here
+      }
+    }
+
+    window.onload = type;
+  </script>
+</body>
+</html>
