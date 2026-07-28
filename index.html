@@ -260,9 +260,7 @@
                 <span class="fw-bold fs-5 tracking-tight text-white">Binder Resources</span>
             </a>
             <div class="d-none d-md-flex gap-4">
-                <a href="#about" class="text-decoration-none nav-link-custom fw-semibold small">About</a>
                 <a href="#terms" class="text-decoration-none nav-link-custom fw-semibold small">Terms & Conditions</a>
-                <a href="#tips" class="text-decoration-none nav-link-custom fw-semibold small">Guides</a>
             </div>
         </div>
     </nav>
@@ -282,16 +280,16 @@
         <div class="row g-4 mb-5" id="about">
             
             <!-- Main Hero Bento Card -->
-            <div class="col-lg-7">
+            <div class="col-lg-12">
                 <div class="bento-card p-4 p-md-5 h-100 d-flex flex-column justify-content-between">
                     <div>
                         <div class="floating-icon" style="background: rgba(99, 102, 241, 0.2); color: #818cf8;">
                             📁
                         </div>
-                        <h1 class="fw-800 display-6 mb-3" style="color: lime;">Download</h1>
+                        <h1 class="fw-800 display-6 mb-3" style="color: #06de96">Download</h1>
 
                         <h4 class="">Dead, Dying, or Disabled Planner</h4>
-                        <p class="text-muted lead fs-6 mb-4">
+                        <p class="lead" style="color:#cccccc; font-size: 10pt;">
                             Organize essential documents, critical instructions, and legacy records for life's unexpected moments. Free to download, customize, and print for your personal binder.
                         </p>
                     </div>
@@ -313,7 +311,7 @@
             </div>
 
             <!-- Right Bento Highlights -->
-            <div class="col-lg-5">
+           <!-- /* <div class="col-lg-5">
                 <div class="row g-4 h-100">
                     <div class="col-12">
                         <div class="bento-card p-4 h-100" style="background: linear-gradient(135deg, rgba(253, 224, 71, 0.08), rgba(30, 41, 59, 0.7)); border-color: rgba(253, 224, 71, 0.2);">
@@ -335,24 +333,22 @@
                         </div>
                     </div>
                 </div>
-            </div>
-
+            </div> */
+-->
         </div>
 
         <!-- Disclaimers & Interactive Terms Section -->
-        <div class="bento-card p-4 p-md-5 mb-5" id="terms">
+        <div class="bento-card p-4 p-md-5 mb-5" id="terms" style="background: linear-gradient(135deg, rgba(236, 72, 153, 0.15) 0%, rgba(30, 41, 59, 0.9) 100%); border-color: rgba(236, 72, 153, 0.3);">
             <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
                 <h4 class="fw-bold mb-0 text-white">Disclaimers & Terms of Use</h4>
                 <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2 rounded-pill">Required Reading</span>
             </div>
+            <p class="fw-bold text-white mb-2">By using this site, clicking any links, or using any materials in any way, you agree to all of the following:</p>
             
-            <p class="text-muted small mb-4">
-                Please note: The author is not an attorney, CPA, or financial advisor. This planner is intended strictly for informational and organizational purposes and does not replace legal estate planning.
-            </p>
 
             <div class="terms-drawer mb-4">
                 <ul class="ps-3 mb-0">
-                    <li class="fw-bold text-white mb-2">By using this site, clicking any links, or using any materials in any way, you agree to all of the following:</li>
+                    <li style="font-weight: bold;">The author is not an attorney, CPA, or financial advisor. This planner is intended strictly for informational and organizational purposes and does not replace legal estate planning.</li>
                     <li>You agree to all terms, conditions, and requirements listed below and/or within the D3 binder materials.</li>
                     <li>If you do not agree to every term, condition, and requirement listed below, you must destroy this document and any derived copies (Digital, Physical, Print, Audio, Video, etc.).</li>
                     <li>A copy of these Disclaimers & Terms of Use must remain intact with any derived materials.</li>
@@ -363,38 +359,14 @@
                     <li>The author holds no professional legal, medical, or financial certifications and provides these materials solely as personal layout suggestions.</li>
                     <li>The author cannot be held liable for errors, omissions, or inconsistencies.</li>
                     <li>Strictly for non-commercial household use only. Resale or commercial redistribution is prohibited.</li>
+                    <li>Feedback or submitted materials become the property of the author without financial compensation. The author is under no obligation to review submissions or maintain confidentiality.</li>
                 </ul>
             </div>
 
-            <!-- Accordion Details -->
-            <div class="accordion accordion-flush" id="extraTerms">
-                <div class="accordion-item bg-transparent">
-                    <h2 class="accordion-header">
-                        <button class="accordion-button collapsed px-0 fw-semibold text-white fs-6" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseOne">
-                            💬 Feedback & Idea Submissions Agreement
-                        </button>
-                    </h2>
-                    <div id="flush-collapseOne" class="accordion-collapse collapse" data-bs-parent="#extraTerms">
-                        <div class="accordion-body px-0 text-muted small">
-                            Feedback or submitted materials become the property of the author without financial compensation. The author is under no obligation to review submissions or maintain confidentiality.
-                        </div>
-                    </div>
-                </div>
-            </div>
+
         </div>
 
-        <!-- Digital Legacy Tip Banner -->
-        <div class="bento-card p-4 mb-5" id="tips" style="background: linear-gradient(135deg, rgba(236, 72, 153, 0.15) 0%, rgba(30, 41, 59, 0.9) 100%); border-color: rgba(236, 72, 153, 0.3);">
-            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
-                <div>
-                    <h5 class="fw-bold mb-1 text-white">🔗 Digital Legacy Guides</h5>
-                    <p class="text-muted small mb-0">Learn how to manage or memorialize online accounts after a loved one passes.</p>
-                </div>
-                <a href="https://www.facebook.com/help/224562897555674" target="_blank" class="btn btn-outline-light btn-sm rounded-pill px-4 py-2">
-                    Facebook Account Memorialization &rarr;
-                </a>
-            </div>
-        </div>
+
 
     </main>
 
@@ -404,7 +376,7 @@
             <div class="d-flex flex-wrap align-items-center justify-content-between text-muted small gap-3">
                 <div>© Copyright 2023 Noah Norton. All rights reserved.</div>
                 <div class="d-flex align-items-center gap-3">
-                    <span class="badge bg-dark text-secondary border border-secondary border-opacity-25">Ver. 2023.06.12.0745</span>
+                    <span class="badge bg-dark text-secondary border border-secondary border-opacity-25">Ver. 2026.07.27.1642</span>
                 </div>
             </div>
         </div>
