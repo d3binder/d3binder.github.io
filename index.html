@@ -1,111 +1,439 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-        <meta name="description" content="" />
-        <meta name="author" content="" />
-        <title>D3 - The Dead, Dying, or Disabled Binder</title>
-        <!-- Favicon-->
-        <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
-        <!-- Core theme CSS (includes Bootstrap)-->
-        <!-- <link href="css/styles.css" rel="stylesheet" /> -->
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
-        <style>div.terms li:hover{background-color: #DDFFEE;}</style>
-    </head>
-    <body>
-        <!-- Responsive navbar-->
-        <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-            <div class="container px-5">
-                <a class="navbar-brand" href="#!">D3 </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
-                <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-                        <li class="nav-item"><a class="nav-link active" aria-current="page" href="#!">Home</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#!">About</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#!">Contact</a></li>
-                 
-                    </ul>
-                </div>
-            </div>
-        </nav>
-        <!-- Page Content-->
-        <div class="container px-4 px-lg-5">
-<div style='width:100%; background-color:#FFFF99; text-align:center;'>Exciting changes coming soon. See a preview here:
-                    <button type="submit" class="btn btn-primary" id="newbtn" name="newbtn" onclick="window.open('https://d3.flagship.is','_blank');" >Preview</button>
-</div>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="D3 - The Dead, Dying, or Disabled Binder Resources" />
+    <title>D3 Binder | Life & Legacy Organizer</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Canvas Confetti Library for Interactivity -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --text-dark: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+            --glow-1: rgba(99, 102, 241, 0.25);
+            --glow-2: rgba(236, 72, 153, 0.2);
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-dark);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Animated Mesh Ambient Glows */
+        .bg-glow-1, .bg-glow-2 {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(90px);
+            z-index: -1;
+            animation: floatGlow 12s ease-in-out infinite alternate;
+        }
+        .bg-glow-1 {
+            top: -100px;
+            right: -100px;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, var(--glow-1) 0%, transparent 70%);
+        }
+        .bg-glow-2 {
+            top: 300px;
+            left: -150px;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, var(--glow-2) 0%, transparent 70%);
+            animation-delay: -6s;
+        }
+
+        @keyframes floatGlow {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(40px, 50px) scale(1.1); }
+        }
+
+        /* Glass Topbar */
+        .glass-nav {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .brand-badge {
+            background: var(--accent-gradient);
+            background-size: 200% 200%;
+            animation: gradientShift 6s ease infinite;
+            color: white;
+            font-weight: 800;
+            padding: 6px 14px;
+            border-radius: 12px;
+            display: inline-block;
+            box-shadow: 0 4px 15px rgba(168, 85, 247, 0.3);
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .nav-link-custom {
+            color: var(--text-muted);
+            transition: all 0.2s ease;
+        }
+        .nav-link-custom:hover {
+            color: #f43f5e;
+            transform: translateY(-1px);
+        }
+
+        /* OPTION 1: Animated Rotating Border Announcement Pill */
+        @property --border-angle {
+            syntax: '<angle>';
+            initial-value: 0deg;
+            inherits: false;
+        }
+
+        .announcement-pill {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 20px;
+            font-size: 0.875rem;
+            border-radius: 50px;
             
-            <!-- Heading Row-->
-            <div class="row gx-4 gx-lg-5 align-items-center my-5">
-                <div class="col-lg-7">
-                    <img style="display: none;" class="img-fluid rounded mb-4 mb-lg-0" src="https://dummyimage.com/900x400/dee2e6/6c757d.jpg" alt="..." />
-                    <img style="width: 400px;" class="img-fluid rounded-5 mb-4 mb-lg-0" src="img/robotfield.jpeg" alt="..." />
-                </div>
-                    <div class="col-lg-5">
-                    <h1 class="font-weight-light">D3 Binder</h1>
+            /* Dual background to create border gradient effect */
+            background: 
+                linear-gradient(rgba(30, 41, 59, 0.95), rgba(30, 41, 59, 0.95)) padding-box, 
+                linear-gradient(var(--border-angle), #6366f1, #a855f7, #ec4899, #10b981, #6366f1) border-box;
+            border: 2px solid transparent;
+            
+            animation: rotateBorder 4s linear infinite;
+            box-shadow: 0 4px 20px rgba(168, 85, 247, 0.25);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+        }
 
-                    <h4>Dead, Dying, or Disabled </h4>
-                    <p>Download the D3 materials here. By doing so, you agree to all terms, conditions, and requirements listed below.</p>
-                    <input type="checkbox" id="checkme"/> I agree to the Terms.<br/>
-                    <button type="submit" class="btn btn-primary" id="sendNewSms" name="sendNewSms" disabled="disabled" onclick="window.open('https://1drv.ms/f/s!AtbFNMRKTTCXk0NM9K1x3-eBwmui?e=Wec0wL','_blank');" >Open Document Resources</button>
+        .announcement-pill:hover {
+            transform: scale(1.03);
+            box-shadow: 0 6px 28px rgba(236, 72, 153, 0.45);
+        }
+
+        @keyframes rotateBorder {
+            to {
+                --border-angle: 360deg;
+            }
+        }
+
+        /* Bento Grid Interactive Cards */
+        .bento-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--card-border);
+            border-radius: 28px;
+            box-shadow: 0 20px 40px -15px rgba(0,0,0,0.5);
+            transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        .bento-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 25px 50px -12px rgba(99, 102, 241, 0.25);
+            border-color: rgba(168, 85, 247, 0.4);
+        }
+
+        /* Dynamic Floating Icons */
+        .floating-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.75rem;
+            margin-bottom: 20px;
+            box-shadow: inset 0 0 12px rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s ease;
+        }
+        .bento-card:hover .floating-icon {
+            transform: scale(1.1) rotate(5deg);
+        }
+
+        /* Interactive Access Box */
+        .access-box {
+            background: rgba(15, 23, 42, 0.6);
+            border: 2px dashed rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            padding: 24px;
+            transition: all 0.3s ease;
+        }
+        .access-box.active {
+            border-color: #10b981;
+            background: rgba(16, 185, 129, 0.05);
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.15);
+        }
+
+        /* Vivid Interactive Launch Button */
+        .btn-launch {
+            background: var(--accent-gradient);
+            background-size: 200% 200%;
+            color: white;
+            font-weight: 700;
+            border-radius: 14px;
+            padding: 16px 28px;
+            border: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.5);
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-launch:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 30px -5px rgba(168, 85, 247, 0.6);
+            background-position: 100% 0;
+            color: white;
+        }
+        .btn-launch:disabled {
+            background: #334155;
+            box-shadow: none;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        /* Terms Accordion Drawer */
+        .terms-drawer {
+            max-height: 240px;
+            overflow-y: auto;
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 16px;
+            border: 1px solid var(--card-border);
+            padding: 18px 22px;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            scrollbar-width: thin;
+            scrollbar-color: #475569 transparent;
+        }
+
+        .accordion-button {
+            color: var(--text-dark) !important;
+            background: transparent !important;
+            box-shadow: none !important;
+        }
+        .accordion-button:not(.collapsed) {
+            color: #a855f7 !important;
+        }
+
+        footer {
+            margin-top: auto;
+            border-top: 1px solid var(--card-border);
+            background: rgba(15, 23, 42, 0.9);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Ambient Floating Background Glows -->
+    <div class="bg-glow-1"></div>
+    <div class="bg-glow-2"></div>
+
+    <!-- Navigation Header -->
+    <nav class="navbar glass-nav sticky-top py-3">
+        <div class="container px-4">
+            <a class="navbar-brand d-flex align-items-center gap-2" href="#">
+                <span class="brand-badge">D3</span>
+                <span class="fw-bold fs-5 tracking-tight text-white">Binder Resources</span>
+            </a>
+            <div class="d-none d-md-flex gap-4">
+                <a href="#about" class="text-decoration-none nav-link-custom fw-semibold small">About</a>
+                <a href="#terms" class="text-decoration-none nav-link-custom fw-semibold small">Terms & Conditions</a>
+                <a href="#tips" class="text-decoration-none nav-link-custom fw-semibold small">Guides</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Section -->
+    <main class="container my-5 px-4">
+        
+        <!-- Interactive Top Announcement Bar -->
+        <div class="text-center mb-5">
+            <div class="announcement-pill">
+                <span>✨ <strong class="text-white">Give the new site a try!</strong> </span>
+                <a href="https://d3.flagship.is" target="_blank" class="badge bg-primary rounded-pill text-decoration-none px-3 py-2">New Site &rarr;</a>
+            </div>
+        </div>
+
+        <!-- Bento Grid Section -->
+        <div class="row g-4 mb-5" id="about">
+            
+            <!-- Main Hero Bento Card -->
+            <div class="col-lg-7">
+                <div class="bento-card p-4 p-md-5 h-100 d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="floating-icon" style="background: rgba(99, 102, 241, 0.2); color: #818cf8;">
+                            📁
+                        </div>
+                        <h1 class="fw-800 display-6 mb-3" style="color: lime;">Download</h1>
+
+                        <h4 class="">Dead, Dying, or Disabled Planner</h4>
+                        <p class="text-muted lead fs-6 mb-4">
+                            Organize essential documents, critical instructions, and legacy records for life's unexpected moments. Free to download, customize, and print for your personal binder.
+                        </p>
+                    </div>
+
+                    <!-- Interactive Unlock & Access Box -->
+                    <div class="access-box" id="accessBox">
+                        <div class="form-check mb-3">
+                            <input class="form-check-input cursor-pointer" type="checkbox" id="checkme">
+                            <label class="form-check-label fw-semibold text-white small ms-1" for="checkme">
+                                I agree to the <a href="#terms" class="text-info text-decoration-underline">terms, conditions, and requirements</a> listed below.
+                            </label>
+                        </div>
+                        <button class="btn btn-launch w-100 d-flex align-items-center justify-content-center gap-2" id="sendNewSms" disabled onclick="window.open('https://1drv.ms/f/s!AtbFNMRKTTCXk0NM9K1x3-eBwmui?e=Wec0wL','_blank');">
+                            <span>Open Document Resources</span>
+                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                        </button>
+                    </div>
                 </div>
             </div>
-            <!-- Content Row-->
-            <div class="row gx-4 gx-lg-5 terms">
 
-                <H2>Disclaimers, Terms Of Use, Requirements, Agreements, etc. </H2>
-                <ul >
-                <li style="font-weight: bold;">By using this site, clicking any links, or using any materials in any way, you agree to all of the following.</li>
-                <li>You agree to all of the terms, conditions and requirements listed below and/or those in the D3 binder document</li>
-                </li><li>If you do not agree to every term, condition and requirement listed below then you are required to destroy this document and any related materials or materials derived from it. Including copies in any form, including, but not limited to Digital, Physical, print, Audio, Video or other transmission forms. This requirements does extend to any copies or transmissions you may have provided to any other person, company or entity.  
-                </li><li>A copy of the Disclaimers &amp; Terms of use must remain in whole with any materials related to or derived from this document or any related materials.
-                </li><li>The Disclaimers &amp; Terms of use, website and any contents within the related materials may change at any time without notice. You agree to the terms and conditions that are most recent. 
-                </li><li>This Planner/guide/document including any related materials  are not a legal document, however other documents you place within the binder may be. This document does not replace a valid will or any other valid legal documents. 
-                </li><li>Any included materials from 3rd party sources are under their own terms of use, it is the reader’s/user’s responsibility to research and accept and follow those terms.  
-                </li><li>The author of this document or any related materials offers no guarantees of results, outcomes, benefits, or anything else. No guarantees are offered regardless if those guarantees are stated or implied within this document or any others produced by the author.
-                </li><li>The author of this document or any related materials is not a lawyer, financial advisor, CPA, doctor, counselor, funeral director, estate planner, realtor, professional author, English major, or holding any other professional credentials or qualifications. Even if the author holds credentials, they are not offering official advice under one of these credentials. The author is simply someone who went through the process when their father died and thought getting this guide together could help other people. 
-                </li><li>The author cannot be held liable for any errors, omissions, or inconsistencies. You are solely responsible for your use of this document and actions you take and any potential consequences.  
-                </li><li>This document and any related materials are strictly for informational purposes only. Including but not limited to materials in whole or in part that are Physical copies, Digital copies, Audio or Video Presentations of the materials or any other medium. 
-                </li><li>You are advised to use qualified and licensed professionals as you work through this document or any related materials, or consider what should be done before, during, and after you or someone else is disabled, dying or dead. 
-                </li><li>The author nor any person or entity connected with the author takes any responsibility for the contents or use of this document or any related materials. You use this document at your own risk and are encouraged to seek guidance from qualified professionals.  
-                </li><li>The author may provide example contact information, this is not an endorsement of them, there is no affiliation or arrangement between the contacts and the author. They are simply Examples, nothing more. You are encouraged to research professionals on your own. 
-                </li><li>You may not distribute this document in whole or in part without written consent from the author.
-                </li><li>You are permitted to make copies of pages for use within your own binder or D3 related records. As an EXAMPLE scenario, you are allowed to make a copy of the dependents information pages so that you can store the information for each of your dependents. You are not permitted to make copies of pages to give to other people.
-                </li><li>This Document along with any other materials in whole or in part are only for informational purposes and only for private & personal use. No materials, in whole or in part are permitted to be used for commercial purposes or by a commercial entity. Any commercial use, resale, or redistribution is strictly prohibited and requires written permission from the author(s). 
-                </li><li>
-                </li></ul>
-                
-                    <h2>Feedback and Idea submissions</h2> <span style="font-weight: bold;">You agree that:</span>
-                <ul>
-                     <li>Your submissions and feedback along with their contents and related intellectual property rights will automatically become the property of the author, without any compensation to you
-                </li><li>The Author may use or redistribute the submissions and feedback along with their contents for any purpose and in any way on an unrestricted basis
-                </li><li>There is no obligation for the Author to review the submissions or feedback
-                </li><li>There is no obligation to keep any submissions or feedback confidential.
-                </ul>
+            <!-- Right Bento Highlights -->
+            <div class="col-lg-5">
+                <div class="row g-4 h-100">
+                    <div class="col-12">
+                        <div class="bento-card p-4 h-100" style="background: linear-gradient(135deg, rgba(253, 224, 71, 0.08), rgba(30, 41, 59, 0.7)); border-color: rgba(253, 224, 71, 0.2);">
+                            <div class="floating-icon" style="background: rgba(253, 224, 71, 0.2);">💡</div>
+                            <h5 class="fw-bold mb-2 text-warning">Created Out of Real Experience</h5>
+                            <p class="text-muted small mb-0">
+                                Built by someone who navigated the overwhelming administrative process firsthand when their father passed away. Designed solely to bring clarity to chaotic times.
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="col-12">
+                        <div class="bento-card p-4 h-100" style="background: linear-gradient(135deg, rgba(56, 189, 248, 0.08), rgba(30, 41, 59, 0.7)); border-color: rgba(56, 189, 248, 0.2);">
+                            <div class="floating-icon" style="background: rgba(56, 189, 248, 0.2);">🛡️</div>
+                            <h5 class="fw-bold mb-2 text-info">Private & Personal</h5>
+                            <p class="text-muted small mb-0">
+                                Free for private household use. No account creation or personal data needed to access the cloud resources.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-
-<h5>Additional Tips</h5>
-<ul>
-    <li>Deleting a Facebook account: <a href="https://www.facebook.com/help/224562897555674" target="_blank">Permanently Delete Your Facebook Account</a></li>
-</ul>
-
-
-
-
-
-            </div><!-- /Content Row-->
         </div>
-        <!-- Footer-->
-        <footer class="py-5 bg-dark">
-            <div class="container px-4 px-lg-5">    <div style="color: #55FFAA; width: 100%; padding: 10px;"><span style="text-align:left; ">© Copyright 2023, Noah Norton </span>  
-                <span style="text-align: right; position: absolute; right: 10px;">Ver. 2023.06.12.0745</span> 
-            </div></div>
-        </footer>
-        <!-- Bootstrap core JS-->
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
-  
-        <!-- Core theme JS-->
-        <script src="js/scripts.js"></script>
-    </body>
+
+        <!-- Disclaimers & Interactive Terms Section -->
+        <div class="bento-card p-4 p-md-5 mb-5" id="terms">
+            <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+                <h4 class="fw-bold mb-0 text-white">Disclaimers & Terms of Use</h4>
+                <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2 rounded-pill">Required Reading</span>
+            </div>
+            
+            <p class="text-muted small mb-4">
+                Please note: The author is not an attorney, CPA, or financial advisor. This planner is intended strictly for informational and organizational purposes and does not replace legal estate planning.
+            </p>
+
+            <div class="terms-drawer mb-4">
+                <ul class="ps-3 mb-0">
+                    <li class="fw-bold text-white mb-2">By using this site, clicking any links, or using any materials in any way, you agree to all of the following:</li>
+                    <li>You agree to all terms, conditions, and requirements listed below and/or within the D3 binder materials.</li>
+                    <li>If you do not agree to every term, condition, and requirement listed below, you must destroy this document and any derived copies (Digital, Physical, Print, Audio, Video, etc.).</li>
+                    <li>A copy of these Disclaimers & Terms of Use must remain intact with any derived materials.</li>
+                    <li>Terms are subject to update without notice; continued use indicates acceptance of current terms.</li>
+                    <li>This guide/document is not a legal document and does not replace a legally binding will or formal court filings.</li>
+                    <li>Any included 3rd-party materials remain under their respective licenses and terms.</li>
+                    <li>The author offers no guarantees of specific outcomes or legal protections.</li>
+                    <li>The author holds no professional legal, medical, or financial certifications and provides these materials solely as personal layout suggestions.</li>
+                    <li>The author cannot be held liable for errors, omissions, or inconsistencies.</li>
+                    <li>Strictly for non-commercial household use only. Resale or commercial redistribution is prohibited.</li>
+                </ul>
+            </div>
+
+            <!-- Accordion Details -->
+            <div class="accordion accordion-flush" id="extraTerms">
+                <div class="accordion-item bg-transparent">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed px-0 fw-semibold text-white fs-6" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseOne">
+                            💬 Feedback & Idea Submissions Agreement
+                        </button>
+                    </h2>
+                    <div id="flush-collapseOne" class="accordion-collapse collapse" data-bs-parent="#extraTerms">
+                        <div class="accordion-body px-0 text-muted small">
+                            Feedback or submitted materials become the property of the author without financial compensation. The author is under no obligation to review submissions or maintain confidentiality.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Digital Legacy Tip Banner -->
+        <div class="bento-card p-4 mb-5" id="tips" style="background: linear-gradient(135deg, rgba(236, 72, 153, 0.15) 0%, rgba(30, 41, 59, 0.9) 100%); border-color: rgba(236, 72, 153, 0.3);">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <div>
+                    <h5 class="fw-bold mb-1 text-white">🔗 Digital Legacy Guides</h5>
+                    <p class="text-muted small mb-0">Learn how to manage or memorialize online accounts after a loved one passes.</p>
+                </div>
+                <a href="https://www.facebook.com/help/224562897555674" target="_blank" class="btn btn-outline-light btn-sm rounded-pill px-4 py-2">
+                    Facebook Account Memorialization &rarr;
+                </a>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="py-4">
+        <div class="container px-4">
+            <div class="d-flex flex-wrap align-items-center justify-content-between text-muted small gap-3">
+                <div>© Copyright 2023 Noah Norton. All rights reserved.</div>
+                <div class="d-flex align-items-center gap-3">
+                    <span class="badge bg-dark text-secondary border border-secondary border-opacity-25">Ver. 2023.06.12.0745</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Interactive Logic Script -->
+    <script>
+        const checkbox = document.getElementById('checkme');
+        const submitBtn = document.getElementById('sendNewSms');
+        const accessBox = document.getElementById('accessBox');
+
+        checkbox.addEventListener('change', function() {
+            submitBtn.disabled = !this.checked;
+            if (this.checked) {
+                accessBox.classList.add('active');
+                // Celebrate checking the box with a brief confetti flourish!
+                confetti({
+                    particleCount: 40,
+                    spread: 60,
+                    origin: { y: 0.8 },
+                    colors: ['#6366f1', '#a855f7', '#ec4899']
+                });
+            } else {
+                accessBox.classList.remove('active');
+            }
+        });
+    </script>
+</body>
 </html>
