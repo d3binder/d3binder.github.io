@@ -220,6 +220,7 @@
         .terms-drawer {
             max-height: 240px;
             overflow-y: auto;
+          
             background: rgba(15, 23, 42, 0.5);
             border-radius: 16px;
             border: 1px solid var(--card-border);
@@ -229,6 +230,91 @@
             scrollbar-width: thin;
             scrollbar-color: #475569 transparent;
         }
+/* --- <Term_Scroll_Bars_Show> --- */
+
+
+.terms-drawer {
+    overflow-y: auto;
+}
+.terms-drawer ul {
+    overflow: visible; /* ensure UL isn't the scroller */
+}
+
+.terms-drawer::-webkit-scrollbar {
+    width: 8px;
+}
+
+.terms-drawer::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.terms-drawer::-webkit-scrollbar-thumb {
+    background: #475569;
+    border-radius: 4px;
+}
+
+/* --- </Term_Scroll_Bars_Show> --- */
+
+
+/* --- </Term_Scroll_Bars_Design> --- */
+
+.terms-drawer::-webkit-scrollbar {
+    width: 10px ;
+}
+
+.terms-drawer::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.6) ;
+    border-radius: 10px ;
+}
+
+.terms-drawer::-webkit-scrollbar-thumb {
+    background: #ec4899 ;
+    border-radius: 10px ;
+    box-shadow: 0 0 12px #ec4899 ;
+    animation: pulseGlow 2s infinite alternate ;
+}
+
+@keyframes pulseGlow {
+    0% { box-shadow: 0 0 8px #ec4899 ; }
+    100% { box-shadow: 0 0 16px #a855f7 ; }
+}
+
+/* ---- pt 2 ---- */
+/* Chrome / Safari / Edge */
+.terms-drawer::-webkit-scrollbar {
+    width: 12px;
+}
+
+.terms-drawer::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+}
+
+.terms-drawer::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #6366f1, #a855f7, #ec4899);
+    border-radius: 12px;
+    box-shadow: 0 0 12px rgba(168, 85, 247, 0.7);
+    border: 2px solid rgba(15, 23, 42, 0.8);
+}
+
+.terms-drawer::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #818cf8, #c084fc, #f472b6);
+    box-shadow: 0 0 16px rgba(236, 72, 153, 0.9);
+}
+
+/* Firefox */
+.terms-drawer {
+    scrollbar-width: thin;
+    scrollbar-color: #a855f7 rgba(255, 255, 255, 0.05);
+}
+
+
+
+
+
+/* --- </Term_Scroll_Bars_Design> --- */
+
+
 
         .accordion-button {
             color: var(--text-dark) !important;
