@@ -23,6 +23,7 @@
     --jade:#5C9484;
     --jade-dim:#345048;
     --danger:#B4694A;
+    --target:#4FD1E8;
     --radius:10px;
     --serif:'Fraunces', Georgia, serif;
     --sans:'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -106,6 +107,7 @@
   .status .stat .k{font-family:var(--mono); font-size:10.5px; letter-spacing:0.12em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:6px;}
   .status .stat .v{font-family:var(--serif); font-size:24px; color:var(--gold); font-weight:500;}
   .status .stat .v.jade{color:var(--jade);}
+  .status .stat .v.target{color:var(--target);}
 
   /* ---------- CHART ---------- */
   .panel{
@@ -150,6 +152,14 @@
   tbody tr.milestone td:first-child{color:var(--gold); font-weight:600;}
   tbody tr.milestone-mid td{background:rgba(92,148,132,0.08);}
   tbody tr.milestone-mid td:first-child{color:var(--jade); font-weight:600;}
+  tbody tr.target-row td{
+    background:rgba(79,209,232,0.16);
+    box-shadow:inset 0 1px 0 rgba(79,209,232,0.5), inset 0 -1px 0 rgba(79,209,232,0.5);
+  }
+  tbody tr.target-row td:first-child{
+    color:var(--target); font-weight:700;
+    box-shadow:inset 3px 0 0 var(--target), inset 0 1px 0 rgba(79,209,232,0.5), inset 0 -1px 0 rgba(79,209,232,0.5);
+  }
   tbody tr.reached td{color:var(--jade);}
   .diff-pos{color:var(--jade);}
   .diff-flat{color:var(--ink-faint);}
@@ -201,17 +211,23 @@
         <label for="returnPct">Expected Investment Return</label>
         <div class="input-row"><input type="number" id="returnPct" value="7" min="-20" max="30" step="0.1"><span class="suffix">%</span></div>
       </div>
-      <div class="field" ">
+
+            <div class="field" ">
         <label for="lifespan">Life Expectancy (Disabled)</label>
         <div class="input-row"><input style="background-color: rgb(53, 0, 0);" type="number" id="lifespan" value="79" min="0" max="120" step="1" disabled="disabled"></div>
    
+      </div>
+
+      <div class="field">
+        <label for="targetAge">Desired Retirement Age</label>
+        <div class="input-row"><input type="number" id="targetAge" value="45" min="0" max="120" step="1"></div>
       </div>
     </div>
   </div>
 
   <div class="status" id="statusStrip"></div>
 
-  <div style="display: none;" class="panel">
+  <div class="panel" style="display: none;">
     <div class="panel-head">
       <h2>Age at FI, against the years you get to keep</h2>
       <h3>Coming Soon</h3>
@@ -276,6 +292,24 @@ function yearsToGoal(P, C, G, r){
   return Math.log(x) / Math.log(1 + r);
 }
 
+function rateNeededForAge(targetAge, currentAge, P, G, r, income){
+  const n = targetAge - currentAge;
+  if (P >= G) return {status:'already'};
+  if (n <= 0) return {status:'past'};
+  if (income <= 0) return {status:'unreachable', rateNeeded:Infinity};
+
+  let C;
+  if (Math.abs(r) < 1e-9){
+    C = (G - P) / n;
+  } else {
+    const x = Math.pow(1 + r, n);
+    C = (G - P * x) * r / (x - 1);
+  }
+  const rate = Math.max(0, (C / income) * 100);
+  if (rate > 100) return {status:'unreachable', rateNeeded: rate};
+  return {status:'ok', rate};
+}
+
 let chart = null;
 
 function compute(){
@@ -285,6 +319,7 @@ function compute(){
   const age = parseFloat($('age').value) || 0;
   const r = (parseFloat($('returnPct').value) || 0) / 100;
   const lifespan = parseFloat($('lifespan').value) || 0;
+  const targetAge = parseFloat($('targetAge').value);
 
   const rows = [];
   let prevYears = null;
@@ -298,12 +333,14 @@ function compute(){
     rows.push({rate, contribution, expenses, years, ageAt, diff, freedomYears});
     prevYears = years;
   }
-  return {income, goal, savings, age, r, lifespan, rows};
+  return {income, goal, savings, age, r, lifespan, targetAge, rows};
 }
 
 function render(){
-  const {rows, lifespan} = compute();
+  const {rows, lifespan, income, goal, savings, age, r, targetAge} = compute();
   const maxDiff = Math.max(0.001, ...rows.map(r => (r.diff !== null && isFinite(r.diff)) ? Math.abs(r.diff) : 0));
+  const targetResult = isFinite(targetAge) ? rateNeededForAge(targetAge, age, savings, goal, r, income) : {status:'none'};
+  const targetRateRounded = (targetResult.status === 'ok') ? Math.round(targetResult.rate) : null;
 
   // ---- status strip: nearest whole-number match to a "typical" 20% rate as a headline stat, plus fastest & current savings status
   const alreadyThere = rows[0].years === 0;
@@ -324,6 +361,19 @@ function render(){
     });
   }
 
+  if (isFinite(targetAge)){
+    let label = `Rate to retire at ${fmtNum(targetAge)}`;
+    if (targetResult.status === 'already'){
+      add(label, 'Already there', 'target');
+    } else if (targetResult.status === 'past'){
+      add(label, 'Target age has passed', 'target');
+    } else if (targetResult.status === 'unreachable'){
+      add(label, 'Not possible', 'target');
+    } else {
+      add(label, `${fmtNum(targetResult.rate)}%`, 'target');
+    }
+  }
+
   // ---- table
   const tbody = $('tableBody');
   tbody.innerHTML = '';
@@ -331,6 +381,7 @@ function render(){
     const tr = document.createElement('tr');
     if (row.rate % 10 === 0) tr.classList.add('milestone');
     else if (row.rate % 10 === 5) tr.classList.add('milestone-mid');
+    if (row.rate === targetRateRounded) tr.classList.add('target-row');
     if (row.years === 0) tr.classList.add('reached');
 
     const yearsCell = row.years === 0 ? 'Reached' : (isFinite(row.years) ? `${fmtNum(row.years)}` : '<span class="never">Never</span>');
@@ -434,11 +485,11 @@ function render(){
 }
 
 const STORAGE_KEY = 'fi-runway-inputs';
-const DEFAULTS = {income:'90000', goal:'1500000', savings:'80000', age:'30', returnPct:'7', lifespan:'79'};
+const DEFAULTS = {income:'90000', goal:'1500000', savings:'80000', age:'30', returnPct:'7', lifespan:'79', targetAge:'45'};
 
 function saveInputs(){
   const vals = {};
-  ['income','goal','savings','age','returnPct','lifespan'].forEach(id => { vals[id] = $(id).value; });
+  ['income','goal','savings','age','returnPct','lifespan','targetAge'].forEach(id => { vals[id] = $(id).value; });
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(vals)); } catch(e) { /* storage unavailable, ignore */ }
 }
 function loadInputs(){
@@ -450,7 +501,7 @@ function loadInputs(){
   } catch(e) { /* storage unavailable or corrupt, ignore */ }
 }
 
-['income','goal','savings','age','returnPct','lifespan'].forEach(id => {
+['income','goal','savings','age','returnPct','lifespan','targetAge'].forEach(id => {
   $(id).addEventListener('input', () => { saveInputs(); render(); });
 });
 
