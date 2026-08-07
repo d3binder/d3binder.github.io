@@ -148,6 +148,8 @@
   tbody tr:hover{background:rgba(201,166,89,0.06);}
   tbody tr.milestone td{background:rgba(201,166,89,0.10);}
   tbody tr.milestone td:first-child{color:var(--gold); font-weight:600;}
+  tbody tr.milestone-mid td{background:rgba(92,148,132,0.08);}
+  tbody tr.milestone-mid td:first-child{color:var(--jade); font-weight:600;}
   tbody tr.reached td{color:var(--jade);}
   .diff-pos{color:var(--jade);}
   .diff-flat{color:var(--ink-faint);}
@@ -168,7 +170,7 @@
 <div class="wrap">
 
   <header>
-    <p class="eyebrow">FIRE Nate - Time To FInancial Independence</p>
+    <p class="eyebrow">FIRE Nate - Time To Financial Independence</p>
     <h1>How fast can you <em>fly</em> to financial independence?</h1>
     <p class="lede">Enter your numbers below. Every point on the runway shows what a given savings rate buys you — in years, and in age — assuming your investments keep compounding along the way.</p>
   </header>
@@ -211,6 +213,7 @@
   <div style="display: none;" class="panel">
     <div class="panel-head">
       <h2>Age at FI, against the years you get to keep</h2>
+      <h3>Coming Soon</h3>
       <span class="sub">STACKED BY SAVINGS RATE, MEASURED AGAINST LIFE EXPECTANCY</span>
     </div>
     <div class="chart-card">
@@ -236,6 +239,7 @@
               <th>Savings Rate</th>
               <th>Expenses</th>
               <th>Savings / Year</th>
+              <th>Savings / Month</th>
               <th>Years to Goal</th>
               <th>Age Reaching Goal</th>
               <th>Δ vs. prev. row</th>
@@ -325,6 +329,7 @@ function render(){
   rows.forEach(row => {
     const tr = document.createElement('tr');
     if (row.rate % 10 === 0) tr.classList.add('milestone');
+    else if (row.rate % 10 === 5) tr.classList.add('milestone-mid');
     if (row.years === 0) tr.classList.add('reached');
 
     const yearsCell = row.years === 0 ? 'Reached' : (isFinite(row.years) ? `${fmtNum(row.years)}` : '<span class="never">Never</span>');
@@ -346,6 +351,7 @@ function render(){
       <td>${row.rate}%</td>
       <td>${fmtUSD(row.expenses)}</td>
       <td>${fmtUSD(row.contribution)}</td>
+      <td>${fmtUSD(row.contribution / 12)}</td>
       <td>${yearsCell}</td>
       <td>${ageCell}</td>
       <td>${diffCell}</td>
