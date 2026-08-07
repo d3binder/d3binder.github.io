@@ -312,7 +312,22 @@
     scrollbar-color: #a855f7 rgba(255, 255, 255, 0.05);
 }
 
+.nnBtn:hover {
+    /* background-color: rgb(13, 110, 253); */
+   
+    
+     /* Dual background to create border gradient effect */
+            background: 
+                linear-gradient(rgba(0, 90, 216, 0.95), rgba(54, 131, 255, 0.95)) padding-box, 
+                linear-gradient(var(--border-angle), #6366f1, #a855f7, #ec4899, #10b981, #6366f1) border-box;
+            border: 1px solid transparent;
+            
+            animation: rotateBorder 4s linear infinite;
+            /* box-shadow: 0 2px 20px rgba(168, 85, 247, 0.25); */
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
 
+
+}
 
 
 
@@ -347,7 +362,7 @@
         <div class="container px-4">
             <a class="navbar-brand d-flex align-items-center gap-2" href="#">
                 <span class="brand-badge">D3</span>
-                <span class="fw-bold fs-5 tracking-tight text-white">Binder Resources</span>
+                <span class="fw-bold fs-5 tracking-tight text-white">Binder</span>
             </a>
 
 <!--  -->
@@ -355,7 +370,7 @@
         <div class="text-center">
             <div class="announcement-pill">
                 <span>✨ <strong class="text-white">Give the new D3 site a try!</strong> </span>
-                <a href="https://d3.flagship.is" target="_blank" class="badge bg-primary rounded-pill text-decoration-none px-3 py-2">New Site &rarr;</a>
+                <a href="https://d3.flagship.is" target="_blank" class="nnBtn badge bg-primary rounded-pill text-decoration-none px-3 py-2">New Site &rarr;</a>
             </div>
         </div>
 <!--  -->
@@ -378,11 +393,14 @@
             <div class="col-lg-12">
                 <div class="bento-card p-4 p-md-5 h-100 d-flex flex-column justify-content-between">
                     <div>
-                        <div class="floating-icon" style="background: rgba(99, 102, 241, 0.2); color: #818cf8;">
+              <!--          <div class="floating-icon" style="background: rgba(99, 102, 241, 0.2); color: #818cf8; float:left;">
                             📁
-                        </div>
-                        <h1 class="fw-800 display-6 mb-3" style="color: #06de96">Downloads</h1>
-
+                  
+                      </div>
+                      --> 
+                        <h1 class="fw-800 display-6 mb-3" style="color: #06de96; display:inline; padding-left: 10px;"><span style="color:white;">&#x2b07;</span>Downloads</h1>
+                        <p><br /></p>
+                        <hr />
                         <h4 class="">Dead, Dying, or Disabled Planner</h4>
                         <p class="lead" style="color:#cccccc; font-size: 10pt;">
                             Organize essential documents, critical instructions, and legacy records for life's unexpected moments. Free to download, customize, and print for your personal binder.
@@ -436,9 +454,11 @@
         <!-- Disclaimers & Interactive Terms Section -->
         <div class="bento-card p-4 p-md-5 mb-5" id="terms" style="background: linear-gradient(135deg, rgba(236, 72, 153, 0.15) 0%, rgba(30, 41, 59, 0.9) 100%); border-color: rgba(236, 72, 153, 0.3);">
             <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
-                <h4 class="fw-bold mb-0 text-white">Disclaimers & Terms of Use</h4>
+                 
+                 <h1 class="fw-800 display-6 mb-3" style="color: #06de96; display:inline; padding-left: 10px; margin: 0;"> <span style="color:white">&#x2696;</span> Disclaimers & Terms of Use</h1>
                 <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2 rounded-pill">Required Reading</span>
             </div>
+            <hr />
             <p class="fw-bold text-white mb-2">By using this site, clicking any links, or using any materials in any way, you agree to all of the following:</p>
             
 
