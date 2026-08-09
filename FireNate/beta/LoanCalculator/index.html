@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>FireNate - Loan Ledger &mdash; Amortization Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="../assets/css/site.css">
+<link rel="stylesheet" href="style.css" />
+<script src="../assets/js/nav.js" defer></script>
+<script>window.FN_BASE = "../"; window.FN_PAGE = "loan-calculator";</script>
+</head>
+<body>
+<div id="fn-site-nav"></div>
+
+  <header class="hero">
+    <div class="wrap">
+      <div class="eyebrow">Amortization &middot; Ledger No. 001</div>
+      <h1>What this loan really costs you.</h1>
+      <p class="sub">Adjust the terms below. Every payment, every dollar of interest, laid out month by month &mdash; the same way a bank sees it.</p>
+
+      <div class="hero-stats">
+        <div>
+          <div class="label">Monthly payment</div>
+          <div class="num big" id="heroPayment">&mdash;</div>
+        </div>
+        <div>
+          <div class="label">Total interest</div>
+          <div class="num big rust" id="heroInterest">&mdash;</div>
+        </div>
+        <div>
+          <div class="label">Total cost of loan</div>
+          <div class="num big sage" id="heroTotal">&mdash;</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap main">
+
+    <!-- INPUTS -->
+    <section class="card inputs-card">
+      <label>
+        <div class="field-label">Loan amount</div>
+        <div class="field-row">
+          <span class="num prefix">$</span>
+          <input class="ll-input" type="text" inputmode="decimal" id="loanAmountInput" placeholder="0" />
+        </div>
+      </label>
+
+      <label>
+        <div class="field-label">Annual interest rate</div>
+        <div class="field-row">
+          <input class="ll-input" type="number" id="rateInput" min="0" step="0.05" />
+          <span class="num suffix">%</span>
+        </div>
+      </label>
+
+      <label>
+        <div class="field-label-row">
+          <div class="field-label">Loan period</div>
+          <div class="segmented" id="termToggle">
+            <button type="button" class="seg-btn" data-unit="years">Yrs</button>
+            <button type="button" class="seg-btn" data-unit="months">Mos</button>
+          </div>
+        </div>
+        <div class="field-row">
+          <input class="ll-input" type="number" id="termInput" min="1" step="1" />
+          <span class="num suffix" id="termUnitLabel">years</span>
+        </div>
+      </label>
+
+      <label>
+        <div class="field-label">Start date</div>
+        <input class="ll-input" type="date" id="startDateInput" />
+      </label>
+    </section>
+
+    <!-- STAT STRIP -->
+    <section class="stat-strip" id="statStrip"></section>
+
+    <!-- CHART -->
+    <section class="card chart-card">
+      <div class="chart-head">
+        <div class="card-title">The burn-down</div>
+        <p class="card-sub">Your balance falls in a straight-looking line, but what you're actually paying down shifts underneath it &mdash; mostly interest at first, mostly principal by the end.</p>
+      </div>
+      <div class="chart-wrap">
+        <svg id="chartSvg" viewBox="0 0 760 320" preserveAspectRatio="none"></svg>
+        <div class="tooltip" id="tooltip"></div>
+      </div>
+      <div class="legend">
+        <span><i class="swatch sage"></i>Principal paid</span>
+        <span><i class="swatch rust"></i>Interest paid</span>
+        <span><i class="swatch line"></i>Remaining balance</span>
+      </div>
+    </section>
+
+    <!-- LEDGER -->
+    <section class="card ledger-card">
+      <div class="ledger-head" id="ledgerToggle">
+        <div>
+          <div class="card-title">Payment schedule</div>
+          <div class="ledger-sub" id="ledgerSub">&mdash;</div>
+        </div>
+        <div class="num toggle-label" id="toggleLabel">view all &#9662;</div>
+      </div>
+      <div class="table-scroll" id="tableWrap" hidden>
+        <table>
+          <thead>
+            <tr>
+              <th class="left">No.</th>
+              <th class="left">Date</th>
+              <th>Beginning</th>
+              <th>Payment</th>
+              <th>Principal</th>
+              <th>Interest</th>
+              <th>Ending</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <p class="footnote">Figures are estimates &middot; assumes fixed rate, no extra payments, no fees.</p>
+  </main>
+
+<div id="fn-site-footer"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,192 @@
+/* =========================================================================
+   FireNate — shared site chrome (nav + footer)
+   Loaded on every page. All rules are scoped under #fn-site-nav /
+   #fn-site-footer (or the fn- prefix) so they never collide with a
+   calculator page's own inline styles.
+   ========================================================================= */
+
+:root{
+  --fn-ink:#0B1210;
+  --fn-panel:#111A17;
+  --fn-panel-2:#0D1614;
+  --fn-line: rgba(237,230,211,0.10);
+  --fn-text:#EDE6D3;
+  --fn-text-dim:#9FB0AA;
+  --fn-text-faint:#63756F;
+  --fn-gold:#C9A659;
+  --fn-gold-soft: rgba(201,166,89,0.14);
+  --fn-jade:#5C9484;
+  --fn-jade-soft: rgba(92,148,132,0.16);
+  --fn-serif:'Fraunces', Georgia, serif;
+  --fn-sans:'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --fn-mono:'IBM Plex Mono', 'JetBrains Mono', 'Courier New', monospace;
+}
+
+#fn-site-nav, #fn-site-footer{ font-family: var(--fn-sans); }
+#fn-site-nav *, #fn-site-footer *{ box-sizing:border-box; }
+
+/* ---------------------------------------------------------------------- */
+/* NAV                                                                     */
+/* ---------------------------------------------------------------------- */
+#fn-site-nav{
+  position:sticky;
+  top:0;
+  z-index:1000;
+  background:rgba(11,18,16,0.92);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--fn-line);
+}
+.fn-nav-inner{
+  max-width:1180px;
+  margin:0 auto;
+  padding:0 24px;
+  height:60px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:20px;
+}
+.fn-brand{
+  display:inline-flex;
+  align-items:baseline;
+  gap:8px;
+  text-decoration:none;
+  color:var(--fn-text);
+  font-family:var(--fn-serif);
+  font-weight:600;
+  font-size:17px;
+  letter-spacing:-0.01em;
+  white-space:nowrap;
+}
+.fn-brand .fn-dot{ color:var(--fn-gold); font-size:18px; line-height:1; }
+.fn-brand .fn-tag{
+  font-family:var(--fn-mono);
+  font-weight:500;
+  font-size:10.5px;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:var(--fn-text-faint);
+  padding-left:8px;
+  border-left:1px solid var(--fn-line);
+}
+@media (max-width:560px){ .fn-brand .fn-tag{ display:none; } }
+
+.fn-links{
+  display:flex;
+  align-items:center;
+  gap:4px;
+}
+.fn-links a{
+  display:inline-flex;
+  align-items:center;
+  text-decoration:none;
+  color:var(--fn-text-dim);
+  font-size:13px;
+  font-weight:500;
+  padding:8px 12px;
+  border-radius:7px;
+  white-space:nowrap;
+  transition:color .15s, background .15s;
+}
+.fn-links a:hover{ color:var(--fn-text); background:rgba(255,255,255,0.05); }
+.fn-links a.fn-active{ color:var(--fn-gold); background:var(--fn-gold-soft); }
+
+.fn-nav-toggle{
+  display:none;
+  background:none;
+  border:1px solid var(--fn-line);
+  color:var(--fn-text);
+  border-radius:8px;
+  width:38px;
+  height:34px;
+  cursor:pointer;
+  font-size:16px;
+  line-height:1;
+  align-items:center;
+  justify-content:center;
+}
+
+@media (max-width:900px){
+  .fn-links{
+    position:absolute;
+    top:60px;
+    left:0;
+    right:0;
+    flex-direction:column;
+    align-items:stretch;
+    gap:2px;
+    background:var(--fn-panel);
+    border-bottom:1px solid var(--fn-line);
+    padding:8px 16px 16px;
+    display:none;
+  }
+  #fn-site-nav.fn-open .fn-links{ display:flex; }
+  .fn-links a{ padding:11px 10px; }
+  .fn-nav-toggle{ display:inline-flex; }
+}
+
+/* ---------------------------------------------------------------------- */
+/* FOOTER                                                                  */
+/* ---------------------------------------------------------------------- */
+#fn-site-footer{
+  background:var(--fn-panel-2);
+  border-top:1px solid var(--fn-line);
+  color:var(--fn-text-dim);
+  margin-top:64px;
+}
+.fn-footer-inner{
+  max-width:1180px;
+  margin:0 auto;
+  padding:48px 24px 32px;
+}
+.fn-footer-grid{
+  display:grid;
+  grid-template-columns:1.3fr 1fr 1fr;
+  gap:32px;
+  margin-bottom:32px;
+}
+@media (max-width:760px){ .fn-footer-grid{ grid-template-columns:1fr; gap:26px; } }
+.fn-footer-brand{
+  display:inline-flex;
+  align-items:baseline;
+  gap:8px;
+  color:var(--fn-text);
+  font-family:var(--fn-serif);
+  font-weight:600;
+  font-size:17px;
+  text-decoration:none;
+}
+.fn-footer-brand .fn-dot{ color:var(--fn-gold); }
+.fn-footer-grid p{
+  font-size:13px;
+  line-height:1.6;
+  color:var(--fn-text-faint);
+  max-width:38ch;
+  margin:12px 0 0;
+}
+.fn-footer-grid h5{
+  font-family:var(--fn-mono);
+  font-size:11px;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--fn-jade);
+  margin:0 0 14px;
+}
+.fn-footer-grid ul{ list-style:none; margin:0; padding:0; }
+.fn-footer-grid li{ margin-bottom:9px; font-size:13.5px; }
+.fn-footer-grid a{ color:var(--fn-text-dim); text-decoration:none; }
+.fn-footer-grid a:hover{ color:var(--fn-gold); }
+.fn-footer-bottom{
+  border-top:1px solid var(--fn-line);
+  padding-top:20px;
+  font-size:12px;
+  line-height:1.7;
+  color:var(--fn-text-faint);
+  font-family:var(--fn-mono);
+}
+.fn-footer-bottom strong{ color:var(--fn-text-dim); }
+
+@media print{
+  #fn-site-nav, #fn-site-footer{ display:none !important; }
+}
