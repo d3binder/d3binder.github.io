@@ -17,7 +17,7 @@
     { id: "compound-interest", label: "Compound Interest", href: BASE + "CompoundInterest-WealthMultiplier/index.html" },
     { id: "loan-calculator", label: "Loan Calculator", href: BASE + "LoanCalculator/index.html" },
     { id: "payoff-or-invest", label: "Payoff or Invest", href: BASE + "Payoff-or-Invest/index.html" },
-    { id: "homes-vs-stocks", label: "Homes vs. Stocks", href: BASE + "RealEstateVsStocks/index.html" }
+    { id: "homes-vs-stocks", label: "Homes vs. Stocks", href: "../"+BASE + "RealEstateVsStocks/index.html" }
   ];
 
   function escapeHtml(s) {
