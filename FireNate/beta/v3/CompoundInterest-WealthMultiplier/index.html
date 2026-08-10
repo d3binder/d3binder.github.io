@@ -604,11 +604,11 @@
             <option value="365">Day</option>
             <option value="52">Week</option>
             <option value="26">2 Weeks</option>
-            <option value="12">Month</option>
+            <option value="12" selected>Month</option>
             <option value="6">2 Months</option>
             <option value="4">Quarter</option>
             <option value="2">Half-year</option>
-            <option value="1" selected>Year</option>
+            <option value="1">Year</option>
           </select>
         </div>
       </div>
@@ -750,11 +750,11 @@
   const resetBtn = document.getElementById('resetBtn');
 
   const DEFAULTS = {
-    amount: '1,560',
+    amount: '1,000',
     rate: '10.0',
-    frequency: '1',
+    frequency: '12',
     years: '20',
-    ageHighlight: '30',
+    ageHighlight: '35',
     targetAmount: '1,000,000',
     targetAge: '65'
   };
