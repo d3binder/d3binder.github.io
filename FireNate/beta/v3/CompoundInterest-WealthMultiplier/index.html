@@ -695,7 +695,7 @@
     <div class="section-head">
       <div class="num">03 &mdash; The wealth multiplier</div>
       <h2>What today's dollar could become</h2>
-      <p>Using the return rate above, this shows how much a dollar invested today could multiply into by your target age&mdash;and how little you'd need to save each month, starting at that age, to reach your goal.</p>
+      <p>Using the return rate above, this shows how much a dollar invested today could multiply into by your target age&mdash;and how little you'd need to save each month, starting at that age, to reach your goal. The last column factors in any amount you've already saved, letting it grow at the same rate until your goal age.</p>
     </div>
 
     <div class="wm-controls">
@@ -708,6 +708,11 @@
       </span>
       <label for="targetAgeInput" style="margin-left:14px;">By age</label>
       <input id="targetAgeInput" type="number" min="1" max="120" value="65" style="width:64px;">
+      <label for="savedAmountInput" style="margin-left:14px;">Already saved</label>
+      <span style="display:inline-flex;align-items:baseline;">
+        <span style="font-family:'IBM Plex Mono',monospace;color:var(--gold);font-size:15px;margin-right:2px;">$</span>
+        <input id="savedAmountInput" type="text" value="0" inputmode="decimal" autocomplete="off" style="width:120px;">
+      </span>
     </div>
 
     <div class="table-shell">
@@ -718,6 +723,7 @@
               <th>Age</th>
               <th>Wealth multiplier</th>
               <th id="savingsColHeader">Savings / month to hit $1,000,000 by 65</th>
+              <th id="savingsAdjColHeader">Savings / month with savings factored in</th>
             </tr>
           </thead>
           <tbody id="wmBody"></tbody>
@@ -746,6 +752,7 @@
   const ageHighlight = document.getElementById('ageHighlight');
   const targetAmountInput = document.getElementById('targetAmountInput');
   const targetAgeInput = document.getElementById('targetAgeInput');
+  const savedAmountInput = document.getElementById('savedAmountInput');
   const lastSavedEl = document.getElementById('lastSaved');
   const resetBtn = document.getElementById('resetBtn');
 
@@ -756,7 +763,8 @@
     years: '20',
     ageHighlight: '35',
     targetAmount: '1,000,000',
-    targetAge: '65'
+    targetAge: '65',
+    savedAmount: '0'
   };
 
   const COOKIE_NAME = 'compoundCalcState';
@@ -799,7 +807,8 @@
       years: yearsInput.value,
       ageHighlight: ageHighlight.value,
       targetAmount: targetAmountInput.value,
-      targetAge: targetAgeInput.value
+      targetAge: targetAgeInput.value,
+      savedAmount: savedAmountInput.value
     };
   }
 
@@ -812,6 +821,7 @@
     if(state.ageHighlight !== undefined) ageHighlight.value = state.ageHighlight;
     if(state.targetAmount !== undefined) targetAmountInput.value = state.targetAmount;
     if(state.targetAge !== undefined) targetAgeInput.value = state.targetAge;
+    if(state.savedAmount !== undefined) savedAmountInput.value = state.savedAmount;
   }
 
   function saveState(){
@@ -880,7 +890,7 @@
       el.setSelectionRange(newPos, newPos);
     });
   }
-  [amountInput, rateInput, targetAmountInput].forEach(attachNumberFormatting);
+  [amountInput, rateInput, targetAmountInput, savedAmountInput].forEach(attachNumberFormatting);
 
   function getInputs(){
     let a = parseNum(amountInput.value);
@@ -904,6 +914,12 @@
     if(isNaN(amt) || amt <= 0) amt = 1000000;
     if(isNaN(age) || age < 1) age = 65;
     return { targetAmount:amt, targetAge:age };
+  }
+
+  function getSavedAmount(){
+    let s = parseNum(savedAmountInput.value);
+    if(isNaN(s) || s < 0) s = 0;
+    return s;
   }
 
   function getYears(){
@@ -1069,6 +1085,7 @@
   function renderWealthTable(){
     const {rate} = getInputs();
     const {targetAmount, targetAge} = getGoal();
+    const alreadySaved = getSavedAmount();
     const i = rate/12;
     const body = document.getElementById('wmBody');
     body.innerHTML = '';
@@ -1076,23 +1093,42 @@
 
     document.getElementById('savingsColHeader').textContent =
       `Savings / month to hit ${fmt0(targetAmount)} by ${targetAge}`;
+    document.getElementById('savingsAdjColHeader').textContent = alreadySaved > 0
+      ? `Savings / month to hit the goal by ${targetAge} (with ${fmt0(alreadySaved)} already saved)`
+      : `Savings / month to hit the goal by ${targetAge} (with savings factored in)`;
 
     for(let age=0; age<=targetAge; age++){
       const months = (targetAge-age)*12;
-      let mult, saving;
+      let mult, saving, savingAdj, savedFV;
       if(months <= 0){
         mult = 1;
         saving = 0;
+        savedFV = alreadySaved;
+        savingAdj = 0;
       } else if(i === 0){
         mult = 1;
         saving = targetAmount/months;
+        savedFV = alreadySaved;
+        savingAdj = Math.max(targetAmount - alreadySaved, 0) / months;
       } else {
         mult = Math.pow(1+i, months);
         saving = targetAmount * i / (mult - 1);
+        savedFV = alreadySaved * mult;
+        const remaining = Math.max(targetAmount - savedFV, 0);
+        savingAdj = remaining * i / (mult - 1);
       }
       const tr = document.createElement('tr');
       if(age === highlightAge) tr.className = 'highlight';
-      tr.innerHTML = `<td class="age">${age}</td><td class="mult">${mult.toFixed(2)}&times;</td><td>${months<=0 ? `&mdash; already ${targetAge}` : fmt2(saving) + ' / mo'}</td>`;
+      const baseCell = months<=0 ? `&mdash; already ${targetAge}` : fmt2(saving) + ' / mo';
+      let adjCell;
+      if(months <= 0){
+        adjCell = savedFV >= targetAmount ? '&mdash; goal met' : `&mdash; already ${targetAge}`;
+      } else if(savedFV >= targetAmount){
+        adjCell = '&mdash; on track';
+      } else {
+        adjCell = fmt2(savingAdj) + ' / mo';
+      }
+      tr.innerHTML = `<td class="age">${age}</td><td class="mult">${mult.toFixed(2)}&times;</td><td>${baseCell}</td><td>${adjCell}</td>`;
       body.appendChild(tr);
     }
   }
@@ -1114,6 +1150,7 @@
   ageHighlight.addEventListener('input', persistAndRenderWealth);
   targetAmountInput.addEventListener('input', persistAndRenderWealth);
   targetAgeInput.addEventListener('input', persistAndRenderWealth);
+  savedAmountInput.addEventListener('input', persistAndRenderWealth);
   resetBtn.addEventListener('click', resetState);
   const printBtn = document.getElementById('printBtn');
   printBtn.addEventListener('click', () => window.print());
