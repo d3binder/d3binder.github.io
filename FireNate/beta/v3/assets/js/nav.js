@@ -39,7 +39,7 @@
       '<div class="fn-nav-inner">' +
         '<a href="' + BASE + 'index.html' + '" class="fn-brand">' +
           '<span class="fn-dot">&#9670;</span>FireNate' +
-          '<span class="fn-tag">FI &amp; Money Calculators</span>' +
+          '<span class="fn-tag">FIRE Calculators</span>' +
         "</a>" +
         '<nav class="fn-links" aria-label="Site">' +
           '<a href="' + BASE + 'index.html' + '" class="fn-nav-link' + homeActive + '">Home</a>' +
