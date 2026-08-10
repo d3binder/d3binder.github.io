@@ -3,197 +3,248 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FireNate — Financial Independence Calculators</title>
-<meta name="description" content="A small toolset for financial-independence planning: time to FI, loan and amortization math, buy-vs-invest trade-offs, and the long arc of compounding.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/site.css">
-<script src="assets/js/nav.js" defer></script>
-<script>window.FN_BASE = ""; window.FN_PAGE = "home";</script>
+<title>F.I.R.E. Nate — Site Versions</title>
 <style>
-  :root{
-    --hp-bg: var(--fn-ink);
-    --hp-panel: var(--fn-panel);
-    --hp-line: var(--fn-line);
-  }
-  *{ box-sizing:border-box; }
-  html,body{ margin:0; padding:0; }
-  body{
-    background:
-      radial-gradient(1200px 600px at 15% -10%, rgba(201,166,89,0.08), transparent 60%),
-      radial-gradient(900px 500px at 100% 0%, rgba(92,148,132,0.07), transparent 55%),
-      var(--hp-bg);
-    color:var(--fn-text);
-    font-family:var(--fn-sans);
-    min-height:100vh;
-    -webkit-font-smoothing:antialiased;
-  }
-  a{ color:inherit; }
-  ::selection{ background:var(--fn-gold); color:#1a1108; }
-
-  .wrap{ max-width:1180px; margin:0 auto; padding:0 24px; }
-
-  /* ---------- HERO ---------- */
-  .hp-hero{ padding:88px 0 56px; border-bottom:1px solid var(--hp-line); }
-  .hp-eyebrow{
-    font-family:var(--fn-mono); font-size:12px; letter-spacing:0.2em; text-transform:uppercase;
-    color:var(--fn-gold); margin:0 0 18px; display:flex; align-items:center; gap:10px;
-  }
-  .hp-eyebrow::before{ content:''; width:22px; height:1px; background:var(--fn-gold); display:inline-block; }
-  .hp-hero h1{
-    font-family:var(--fn-serif); font-weight:500; font-size:clamp(36px,6vw,64px);
-    line-height:1.05; margin:0 0 20px; letter-spacing:-0.01em; max-width:18ch;
-  }
-  .hp-hero h1 em{ font-style:italic; color:var(--fn-gold); font-weight:400; }
-  .hp-hero p.lede{ color:var(--fn-text-dim); font-size:17px; line-height:1.6; max-width:60ch; margin:0 0 32px; }
-
-  .hp-hero-stats{ display:flex; flex-wrap:wrap; gap:36px; }
-  .hp-hero-stats .stat .k{
-    font-family:var(--fn-mono); font-size:11px; letter-spacing:0.1em; text-transform:uppercase;
-    color:var(--fn-text-faint); margin-bottom:6px;
-  }
-  .hp-hero-stats .stat .v{ font-family:var(--fn-serif); font-size:26px; color:var(--fn-text); font-weight:500; }
-  .hp-hero-stats .stat .v.gold{ color:var(--fn-gold); }
-  .hp-hero-stats .stat .v.jade{ color:var(--fn-jade); }
-
-  /* ---------- TOOLS GRID ---------- */
-  .hp-section{ padding:64px 0; }
-  .hp-section-head{ margin-bottom:32px; max-width:64ch; }
-  .hp-section-head .num{
-    font-family:var(--fn-mono); font-size:12px; color:var(--fn-text-faint); letter-spacing:0.1em; margin-bottom:10px;
-  }
-  .hp-section-head h2{
-    font-family:var(--fn-serif); font-weight:500; font-size:clamp(24px,3vw,32px); margin:0 0 10px; letter-spacing:-0.01em;
-  }
-  .hp-section-head p{ color:var(--fn-text-dim); font-size:15px; line-height:1.6; margin:0; }
-
-  .hp-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:1px; background:var(--hp-line); border:1px solid var(--hp-line); border-radius:14px; overflow:hidden; }
-  .hp-card{
-    background:var(--hp-panel); padding:28px 26px; text-decoration:none; color:inherit;
-    display:flex; flex-direction:column; gap:14px; transition:background .15s;
-    position:relative;
-  }
-  .hp-card:hover{ background:var(--fn-panel-2); }
-  .hp-card:hover .hp-card-cta{ color:var(--fn-gold); }
-  .hp-card-tag{
-    display:inline-flex; align-self:flex-start; align-items:center; gap:6px;
-    font-family:var(--fn-mono); font-size:10.5px; letter-spacing:0.1em; text-transform:uppercase;
-    padding:4px 10px; border-radius:999px; border:1px solid currentColor;
-  }
-  .hp-card-tag.gold{ color:var(--fn-gold); }
-  .hp-card-tag.jade{ color:var(--fn-jade); }
-  .hp-card h3{ font-family:var(--fn-serif); font-weight:600; font-size:20px; margin:0; line-height:1.25; }
-  .hp-card p{ color:var(--fn-text-dim); font-size:14px; line-height:1.55; margin:0; flex:1; }
-  .hp-card-cta{
-    font-family:var(--fn-mono); font-size:12px; letter-spacing:0.05em; text-transform:uppercase;
-    color:var(--fn-text-faint); display:flex; align-items:center; gap:6px; transition:color .15s;
+  :root {
+    --bg-1: #0f1420;
+    --bg-2: #1a2233;
+    --card: #1e2738;
+    --card-hover: #253044;
+    --accent: #ff7a3d;
+    --accent-2: #ffb347;
+    --text-main: #eef1f6;
+    --text-dim: #9aa5b8;
+    --border-color: #2c364c;
+    --red: #ff5c5c;
   }
 
-  /* ---------- ABOUT STRIP ---------- */
-  .hp-about{
-    background:var(--fn-panel-2); border:1px solid var(--hp-line); border-radius:14px;
-    padding:28px 30px; display:grid; grid-template-columns:1.2fr 1fr; gap:28px; align-items:center;
-  }
-  @media (max-width:760px){ .hp-about{ grid-template-columns:1fr; } }
-  .hp-about h3{ font-family:var(--fn-serif); font-weight:600; font-size:19px; margin:0 0 10px; }
-  .hp-about p{ color:var(--fn-text-dim); font-size:14px; line-height:1.6; margin:0; }
-  .hp-about ul{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:10px; }
-  .hp-about li{
-    font-family:var(--fn-mono); font-size:12.5px; color:var(--fn-text-dim);
-    display:flex; align-items:baseline; gap:8px;
-  }
-  .hp-about li::before{ content:'—'; color:var(--fn-jade); }
+  * { box-sizing: border-box; }
 
-  @media (max-width:640px){
-    .hp-hero{ padding:56px 0 40px; }
-    .hp-section{ padding:48px 0; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: radial-gradient(circle at 20% -10%, #2a2140 0%, transparent 45%),
+                radial-gradient(circle at 90% 0%, #3a1f1f 0%, transparent 40%),
+                linear-gradient(180deg, var(--bg-1) 0%, var(--bg-2) 100%);
+    color: var(--text-main);
+    padding: 56px 24px 80px;
+  }
+
+  .wrap {
+    max-width: 640px;
+    margin: 0 auto;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 44px;
+  }
+
+  header .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #201205;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 6px 14px;
+    border-radius: 999px;
+    margin-bottom: 18px;
+  }
+
+  header h1 {
+    font-size: clamp(26px, 4vw, 36px);
+    margin: 0 0 10px;
+    letter-spacing: -0.02em;
+  }
+
+  header p {
+    color: var(--text-dim);
+    font-size: 15px;
+    margin: 0;
+  }
+
+  .versions {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .version-card {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 20px 22px;
+    background: var(--card);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.2s ease, transform 0.2s ease, background 0.2s ease;
+  }
+
+  .version-card.is-active:hover {
+    border-color: rgba(255, 122, 61, 0.5);
+    background: var(--card-hover);
+    transform: translateY(-2px);
+  }
+
+  .version-card.is-disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  .version-card.is-deleted {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  .version-icon {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    border-radius: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: 700;
+  }
+
+  .is-active .version-icon {
+    background: linear-gradient(135deg, #ff7a3d, #c23616);
+    box-shadow: 0 6px 18px rgba(194, 54, 22, 0.35);
+  }
+
+  .is-disabled .version-icon,
+  .is-deleted .version-icon,
+  .is-soon .version-icon {
+    background: #2a3346;
+    color: var(--text-dim);
+  }
+
+  .version-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .version-info .name {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 0 4px;
+  }
+
+  .version-info .path {
+    font-size: 13px;
+    color: var(--text-dim);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+
+  .status-pill {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 999px;
+    font-size: 12.5px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .status-pill.active {
+    background: rgba(255, 122, 61, 0.12);
+    color: var(--accent-2);
+    border: 1px solid rgba(255, 122, 61, 0.35);
+  }
+
+  .version-card.is-active:hover .status-pill.active {
+    background: var(--accent);
+    color: #201205;
+    border-color: var(--accent);
+  }
+
+  .status-pill.disabled {
+    background: rgba(154, 165, 184, 0.08);
+    color: var(--text-dim);
+    border: 1px solid var(--border-color);
+  }
+
+  .status-pill.deleted {
+    background: rgba(255, 92, 92, 0.1);
+    color: var(--red);
+    border: 1px solid rgba(255, 92, 92, 0.3);
+  }
+
+  .status-pill.soon {
+    background: rgba(255, 179, 71, 0.1);
+    color: var(--accent-2);
+    border: 1px solid rgba(255, 179, 71, 0.3);
+  }
+
+  footer {
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 12.5px;
+    margin-top: 48px;
   }
 </style>
 </head>
 <body>
-<div id="fn-site-nav"></div>
+  <div class="wrap">
+    <header>
+      <div class="badge">🔥 F.I.R.E. Nate</div>
+      <h1>Choose a Version</h1>
+      <p>Pick which version of the site you'd like to visit.</p>
+    </header>
 
-<div class="wrap">
-  <header class="hp-hero">
-    <p class="hp-eyebrow">FireNate — FI &amp; Money Calculators</p>
-    <h1>Six ledgers for the road to <em>financial independence</em>.</h1>
-    <p class="lede">Small, focused calculators for the questions that actually decide your timeline: how fast you can get there, what a loan really costs, and whether the next dollar should pay down debt or go into the market.</p>
-
-    <div class="hp-hero-stats">
-      <div class="stat"><div class="k">Calculators</div><div class="v gold">6</div></div>
-      <div class="stat"><div class="k">Cost</div><div class="v jade">Free, no signup</div></div>
-      <div class="stat"><div class="k">Your data</div><div class="v">Stays on your device</div></div>
-    </div>
-  </header>
-
-  <section class="hp-section">
-    <div class="hp-section-head">
-      <div class="num">Start here</div>
-      <h2>Pick a calculator</h2>
-      <p>Every tool below runs entirely in your browser — inputs are saved locally so you can come back and pick up where you left off.</p>
-    </div>
-
-    <div class="hp-grid">
-      <a class="hp-card" href="TimeToFI/index.html">
-        <span class="hp-card-tag gold">Savings rate</span>
-        <h3>Time to FI</h3>
-        <p>Enter your income, savings, and goal — see how many years (and what age) every savings rate from 0% to 100% actually buys you.</p>
-        <span class="hp-card-cta">Open calculator &rarr;</span>
+    <div class="versions">
+      <a class="version-card is-deleted" href="/v1/index.html" aria-disabled="true" tabindex="-1" onclick="return false;">
+        <div class="version-icon">1.0</div>
+        <div class="version-info">
+          <p class="name">Version 1.0</p>
+          <p class="path">/v1/index.html</p>
+        </div>
+        <span class="status-pill deleted">🗑 Deleted</span>
       </a>
 
-      <a class="hp-card" href="ReverseTimeToFI/index.html">
-        <span class="hp-card-tag jade">Reverse-engineered</span>
-        <h3>Reverse Time to FI</h3>
-        <p>Start from the freedom date you want. Work backward to exactly what you need to save this week, this month, and this year to get there.</p>
-        <span class="hp-card-cta">Open calculator &rarr;</span>
+      <a class="version-card is-disabled" href="/v2/index.html" aria-disabled="true" tabindex="-1" onclick="return false;">
+        <div class="version-icon">2.0</div>
+        <div class="version-info">
+          <p class="name">Version 2.0</p>
+          <p class="path">/v2/index.html</p>
+        </div>
+        <span class="status-pill disabled">⛔ Disabled</span>
       </a>
 
-      <a class="hp-card" href="CompoundInterest-WealthMultiplier/index.html">
-        <span class="hp-card-tag gold">Compounding</span>
-        <h3>Compound Interest &amp; Wealth Multiplier</h3>
-        <p>Visualize what a single deposit — or a recurring one — becomes over decades, and what today's dollar could multiply into by any target age.</p>
-        <span class="hp-card-cta">Open calculator &rarr;</span>
+      <a class="version-card is-active" href="/v3/index.html">
+        <div class="version-icon">3.0</div>
+        <div class="version-info">
+          <p class="name">Version 3.0</p>
+          <p class="path">/v3/index.html</p>
+        </div>
+        <span class="status-pill active">✔ Live</span>
       </a>
 
-      <a class="hp-card" href="LoanCalculator/index.html">
-        <span class="hp-card-tag jade">Amortization</span>
-        <h3>Loan Calculator</h3>
-        <p>The full amortization schedule for any loan: monthly payment, the principal/interest burn-down chart, and total cost over the term.</p>
-        <span class="hp-card-cta">Open calculator &rarr;</span>
-      </a>
-
-      <a class="hp-card" href="Payoff-or-Invest/index.html">
-        <span class="hp-card-tag gold">Debt vs. portfolio</span>
-        <h3>Payoff or Invest</h3>
-        <p>A low-rate loan and a rising market pull your extra dollars in opposite directions. See which side of the scale wins with your numbers.</p>
-        <span class="hp-card-cta">Open calculator &rarr;</span>
-      </a>
-
-      <a class="hp-card" href="RealEstateVsStocks/index.html">
-        <span class="hp-card-tag jade">Buy vs. invest</span>
-        <h3>Homes vs. Stocks</h3>
-        <p>Put the same monthly dollars toward a mortgage or toward the market, and watch home equity race against a stock portfolio over 30 years.</p>
-        <span class="hp-card-cta">Open calculator &rarr;</span>
+      <a class="version-card is-soon" href="/v4/index.html" aria-disabled="true" tabindex="-1" onclick="return false;">
+        <div class="version-icon">4.0</div>
+        <div class="version-info">
+          <p class="name">Version 4.0</p>
+          <p class="path">/v4/index.html</p>
+        </div>
+        <span class="status-pill soon">🚧 Coming soon</span>
       </a>
     </div>
-  </section>
 
-  <section class="hp-section" style="padding-top:0;">
-    <div class="hp-about">
-      <div>
-        <h3>Not financial advice — a set of ledgers</h3>
-        <p>Every tool here is a simple model built to make trade-offs visible, not to predict the future. Real markets, rates, and life don't move in a straight line — use these to build intuition and revisit your plan regularly, then talk to a licensed financial advisor about decisions that matter.</p>
-      </div>
-      <ul>
-        <li>All calculations run locally in your browser</li>
-        <li>Inputs save automatically on your device only</li>
-        <li>No accounts, no tracking, no data leaves your machine</li>
-      </ul>
-    </div>
-  </section>
-</div>
-
-<div id="fn-site-footer"></div>
+    <footer>
+      Place this file at your site root, alongside the <strong>/v1</strong>, <strong>/v2</strong>, <strong>/v3</strong>, and <strong>/v4</strong> folders.
+    </footer>
+  </div>
 </body>
 </html>
