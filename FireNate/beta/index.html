@@ -12,6 +12,7 @@
     --card-hover: #253044;
     --accent: #ff7a3d;
     --accent-2: #ffb347;
+    --accent-3: #47b3ff;
     --text-main: #eef1f6;
     --text-dim: #9aa5b8;
     --border-color: #2c364c;
@@ -212,6 +213,12 @@
     border: 1px solid rgba(255, 179, 71, 0.3);
   }
 
+ .status-pill.planning {
+    background: rgba(70, 179, 255, 0.1);
+    color: var(--accent-3);
+    border: 1px solid rgba(70, 179, 255, 0.3);
+  }
+
   footer {
     text-align: center;
     color: var(--text-dim);
@@ -290,7 +297,7 @@
             
           </p>
         </div>
-        <span class="status-pill soon">🚧 Coming soon</span>
+        <span class="status-pill planning">Prioritizing</span>
       </a>
       
     </div>
