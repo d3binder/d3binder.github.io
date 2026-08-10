@@ -45,7 +45,8 @@
   }
 
   header .badge {
-    display: inline-flex;
+    display: flex;
+    width: fit-content;
     align-items: center;
     gap: 8px;
     background: linear-gradient(135deg, var(--accent), var(--accent-2));
@@ -56,7 +57,22 @@
     text-transform: uppercase;
     padding: 6px 14px;
     border-radius: 999px;
-    margin-bottom: 18px;
+    margin: 0 auto 18px;
+  }
+
+  header .fun-badge {
+    display: flex;
+    width: fit-content;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, var(--red), #ff914d);
+    color: #2a0a0a;
+    font-weight: 800;
+    font-size: 13px;
+    padding: 8px 18px;
+    border-radius: 999px;
+    margin: 4px auto 18px;
+    box-shadow: 0 8px 20px rgba(255, 92, 92, 0.3);
   }
 
   header h1 {
@@ -69,6 +85,12 @@
     color: var(--text-dim);
     font-size: 15px;
     margin: 0;
+  }
+
+  header p.tagline {
+    color: var(--accent-2);
+    /* font-weight: 600; */
+    margin-top: 6px;
   }
 
   .versions {
@@ -365,31 +387,13 @@
   <div class="wrap">
     <header>
       <div class="badge">🔥 F.I.R.E. Nate</div>
+      <div class="fun-badge">🔥 Nate is getting FIRED'd — so can you! 🔥</div>
       <h1>Choose a Site Version</h1>
       <p>Pick which version of the site you'd like to visit.</p>
-      <p>It's like Groundhog Day, but all the versions of how Nate got F.I.R.E.'d</p>
+      <p class="tagline">It's like Groundhog Day, but all the versions of how Nate got F.I.R.E.'d</p>
     </header>
 
     <div class="versions">
-      <a class="version-card is-deleted" href="v1/index.html" aria-disabled="true" tabindex="-1" onclick="return false;">
-        <div class="version-icon">A.1</div>
-        <div class="version-info">
-          <p class="name">Alpha 1.0</p>
-          <p class="path">/beta/v1</p>
-          <p class="notes">Initial Time-To-FI Calculator P.O.C.</p>
-        </div>
-        <span class="status-pill deleted">🗑 Deleted</span>
-      </a>
-
-      <a class="version-card is-disabled" href="v2/index.html" aria-disabled="true" tabindex="-1" onclick="return false;">
-        <div class="version-icon">B.2</div>
-        <div class="version-info">
-          <p class="name">Beta 2.0</p>
-          <p class="path">/beta/v2</p>
-          <p class="notes">Add additional calculators</p>
-        </div>
-        <span class="status-pill disabled">⛔ Disabled</span>
-      </a>
 
       <a class="version-card is-active" href="v3/index.html">
         <div class="version-icon">B.3</div>
@@ -411,6 +415,27 @@
         </div>
         <span class="status-pill soon">🚧 Coming soon</span>
       </a>
+
+      <a class="version-card is-disabled" href="v2/index.html" aria-disabled="true" tabindex="-1" onclick="return false;">
+        <div class="version-icon">B.2</div>
+        <div class="version-info">
+          <p class="name">Beta 2.0</p>
+          <p class="path">/beta/v2</p>
+          <p class="notes">Add additional calculators</p>
+        </div>
+        <span class="status-pill disabled">⛔ Disabled</span>
+      </a>
+
+      <a class="version-card is-deleted" href="v1/index.html" aria-disabled="true" tabindex="-1" onclick="return false;">
+        <div class="version-icon">A.1</div>
+        <div class="version-info">
+          <p class="name">Alpha 1.0</p>
+          <p class="path">/beta/v1</p>
+          <p class="notes">Initial Time-To-FI Calculator P.O.C.</p>
+        </div>
+        <span class="status-pill deleted">🗑 Deleted</span>
+      </a>
+
       
     </div>
 
