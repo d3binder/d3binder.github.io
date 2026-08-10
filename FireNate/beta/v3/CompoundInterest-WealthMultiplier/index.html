@@ -603,7 +603,9 @@
           <select id="frequencyInput">
             <option value="365">Day</option>
             <option value="52">Week</option>
+            <option value="26">2 Weeks</option>
             <option value="12">Month</option>
+            <option value="6">2 Months</option>
             <option value="4">Quarter</option>
             <option value="2">Half-year</option>
             <option value="1" selected>Year</option>
@@ -762,7 +764,9 @@
   const FREQ_LABELS = {
     365: { period:'day',   plural:'days',   every:'Day'   },
     52:  { period:'week',  plural:'weeks',  every:'Week'  },
+    26:  { period:'2 weeks',  plural:'2 weeks',  every:'2 Weeks'  },
     12:  { period:'month', plural:'months', every:'Month' },
+    6:   { period:'2 months', plural:'2 months', every:'2 Month' },
     4:   { period:'quarter', plural:'quarters', every:'Quarter' },
     2:   { period:'half-year', plural:'half-years', every:'Half-year' },
     1:   { period:'year',  plural:'years',  every:'Year'  }
