@@ -185,8 +185,63 @@
     border-bottom:1px solid var(--line);
     box-shadow:0 12px 28px rgba(0,0,0,0.28);
   }
+  .gi-summary-row{
+    display:flex;
+    justify-content:center;
+    padding:11px 32px 0;
+  }
+  .gi-summary{
+    max-width:100%;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    color:var(--muted-2);
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    text-align:center;
+  }
+  .gi-toggle-row{
+    display:flex;
+    justify-content:center;
+    padding:8px 32px 12px;
+  }
+  .gi-toggle{
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+    flex-shrink:0;
+    background:var(--gold-soft);
+    border:1px solid var(--gold);
+    color:var(--gold);
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    font-weight:600;
+    letter-spacing:.05em;
+    text-transform:uppercase;
+    padding:6px 14px;
+    border-radius:20px;
+    cursor:pointer;
+    transition:background-color .15s, border-color .15s, color .15s;
+    white-space:nowrap;
+  }
+  .gi-toggle:hover{ background:rgba(211,171,99,0.3); border-color:var(--gold); color:var(--cream); }
+  .gi-toggle:active{ transform:translateY(1px); }
+  .gi-toggle:focus-visible{ outline:2px solid var(--gold); outline-offset:2px; }
+  .gi-chevron{ transition:transform .2s ease; flex-shrink:0; }
+  .global-inputs.collapsed .gi-chevron{ transform:rotate(180deg); }
+  .gi-content{
+    max-height:800px;
+    overflow:hidden;
+    opacity:1;
+    transition:max-height .25s ease, opacity .2s ease;
+  }
+  .global-inputs.collapsed .gi-content{
+    max-height:0;
+    opacity:0;
+    pointer-events:none;
+  }
   .gi-inner{
-    padding:16px 32px;
+    padding:4px 32px 16px;
     display:flex;
     align-items:flex-end;
     flex-wrap:wrap;
@@ -596,6 +651,10 @@
 </nav>
 
 <div class="global-inputs" id="globalInputs">
+  <div class="wrap gi-summary-row">
+    <div class="gi-summary" id="giSummary">$1,000 / month &middot; 10.0% &middot; 20 yrs &nbsp;|&nbsp; Goal $1,000,000 by 65</div>
+  </div>
+  <div class="gi-content" id="giContent">
   <div class="wrap gi-inner">
     <div class="gi-groups">
       <div class="gi-group">
@@ -623,8 +682,8 @@
           </div>
           <div class="gi-field">
             <div class="gi-label-row">
-              <label for="rateInput">Annual return<sup>*</sup></label>
-              <span style="display: none;" class="gi-shared-badge" title="This rate powers both the growth calculator on the left and the goal calculator on the right.">used by both</span>
+              <label for="rateInput">Annual return</label>
+              <span class="gi-shared-badge" title="This rate powers both the growth calculator on the left and the goal calculator on the right.">used by both</span>
             </div>
             <div class="gi-input-row">
               <input id="rateInput" type="text" value="10.0" inputmode="decimal" autocomplete="off" title="The S&P 500 has averaged ~10-11% since 1950. This rate is also used by the goal calculator.">
@@ -676,6 +735,13 @@
       <span id="lastSaved" class="save-status">Not saved yet</span>
       <button id="resetBtn" type="button" class="reset-btn">Reset to defaults</button>
     </div>
+  </div>
+  </div>
+  <div class="wrap gi-toggle-row">
+    <button id="giToggle" type="button" class="gi-toggle" aria-expanded="true" aria-controls="giContent">
+      <svg class="gi-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+      <span id="giToggleLabel">Hide inputs</span>
+    </button>
   </div>
 </div>
 
@@ -794,6 +860,10 @@
   const savedAmountInput = document.getElementById('savedAmountInput');
   const lastSavedEl = document.getElementById('lastSaved');
   const resetBtn = document.getElementById('resetBtn');
+  const giToggle = document.getElementById('giToggle');
+  const giToggleLabel = document.getElementById('giToggleLabel');
+  const giContent = document.getElementById('giContent');
+  const giSummary = document.getElementById('giSummary');
 
   const DEFAULTS = {
     amount: '1,000',
@@ -803,7 +873,8 @@
     ageHighlight: '35',
     targetAmount: '1,000,000',
     targetAge: '65',
-    savedAmount: '0'
+    savedAmount: '0',
+    inputsCollapsed: false
   };
 
   const COOKIE_NAME = 'compoundCalcState';
@@ -847,7 +918,8 @@
       ageHighlight: ageHighlight.value,
       targetAmount: targetAmountInput.value,
       targetAge: targetAgeInput.value,
-      savedAmount: savedAmountInput.value
+      savedAmount: savedAmountInput.value,
+      inputsCollapsed: inputsCollapsed
     };
   }
 
@@ -861,6 +933,7 @@
     if(state.targetAmount !== undefined) targetAmountInput.value = state.targetAmount;
     if(state.targetAge !== undefined) targetAgeInput.value = state.targetAge;
     if(state.savedAmount !== undefined) savedAmountInput.value = state.savedAmount;
+    if(state.inputsCollapsed !== undefined) setInputsCollapsed(!!state.inputsCollapsed, {skipOffsetUpdate:true});
   }
 
   function saveState(){
@@ -1188,16 +1261,38 @@
     document.documentElement.style.setProperty('--sticky-offset', totalOffset + 'px');
   }
 
+  // ---------- collapse/expand the input bar ----------
+  let inputsCollapsed = false;
+  function setInputsCollapsed(collapsed, opts){
+    opts = opts || {};
+    inputsCollapsed = collapsed;
+    if(globalInputsEl) globalInputsEl.classList.toggle('collapsed', collapsed);
+    if(giToggle) giToggle.setAttribute('aria-expanded', String(!collapsed));
+    if(giToggleLabel) giToggleLabel.textContent = collapsed ? 'Show inputs' : 'Hide inputs';
+    if(!opts.skipOffsetUpdate) updateStickyOffsets();
+  }
+
+  function updateGiSummary(){
+    if(!giSummary) return;
+    const {amount} = getInputs();
+    const freq = parseInt(frequencyInput.value, 10);
+    const f = FREQ_LABELS[freq] || FREQ_LABELS[1];
+    const {targetAmount, targetAge} = getGoal();
+    const rateDisplay = parseNum(rateInput.value);
+    giSummary.textContent = `${fmt0(amount)} / ${f.period} · ${isNaN(rateDisplay)?0:rateDisplay}% · ${getYears()} yrs  |  Goal ${fmt0(targetAmount)} by ${targetAge}`;
+  }
+
   function renderAll(){
     updateAmountLabels();
     renderDeposits();
     renderChart();
     renderWealthTable();
+    updateGiSummary();
     updateStickyOffsets();
   }
 
   function persistAndRenderAll(){ renderAll(); saveState(); }
-  function persistAndRenderWealth(){ renderWealthTable(); saveState(); }
+  function persistAndRenderWealth(){ renderWealthTable(); updateGiSummary(); saveState(); }
 
   [amountInput, rateInput, yearsInput].forEach(el=>{
     el.addEventListener('input', persistAndRenderAll);
@@ -1210,6 +1305,20 @@
   resetBtn.addEventListener('click', resetState);
   const printBtn = document.getElementById('printBtn');
   printBtn.addEventListener('click', () => window.print());
+
+  if(giToggle){
+    giToggle.addEventListener('click', () => {
+      setInputsCollapsed(!inputsCollapsed);
+      saveState();
+    });
+  }
+  if(giContent){
+    // recompute once the collapse/expand transition finishes, since the
+    // sticky bar's real height only settles at the end of the animation
+    giContent.addEventListener('transitionend', (e) => {
+      if(e.propertyName === 'max-height') updateStickyOffsets();
+    });
+  }
 
   window.addEventListener('resize', () => { renderChart(); updateStickyOffsets(); });
 
