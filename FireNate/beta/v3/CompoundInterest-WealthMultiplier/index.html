@@ -652,11 +652,12 @@
 
 <div class="global-inputs" id="globalInputs">
   <div class="wrap gi-summary-row">
-    <div class="gi-summary" id="giSummary">$1,000 / month &middot; 10.0% &middot; 20 yrs &nbsp;|&nbsp; Goal $1,000,000 by 65</div>
+    <div class="gi-summary" id="giSummary">$1,000 / month &middot; 20 yrs &nbsp;|&nbsp; 10.0%  &nbsp;|&nbsp; Goal $1,000,000 by 65</div>
   </div>
   <div class="gi-content" id="giContent">
   <div class="wrap gi-inner">
     <div class="gi-groups">
+      
       <div class="gi-group">
         <span class="gi-group-label">Growth calculator</span>
         <div class="gi-fields">
@@ -680,7 +681,7 @@
               <option value="1">Year</option>
             </select>
           </div>
-          <div class="gi-field">
+          <!-- <div class="gi-field">
             <div class="gi-label-row">
               <label for="rateInput">Annual return</label>
               <span class="gi-shared-badge" title="This rate powers both the growth calculator on the left and the goal calculator on the right.">used by both</span>
@@ -689,7 +690,7 @@
               <input id="rateInput" type="text" value="10.0" inputmode="decimal" autocomplete="off" title="The S&P 500 has averaged ~10-11% since 1950. This rate is also used by the goal calculator.">
               <span class="gi-suffix">%</span>
             </div>
-          </div>
+          </div> -->
           <div class="gi-field">
             <label for="yearsInput">Years</label>
             <div class="gi-input-row">
@@ -701,7 +702,24 @@
       </div>
 
       <div class="gi-divider"></div>
+          <div class="gi-group">
+            <span class="gi-group-label">Both</span>
 
+ <div class="gi-field">
+            <div class="gi-label-row">
+              <label for="rateInput">Annual return</label>
+              <!-- <span class="gi-shared-badge" title="This rate powers both the growth calculator on the left and the goal calculator on the right.">used by both</span> -->
+            </div>
+            <div class="gi-input-row">
+              <input id="rateInput" type="text" value="10.0" inputmode="decimal" autocomplete="off" title="The S&P 500 has averaged ~10-11% since 1950. This rate is also used by the goal calculator.">
+              <span class="gi-suffix">%</span>
+            </div>
+          </div>
+
+          </div> <!-- /gi-group-->
+      
+      <div class="gi-divider"></div>
+      
       <div class="gi-group">
         <span class="gi-group-label">Goal calculator <span class="gi-group-note">&middot; also uses annual return</span></span>
         <div class="gi-fields">
@@ -729,7 +747,7 @@
           </div>
         </div>
       </div>
-    </div>
+    </div> <!-- /grGroups -->
 
     <div class="gi-save">
       <span id="lastSaved" class="save-status">Not saved yet</span>
@@ -1279,7 +1297,7 @@
     const f = FREQ_LABELS[freq] || FREQ_LABELS[1];
     const {targetAmount, targetAge} = getGoal();
     const rateDisplay = parseNum(rateInput.value);
-    giSummary.textContent = `${fmt0(amount)} / ${f.period} · ${isNaN(rateDisplay)?0:rateDisplay}% · ${getYears()} yrs  |  Goal ${fmt0(targetAmount)} by ${targetAge}`;
+    giSummary.textContent = `Growth: ${fmt0(amount)} / ${f.period} · ${getYears()} yrs  | Rate: ${isNaN(rateDisplay)?0:rateDisplay}% yr | Goal: ${fmt0(targetAmount)} by ${targetAge}`;
   }
 
   function renderAll(){
