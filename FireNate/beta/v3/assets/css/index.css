@@ -42,6 +42,7 @@
   .hp-hero-stats .stat .v{ font-family:var(--fn-serif); font-size:26px; color:var(--fn-text); font-weight:500; }
   .hp-hero-stats .stat .v.gold{ color:var(--fn-gold); }
   .hp-hero-stats .stat .v.jade{ color:var(--fn-jade); }
+  .hp-hero-stats .stat .v.azure{ color:var(--fn-azure); }
 
   /* ---------- TOOLS GRID ---------- */
   .hp-section{ padding:64px 0; }
@@ -69,6 +70,7 @@
   }
   .hp-card-tag.gold{ color:var(--fn-gold); }
   .hp-card-tag.jade{ color:var(--fn-jade); }
+  .hp-card-tag.azure{ color:var(--fn-azure); }
   .hp-card h3{ font-family:var(--fn-serif); font-weight:600; font-size:20px; margin:0; line-height:1.25; }
   .hp-card p{ color:var(--fn-text-dim); font-size:14px; line-height:1.55; margin:0; flex:1; }
   .hp-card-cta{
@@ -90,6 +92,7 @@
     display:flex; align-items:baseline; gap:8px;
   }
   .hp-about li::before{ content:'—'; color:var(--fn-jade); }
+  
 
   @media (max-width:640px){
     .hp-hero{ padding:56px 0 40px; }

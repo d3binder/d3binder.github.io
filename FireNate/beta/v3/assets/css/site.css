@@ -15,8 +15,11 @@
   --fn-text-faint:#63756F;
   --fn-gold:#C9A659;
   --fn-gold-soft: rgba(201,166,89,0.14);
-  --fn-jade:#5C9484;
+  --fn-jade:rgba(92,148,132,1.0);
   --fn-jade-soft: rgba(92,148,132,0.16);
+  --fn-azure:rgba(0,150,220,1.00);  /*rgba*0,168,255,0.85(*/
+  --fn-azure-soft: rgba(0,168,255,0.25);
+
   --fn-serif:'Fraunces', Georgia, serif;
   --fn-sans:'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   --fn-mono:'IBM Plex Mono', 'JetBrains Mono', 'Courier New', monospace;
