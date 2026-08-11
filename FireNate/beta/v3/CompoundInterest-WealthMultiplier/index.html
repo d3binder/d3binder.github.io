@@ -194,7 +194,8 @@
     max-width:100%;
     font-family:'IBM Plex Mono',monospace;
     font-size:12px;
-    color:var(--muted-2);
+    /* color:var(--muted-2); */
+    color:rgba(201,166,89,0.80);
     overflow:hidden;
     text-overflow:ellipsis;
     white-space:nowrap;
@@ -652,7 +653,7 @@
 
 <div class="global-inputs" id="globalInputs">
   <div class="wrap gi-summary-row">
-    <div class="gi-summary" id="giSummary">$1,000 / month &middot; 20 yrs &nbsp;|&nbsp; 10.0%  &nbsp;|&nbsp; Goal $1,000,000 by 65</div>
+    <div class="gi-summary" id="giSummary">Growth: $1,000 / month &middot; 20 yrs &nbsp;|&nbsp; Rate: 10.0%  &nbsp;|&nbsp; Goal $1,000,000 by 65</div>
   </div>
   <div class="gi-content" id="giContent">
   <div class="wrap gi-inner">
@@ -714,7 +715,7 @@
               <input id="rateInput" type="text" value="10.0" inputmode="decimal" autocomplete="off" title="The S&P 500 has averaged ~10-11% since 1950. This rate is also used by the goal calculator.">
               <span class="gi-suffix">%</span>
             </div>
-          </div>
+          </div> 
 
           </div> <!-- /gi-group-->
       
