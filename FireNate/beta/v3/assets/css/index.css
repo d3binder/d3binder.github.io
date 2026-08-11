@@ -61,8 +61,12 @@
     display:flex; flex-direction:column; gap:14px; transition:background .15s;
     position:relative;
   }
+
+  .hp-card .hp-card-cta a {text-decoration: none;}
   .hp-card:hover{ background:var(--fn-panel-2); }
   .hp-card:hover .hp-card-cta{ color:var(--fn-gold); }
+ 
+  .hp-card:hover .hp-card-cta:hover{ color:rgb(120,180,255); }
   .hp-card-tag{
     display:inline-flex; align-self:flex-start; align-items:center; gap:6px;
     font-family:var(--fn-mono); font-size:10.5px; letter-spacing:0.1em; text-transform:uppercase;
