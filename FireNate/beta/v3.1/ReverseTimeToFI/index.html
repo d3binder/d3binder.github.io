@@ -95,6 +95,107 @@ window.FN_PROFILE_LEGACY_KEY = "firenate_fi_calculator_v1";
   --attention-badge-text:#F5B79A;
 }
 
+/* ---------- STICKY COLLAPSIBLE INPUT TOOLBAR ---------- */
+:root{
+  --toolbar-bg:
+    radial-gradient(1200px 260px at 10% -40%, rgba(217,132,15,0.30), transparent 60%),
+    radial-gradient(900px 300px at 90% 140%, rgba(219,59,35,0.22), transparent 60%),
+    linear-gradient(115deg, #3B1B4A 0%, #1B3A52 38%, #123B33 68%, #2E2117 100%);
+  --toolbar-bg-solid:#221A30;
+  --toolbar-line: rgba(243,238,221,0.18);
+  --toolbar-text:#F8F3E8;
+  --toolbar-muted:#C9BFDA;
+  --toolbar-muted-2:#9C8FAE;
+  --gold-bright:#F3B23A;
+  --sage-bright:#4FDB8F;
+  --teal-bright:#4FD8E8;
+  --rust-bright:#FF7A5C;
+  --plum-bright:#D98CE8;
+}
+.rtf-inputs{
+  position:sticky; top:60px; z-index:950;
+  background:var(--toolbar-bg);
+  color:var(--toolbar-text);
+  border-bottom:1px solid var(--toolbar-line);
+  box-shadow:0 12px 28px rgba(0,0,0,0.22);
+}
+.rtf-summary-row{ max-width:1180px; margin:0 auto; display:flex; justify-content:center; padding:11px 28px 0; }
+.rtf-summary{
+  max-width:100%;
+  font-family:var(--font-mono); font-weight:600; font-size:12px;
+  background:linear-gradient(90deg, var(--gold-bright), var(--rust-bright) 35%, var(--plum-bright) 65%, var(--teal-bright));
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:center;
+}
+.rtf-toggle-row{ max-width:1180px; margin:0 auto; display:flex; justify-content:center; padding:8px 28px 12px; }
+.rtf-toggle{
+  display:inline-flex; align-items:center; gap:7px; flex-shrink:0;
+  background:rgba(217,140,232,0.16); border:1px solid var(--plum-bright); color:var(--plum-bright);
+  font-family:var(--font-mono); font-size:11px; font-weight:600; letter-spacing:.05em; text-transform:uppercase;
+  padding:6px 14px; border-radius:20px; cursor:pointer;
+  transition:background-color .15s, border-color .15s, color .15s; white-space:nowrap;
+}
+.rtf-toggle:hover{ background:linear-gradient(90deg, var(--plum-bright), var(--teal-bright)); border-color:var(--plum-bright); color:var(--toolbar-bg-solid); }
+.rtf-toggle:active{ transform:translateY(1px); }
+.rtf-toggle:focus-visible{ outline:2px solid var(--plum-bright); outline-offset:2px; }
+.rtf-chevron{ transition:transform .2s ease; flex-shrink:0; }
+.rtf-inputs.collapsed .rtf-chevron{ transform:rotate(180deg); }
+.rtf-content{
+  max-height:900px; overflow:hidden; opacity:1;
+  transition:max-height .25s ease, opacity .2s ease;
+}
+.rtf-inputs.collapsed .rtf-content{ max-height:0; opacity:0; pointer-events:none; }
+.rtf-inner{
+  max-width:1180px; margin:0 auto;
+  padding:4px 28px 16px;
+  display:flex; align-items:flex-start; flex-wrap:wrap; gap:18px 30px;
+}
+.rtf-groups{ display:flex; align-items:flex-start; flex-wrap:wrap; gap:18px 30px; flex:1 1 auto; }
+.rtf-group{ display:flex; flex-direction:column; gap:9px; }
+.rtf-group-label{
+  font-family:var(--font-mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--sage-bright);
+}
+.rtf-fields{ display:flex; align-items:flex-start; flex-wrap:wrap; gap:16px; }
+.rtf-field{ display:flex; flex-direction:column; gap:6px; }
+.rtf-field label{
+  font-family:var(--font-mono); font-size:10.5px; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--toolbar-muted); white-space:nowrap;
+}
+.rtf-input-row{ display:flex; align-items:center; gap:4px; }
+.rtf-prefix, .rtf-suffix{ font-family:var(--font-mono); font-size:14px; color:var(--gold-bright); font-weight:500; }
+.rtf-field input{
+  background:rgba(0,0,0,0.22); border:1px solid transparent; border-radius:7px; color:var(--toolbar-text);
+  font-family:var(--font-mono); font-size:14.5px; font-weight:500; padding:8px 10px; outline:none;
+  transition:border-color .15s, box-shadow .15s; box-shadow:0 1px 2px rgba(0,0,0,0.2);
+  width:112px; font-variant-numeric:tabular-nums;
+}
+.rtf-field input.rtf-narrow{ width:74px; }
+.rtf-field input:focus{ border-color:var(--gold-bright); box-shadow:0 0 0 3px rgba(243,178,58,0.28); }
+.rtf-field input[type="date"]{ width:150px; }
+.rtf-field input[type="date"]::-webkit-calendar-picker-indicator{ filter:invert(0.85); cursor:pointer; }
+.rtf-field-note{ font-size:10.5px; color:var(--toolbar-muted); max-width:220px; line-height:1.3; display:none; }
+.rtf-field-note.show{ display:block; }
+.rtf-field-note.invalid{ color:var(--rust-bright); font-weight:600; }
+.rtf-input-row.invalid input{ border-color:var(--rust-bright); box-shadow:0 0 0 3px rgba(255,122,92,0.25); }
+.rtf-field-hint{ font-size:10.5px; color:var(--toolbar-muted-2); max-width:220px; line-height:1.35; }
+.rtf-divider{ width:1px; align-self:stretch; background:var(--toolbar-line); }
+.rtf-save{ display:flex; flex-direction:column; align-items:flex-end; gap:10px; margin-left:auto; }
+.rtf-save .autosave-status{ display:flex; align-items:center; gap:8px; font-size:11px; color:var(--toolbar-muted-2); }
+.rtf-save .autosave-dot{ width:8px; height:8px; border-radius:50%; background:var(--toolbar-muted-2); flex:0 0 auto; transition:background .2s; }
+.rtf-save .autosave-dot.saved{ background:var(--sage-bright); box-shadow:0 0 0 3px rgba(79,219,143,0.22); }
+.rtf-save .reset-btn{
+  background:rgba(255,122,92,0.08); border:1px solid var(--rust-bright); color:var(--rust-bright);
+  font-family:var(--font-mono); font-size:11.5px; letter-spacing:.05em; text-transform:uppercase;
+  padding:7px 16px; border-radius:20px; cursor:pointer; transition:background-color .15s, color .15s; white-space:nowrap;
+}
+.rtf-save .reset-btn:hover{ background:var(--rust-bright); color:var(--toolbar-bg-solid); }
+.rtf-save .reset-btn:active{ transform:translateY(1px); }
+@media (max-width:900px){
+  .rtf-divider{ display:none; }
+  .rtf-save{ margin-left:0; align-items:flex-start; flex-direction:row; justify-content:space-between; width:100%; flex-wrap:wrap; gap:12px; }
+}
+
 *{box-sizing:border-box;}
 html{scroll-behavior:smooth;}
 body{
@@ -409,6 +510,77 @@ tfoot td.name{ font-family:var(--font-body); }
 <body>
 <div id="fn-site-nav"></div>
 
+<!-- STICKY INPUT TOOLBAR -->
+<div class="rtf-inputs" id="rtfInputs">
+  <div class="rtf-summary-row">
+    <div class="rtf-summary" id="rtfSummary">&mdash;</div>
+  </div>
+  <div class="rtf-content" id="rtfContent">
+    <div class="rtf-inner">
+      <div class="rtf-groups">
+        <div class="rtf-group">
+          <span class="rtf-group-label">Your info</span>
+          <div class="rtf-fields">
+            <div class="rtf-field">
+              <label for="birthday">Birthday</label>
+              <div class="rtf-input-row" id="birthdayShell"><input type="date" id="birthday"></div>
+              <div class="rtf-field-note" id="birthdayWarning" role="alert"></div>
+              <div class="rtf-field-hint">We have a bug: please select a date instead of typing it in. You can manually update the date after one is picked.</div>
+            </div>
+            <div class="rtf-field">
+              <label for="retireAge">Retire at age</label>
+              <input class="rtf-narrow" type="number" id="retireAge" min="18" max="100" step="1" value="60">
+            </div>
+          </div>
+        </div>
+
+        <div class="rtf-divider"></div>
+
+        <div class="rtf-group">
+          <span class="rtf-group-label">Financials</span>
+          <div class="rtf-fields">
+            <div class="rtf-field">
+              <label for="currentSavings">Current savings</label>
+              <div class="rtf-input-row"><span class="rtf-prefix">$</span><input type="text" inputmode="decimal" class="currency-input" id="currentSavings" value="1000"></div>
+            </div>
+            <div class="rtf-field">
+              <label for="ssIncome">SS / pension / annuity</label>
+              <div class="rtf-input-row"><span class="rtf-prefix">$</span><input type="text" inputmode="decimal" class="currency-input" id="ssIncome" value="0"></div>
+              <div class="rtf-field-hint">Monthly, today's dollars. $0 for conservative planning.</div>
+            </div>
+            <div class="rtf-field">
+              <label for="inflationRate">Inflation</label>
+              <div class="rtf-input-row"><input class="rtf-narrow" type="number" id="inflationRate" min="0" max="20" step="0.1" value="3.0"><span class="rtf-suffix">%</span></div>
+            </div>
+            <div class="rtf-field">
+              <label for="withdrawalRate">Withdrawal rate</label>
+              <div class="rtf-input-row"><input class="rtf-narrow" type="number" id="withdrawalRate" min="1" max="20" step="0.1" value="4.0"><span class="rtf-suffix">%</span></div>
+              <div class="rtf-field-hint">4% is the commonly recommended safe withdrawal rate.</div>
+            </div>
+            <div class="rtf-field">
+              <label for="roi">Return on investments</label>
+              <div class="rtf-input-row"><input class="rtf-narrow" type="number" id="roi" min="0" max="30" step="0.1" value="10.0"><span class="rtf-suffix">%</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="rtf-save">
+        <div class="autosave-status">
+          <span class="autosave-dot" id="autosaveDot"></span>
+          <span id="lastSavedText">Not saved yet — your entries save automatically in this browser</span>
+        </div>
+        <button type="button" class="reset-btn" id="resetBtn">Restore default values</button>
+      </div>
+    </div>
+  </div>
+  <div class="rtf-toggle-row">
+    <button id="rtfToggle" type="button" class="rtf-toggle" aria-expanded="true" aria-controls="rtfContent">
+      <svg class="rtf-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+      <span id="rtfToggleLabel">Hide inputs</span>
+    </button>
+  </div>
+</div>
+
 <!-- HERO -->
 <header class="hero" id="top">
   <div class="hero-inner">
@@ -504,72 +676,12 @@ tfoot td.name{ font-family:var(--font-body); }
     <!-- INPUTS -->
     <div class="inputs-col">
 
-      <div class="section-label">Step 1</div>
-      <div class="autosave-bar">
-        <div class="autosave-status">
-          <span class="autosave-dot" id="autosaveDot"></span>
-          <span id="lastSavedText">Not saved yet — your entries save automatically in this browser</span>
-        </div>
-        <button type="button" class="reset-btn" id="resetBtn">Restore default values</button>
-      </div>
-      <h2 class="section-title">Your info &amp; assumptions</h2>
-
-      <div class="card">
-        <h3>Your info</h3>
-        <p class="hint">We use this to count the months between today and your freedom date.</p>
-        <div class="field-row">
-          <div class="field">
-            <label for="birthday">Birthday</label>
-            <div class="input-shell plain" id="birthdayShell"><input type="date" id="birthday"></div>
-            <div class="field-note" id="birthdayWarning" role="alert"></div>
-            <div>We have a bug: please select a date instead of typing it in. You can manuallt update the date aftter one is picked</div>
-          </div>
-          <div class="field">
-            <label for="retireAge">Age you'd like to retire</label>
-            <div class="input-shell plain"><input type="number" id="retireAge" min="18" max="100" step="1" value="60"></div>
-          </div>
-        </div>
-      </div>
-
       <div class="warning-box" id="ssWarning">
         <strong>Heads up:</strong>
         You selected a retirement age under 62. As of current rules, that does not qualify for Social Security — this plan already treats your SS/pension input as supplemental, not guaranteed, at this age.
       </div>
 
-      <div class="card">
-        <h3>Financials</h3>
-        <p class="hint">The four levers that decide how fast you get free.</p>
-        <div class="field-row">
-          <div class="field">
-            <label for="currentSavings">Current savings</label>
-            <div class="input-shell"><span class="affix">$</span><input type="text" inputmode="decimal" class="currency-input" id="currentSavings" value="1000"></div>
-          </div>
-          <div class="field">
-            <label for="ssIncome">Social Security / pension / annuity</label>
-            <div class="input-shell"><span class="affix">$</span><input type="text" inputmode="decimal" class="currency-input" id="ssIncome" value="0"></div>
-            <div class="desc">Monthly, in today's dollars. We recommend $0 for conservative planning.</div>
-          </div>
-        </div>
-        <div class="field-row" style="margin-top:2px;">
-          <div class="field">
-            <label for="inflationRate">Anticipated inflation</label>
-            <div class="input-shell"><input type="number" id="inflationRate" min="0" max="20" step="0.1" value="3.0"><span class="affix">%</span></div>
-          </div>
-          <div class="field">
-            <label for="withdrawalRate">% of investments to live off</label>
-            <div class="input-shell"><input type="number" id="withdrawalRate" min="1" max="20" step="0.1" value="4.0"><span class="affix">%</span></div>
-            <div class="desc">4% is the commonly recommended safe withdrawal rate.</div>
-          </div>
-        </div>
-        <div class="field-row stack1" style="margin-top:2px;">
-          <div class="field">
-            <label for="roi">Anticipated return on investments</label>
-            <div class="input-shell"><input type="number" id="roi" min="0" max="30" step="0.1" value="10.0"><span class="affix">%</span></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="section-label" style="margin-top:38px;">Step 2</div>
+      <div class="section-label">Step 2</div>
       <h2 class="section-title">Life expenses</h2>
       <div class="card">
         <h3>Expenses</h3>
@@ -1001,6 +1113,8 @@ function recalc(){
   }
 
   renderRunway(hasBirthday ? currentAge : null, retireAge, hasBirthday);
+
+  updateRtfSummary();
 }
 
 
@@ -1021,6 +1135,52 @@ if (planBarToggle){
     planBarToggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
   });
 }
+
+// ---------- sticky, collapsible input toolbar ----------
+// the plan-bar below it is also sticky, so its top offset has to be pushed
+// down dynamically to sit right under the input toolbar (whatever its current height is).
+const RTF_COLLAPSE_KEY = 'firenate_fi_calculator_v1_inputs_collapsed';
+const SITE_NAV_H = 60;
+const rtfInputsEl = document.getElementById('rtfInputs');
+const rtfToggle = document.getElementById('rtfToggle');
+const rtfToggleLabel = document.getElementById('rtfToggleLabel');
+const rtfContent = document.getElementById('rtfContent');
+const rtfSummary = document.getElementById('rtfSummary');
+const planBarEl = document.getElementById('planBar');
+
+function updateStickyOffset(){
+  if (!rtfInputsEl || !planBarEl) return;
+  planBarEl.style.top = (SITE_NAV_H + rtfInputsEl.offsetHeight) + 'px';
+}
+
+let rtfInputsCollapsed = false;
+function setRtfInputsCollapsed(collapsed){
+  rtfInputsCollapsed = collapsed;
+  if (rtfInputsEl) rtfInputsEl.classList.toggle('collapsed', collapsed);
+  if (rtfToggle) rtfToggle.setAttribute('aria-expanded', String(!collapsed));
+  if (rtfToggleLabel) rtfToggleLabel.textContent = collapsed ? 'Show inputs' : 'Hide inputs';
+  try { localStorage.setItem(RTF_COLLAPSE_KEY, collapsed ? '1' : '0'); } catch(e) {}
+  updateStickyOffset();
+}
+
+function updateRtfSummary(){
+  if (!rtfSummary) return;
+  const birthdayVal = document.getElementById('birthday').value;
+  const retireAgeVal = document.getElementById('retireAge').value;
+  const savings = numFromField(document.getElementById('currentSavings').value);
+  const roiVal = document.getElementById('roi').value;
+  rtfSummary.textContent = `Birthday: ${birthdayVal || '—'}  |  Retire at: ${retireAgeVal}  |  Savings: ${fmtUSD(savings)}  |  Return: ${roiVal}%/yr`;
+}
+
+if (rtfToggle){
+  rtfToggle.addEventListener('click', () => setRtfInputsCollapsed(!rtfInputsCollapsed));
+}
+if (rtfContent){
+  rtfContent.addEventListener('transitionend', (e) => {
+    if (e.propertyName === 'max-height') updateStickyOffset();
+  });
+}
+window.addEventListener('resize', updateStickyOffset);
 
 // ---------- SAVE / RESTORE (this browser only, no expiry) ----------
 const STORAGE_KEY = 'firenate_fi_calculator_v1';
@@ -1115,7 +1275,9 @@ if (resetBtn) resetBtn.addEventListener('click', resetAll);
 
 applyState(loadState());
 initCurrencyFormatting();
+try { setRtfInputsCollapsed(localStorage.getItem(RTF_COLLAPSE_KEY) === '1'); } catch(e) { setRtfInputsCollapsed(false); }
 recalc();
+updateStickyOffset();
 </script>
 
 </body>

@@ -130,6 +130,7 @@
     align-items: center;
     gap: 20px;
     padding: 22px 24px;
+    margin-bottom: 25px;
     text-decoration: none;
     color: inherit;
   }
@@ -138,6 +139,10 @@
     border-color: rgba(219, 106, 46, 0.5);
     background: var(--card-hover);
     transform: translateY(-2px);
+  }
+
+  a.file-card.old-card {
+    border-top-color: rgb(79, 143, 219) !important;
   }
 
   .file-icon {
@@ -326,7 +331,20 @@
 
 
     <section class="section-title">Downloads</section>
-    <a class="card file-card" href="Nates%20F.I.R.E.%20Spreadsheet%2013.0.xlsm" download>
+
+    <a class="card file-card" href="files/Nates F.I.R.E. Spreadsheet 15.0.xlsm" download>
+      <div class="file-icon">📊</div>
+      <div class="file-info">
+        <p class="name">Nates F.I.R.E. Spreadsheet 15.0.xlsm</p>
+        <div class="meta">
+          <span>Excel Macro-Enabled Workbook</span>
+          <span>.xlsm</span>
+        </div>
+      </div>
+      <span class="download-pill">⬇ Download</span>
+    </a>
+
+    <a class="card file-card old-card" href="files/Nates F.I.R.E. Spreadsheet 13.0.xlsm" download>
       <div class="file-icon">📊</div>
       <div class="file-info">
         <p class="name">Nates F.I.R.E. Spreadsheet 13.0.xlsm</p>
@@ -348,11 +366,11 @@
             <p class="meta">MPEG-4 Video</p>
           </div>
         </div>
-        <a class="open-native is-disabled" href="FireNate.mp4" download aria-disabled="true" tabindex="-1" onclick="return false;">⬇ Download video</a>
+        <a class="open-native is-disabled" href="videos/FireNate.mp4" download aria-disabled="true" tabindex="-1" onclick="return false;">⬇ Download video</a>
       </div>
 
       <video controls preload="metadata">
-        <source src="FireNate.mp4" type="video/mp4">
+        <source src="videos/FireNate.mp4" type="video/mp4">
         <div class="video-fallback">
           Your browser can't play this video inline. Use the download link above to open it.
         </div>

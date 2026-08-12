@@ -16,6 +16,7 @@
     { id: "time-to-fi", label: "Time to FI", href: BASE + "TimeToFI/index.html" },
     { id: "reverse-time-to-fi", label: "Reverse Time to FI", href: BASE + "ReverseTimeToFI/index.html" },
     { id: "compound-interest", label: "Compound Interest", href: BASE + "CompoundInterest-WealthMultiplier/index.html" },
+    { id: "crossover-point", label: "Crossover Point", href: BASE + "CrossoverPoint/index.html" },
     { id: "loan-calculator", label: "Loan Calculator", href: BASE + "LoanCalculator/index.html" },
     { id: "payoff-or-invest", label: "Payoff or Invest", href: BASE + "Payoff-or-Invest/index.html" },
     { id: "homes-vs-stocks", label: "Homes vs. Stocks", href: BASE + "RealEstateVsStocks/index.html" },
