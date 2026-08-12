@@ -18,7 +18,6 @@
 window.FN_BASE = "../"; window.FN_PAGE = "crossover-point";
 window.FN_PROFILE_FIELDS = {
   currentAge: "#age",
-  currentSavings: "#currentSavings",
   goalAmount: "#goal",
   retireAge: "#targetAge",
   expectedReturn: "#returnPct"
@@ -122,23 +121,12 @@ window.FN_PROFILE_LEGACY_KEY = "crossoverPointInputs";
     font-family:var(--serif); font-size:clamp(18px,2.6vw,26px); font-weight:600;
     color:var(--target); margin:0 0 6px;
   }
-  .crossover-summary .cs-amount-row{
-    display:flex; align-items:baseline; flex-wrap:wrap; gap:12px 14px; margin:0 0 8px;
-  }
   .crossover-summary .cs-amount{
     font-family:var(--serif); font-size:clamp(32px,6vw,52px); font-weight:600; color:var(--gold);
-    margin:0; line-height:1;
+    margin:0 0 8px; line-height:1;
   }
-  .crossover-summary .cs-diff{
-    font-family:var(--mono); font-size:14px; font-weight:600;
-    padding:5px 12px; border-radius:999px; white-space:nowrap;
-  }
-  .crossover-summary .cs-diff.cp-diff-pos{ background:rgba(79,219,143,0.15); color:var(--jade); }
-  .crossover-summary .cs-diff.cp-diff-neg{ background:rgba(255,122,92,0.15); color:var(--danger); }
   .crossover-summary .cs-sub{ color:var(--ink-dim); font-size:14.5px; line-height:1.55; max-width:64ch; margin:0; }
   .crossover-summary .cs-sub b{ color:var(--ink); }
-  .crossover-summary .cs-note{ color:var(--ink-faint); font-size:13px; line-height:1.55; max-width:64ch; margin:10px 0 0; }
-  .crossover-summary .cs-note b{ color:var(--ink-dim); }
   @media (max-width:640px){ .crossover-summary{ padding:22px 18px 20px; } }
 
   /* ---------- inline SVG bar chart (no external chart library) ---------- */
@@ -159,10 +147,6 @@ window.FN_PROFILE_LEGACY_KEY = "crossoverPointInputs";
   }
   #cpTooltip .yr{ color:var(--ink-faint); margin-bottom:3px; }
   #cpTooltip b{ color:var(--gold); }
-  .cp-savings-line{ fill:none; stroke:var(--jade); stroke-width:2.5; }
-  .cp-savings-dot{ fill:var(--jade); }
-  .cp-diff-pos{ color:var(--jade); font-weight:600; }
-  .cp-diff-neg{ color:var(--danger); }
 </style>
 </head>
 <body>
@@ -178,10 +162,6 @@ window.FN_PROFILE_LEGACY_KEY = "crossoverPointInputs";
         <div class="cx-field">
           <label for="goal">Desired Retirement Amount</label>
           <div class="cx-input-row"><span class="cx-prefix">$</span><input type="text" step="1000" inputmode="decimal" pattern="[0-9,.]*" id="goal" value="3,000,000.00"></div>
-        </div>
-        <div class="cx-field">
-          <label for="currentSavings">Current Savings</label>
-          <div class="cx-input-row"><span class="cx-prefix">$</span><input type="text" step="1000" inputmode="decimal" pattern="[0-9,.]*" id="currentSavings" value="0.00"></div>
         </div>
         <div class="cx-field">
           <label for="age">Current Age</label>
@@ -221,12 +201,8 @@ window.FN_PROFILE_LEGACY_KEY = "crossoverPointInputs";
   <h2 class="ledger-title" style="margin-top: 40px; margin-bottom: 4px;">Summary</h2>
   <div class="crossover-summary">
     <p class="cs-eyebrow" id="csEyebrow">At age &mdash;</p>
-    <div class="cs-amount-row">
-      <p class="cs-amount" id="csAmount">$0</p>
-      <span class="cs-diff" id="csDiff"></span>
-    </div>
+    <p class="cs-amount" id="csAmount">$0</p>
     <p class="cs-sub" id="csSub">&mdash;</p>
-    <p class="cs-note" id="csNote">&mdash;</p>
   </div>
   <div class="status" id="statusStrip" style="margin-top:16px;"></div>
 
@@ -241,7 +217,6 @@ window.FN_PROFILE_LEGACY_KEY = "crossoverPointInputs";
       <div class="legend-row">
         <span class="legend-dot gold"></span> Amount needed at this age
         <span class="legend-dot" style="background:var(--target);"></span> Your current age
-        <span class="legend-dot jade"></span> Your savings, growing at this rate
       </div>
     </div>
   </div>
@@ -260,9 +235,6 @@ window.FN_PROFILE_LEGACY_KEY = "crossoverPointInputs";
               <th>Years to Target</th>
               <th>Amount Needed</th>
               <th>% of Goal</th>
-              <th>Your Savings</th>
-              <th>Difference</th>
-              <th>% of Goal (w/ Savings)</th>
             </tr>
           </thead>
           <tbody id="tableBody"></tbody>
@@ -270,9 +242,10 @@ window.FN_PROFILE_LEGACY_KEY = "crossoverPointInputs";
       </div>
     </div>
   </div>
-</div>
 
-<footer id="site-footer"></footer>
+  <footer id="site-footer"></footer>
+</div>
+<div id="fn-site-footer"></div>
 
 <script>
 const $ = id => document.getElementById(id);
@@ -329,11 +302,10 @@ function setCxInputsCollapsed(collapsed){
 function updateCxSummary(){
   if (!cxSummary) return;
   const goal = parseCurrency('goal');
-  const currentSavings = parseCurrency('currentSavings');
   const age = parseFloat($('age').value) || 0;
   const targetAge = parseFloat($('targetAge').value);
   const returnPct = parseFloat($('returnPct').value) || 0;
-  cxSummary.textContent = `Goal: ${fmtUSD(goal)} by age ${isFinite(targetAge) ? fmtNum(targetAge) : '—'}  |  Current age: ${fmtNum(age)}  |  Savings: ${fmtUSD(currentSavings)}  |  Return: ${fmtNum(returnPct)}%/yr`;
+  cxSummary.textContent = `Goal: ${fmtUSD(goal)} by age ${isFinite(targetAge) ? fmtNum(targetAge) : '—'}  |  Current age: ${fmtNum(age)}  |  Return: ${fmtNum(returnPct)}%/yr`;
 }
 
 function cxPad2(n){ return String(n).padStart(2, '0'); }
@@ -354,16 +326,8 @@ function crossoverAmount(goal, r, yearsRemaining){
   return goal / Math.pow(base, yrs);
 }
 
-function savingsGrowth(currentSavings, r, yearsElapsed){
-  const yrs = Math.max(0, yearsElapsed);
-  const base = 1 + r;
-  if (base <= 0) return currentSavings;
-  return currentSavings * Math.pow(base, yrs);
-}
-
 function compute(){
   const goal = parseCurrency('goal');
-  const currentSavings = parseCurrency('currentSavings');
   const age = parseFloat($('age').value) || 0;
   const targetAge = parseFloat($('targetAge').value) || 0;
   const r = (parseFloat($('returnPct').value) || 0) / 100;
@@ -373,52 +337,27 @@ function compute(){
   const rows = [];
   for (let a = startAge; a <= endAge; a++){
     const yearsRemaining = targetAge - a;
-    const amount = crossoverAmount(goal, r, yearsRemaining);
-    const savings = savingsGrowth(currentSavings, r, a - startAge);
     rows.push({
       age: a,
       yearsRemaining: Math.max(0, yearsRemaining),
-      amount,
-      pct: goal > 0 ? (amount / goal) * 100 : 0,
-      savings,
-      diff: savings - amount,
-      pctWithSavings: goal > 0 ? (savings / goal) * 100 : 0
+      amount: crossoverAmount(goal, r, yearsRemaining),
+      pct: goal > 0 ? (crossoverAmount(goal, r, yearsRemaining) / goal) * 100 : 0
     });
   }
 
   const currentAmount = crossoverAmount(goal, r, targetAge - age);
   const yearsToTarget = Math.max(0, targetAge - age);
-  return {goal, currentSavings, age, targetAge, r, rows, currentAmount, yearsToTarget, startAge, endAge};
+  return {goal, age, targetAge, r, rows, currentAmount, yearsToTarget, startAge, endAge};
 }
 
 function renderSummary(state){
-  const {goal, currentSavings, age, targetAge, r, currentAmount} = state;
+  const {goal, age, targetAge, r, currentAmount} = state;
   $('csEyebrow').textContent = `At age ${fmtNum(age)}`;
   $('csAmount').textContent = fmtUSD(currentAmount);
-
-  // same figure as the "Difference" column for this age: savings minus amount needed
-  const diff = currentSavings - currentAmount;
-  const csDiff = $('csDiff');
-  if (csDiff){
-    csDiff.classList.remove('cp-diff-pos', 'cp-diff-neg');
-    csDiff.classList.add(diff >= 0 ? 'cp-diff-pos' : 'cp-diff-neg');
-    const sign = diff > 0 ? '+' : (diff < 0 ? '−' : '');
-    csDiff.textContent = `${sign}${fmtUSD(Math.abs(diff))} ${diff >= 0 ? 'ahead' : 'short'}`;
-  }
-
   if (age >= targetAge){
     $('csSub').innerHTML = `You're already at or past your target retirement age of <b>${fmtNum(targetAge)}</b> &mdash; you'd need the full <b>${fmtUSD(goal)}</b> saved now.`;
   } else {
     $('csSub').innerHTML = `If you have this saved and keep earning <b>${fmtNum(r * 100)}%</b> annually, compounding alone can carry you to <b>${fmtUSD(goal)}</b> by age <b>${fmtNum(targetAge)}</b> &mdash; you won't need to save anymore to hit your goal.`;
-  }
-
-  const csNote = $('csNote');
-  if (csNote){
-    if (diff >= 0){
-      csNote.innerHTML = `That badge compares this to your current savings of <b>${fmtUSD(currentSavings)}</b> &mdash; you're already <b>${fmtUSD(diff)} ahead</b> of what's needed at this age.`;
-    } else {
-      csNote.innerHTML = `That badge compares this to your current savings of <b>${fmtUSD(currentSavings)}</b> &mdash; you're currently <b>${fmtUSD(Math.abs(diff))} short</b> of what's needed at this age.`;
-    }
   }
 }
 
@@ -447,16 +386,11 @@ function renderTable(state){
     const tr = document.createElement('tr');
     if (row.age === startAge) tr.classList.add('target-row');
     if (row.age >= endAge) tr.classList.add('milestone');
-    const diffCls = row.diff >= 0 ? 'cp-diff-pos' : 'cp-diff-neg';
-    const diffSign = row.diff > 0 ? '+' : (row.diff < 0 ? '−' : '');
     tr.innerHTML = `
       <td>${row.age}</td>
       <td>${row.yearsRemaining <= 0 ? 'Reached' : fmtNum(row.yearsRemaining)}</td>
       <td>${fmtUSD(row.amount)}</td>
       <td>${fmtNum(row.pct)}%</td>
-      <td>${fmtUSD(row.savings)}</td>
-      <td class="${diffCls}">${diffSign}${fmtUSD(Math.abs(row.diff))}</td>
-      <td>${fmtNum(row.pctWithSavings)}%</td>
     `;
     tbody.appendChild(tr);
   });
@@ -483,7 +417,7 @@ function renderChart(state){
   const plotW = W - padL - padR;
   const plotH = H - padT - padB;
 
-  const maxAmount = Math.max(...rows.map(r => r.amount), ...rows.map(r => r.savings), 1);
+  const maxAmount = Math.max(...rows.map(r => r.amount), 1);
   const niceMax = niceCeil(maxAmount);
 
   cpSvg.innerHTML = '';
@@ -520,15 +454,10 @@ function renderChart(state){
   const barW = Math.max((plotW / n) - barGap, 1);
   const labelStep = n <= 20 ? 1 : n <= 40 ? 2 : 5;
 
-  const savingsPoints = [];
-
   rows.forEach((row, i) => {
     const x = padL + i * (barW + barGap);
     const barH = Math.max((row.amount / niceMax) * plotH, 1);
     const y = padT + plotH - barH;
-    const cx = x + barW / 2;
-    const savingsY = padT + plotH - (row.savings / niceMax) * plotH;
-    savingsPoints.push([cx, savingsY]);
 
     const group = document.createElementNS(svgNS, 'g');
 
@@ -543,7 +472,7 @@ function renderChart(state){
 
     if (row.age % labelStep === 0 || row.age === startAge || row.age === endAge){
       const lbl = document.createElementNS(svgNS, 'text');
-      lbl.setAttribute('x', cx);
+      lbl.setAttribute('x', x + barW / 2);
       lbl.setAttribute('y', H - padB + 16);
       lbl.setAttribute('text-anchor', 'middle');
       lbl.setAttribute('class', 'cp-axis-label');
@@ -555,30 +484,12 @@ function renderChart(state){
       cpTooltip.style.opacity = 1;
       cpTooltip.style.left = e.clientX + 'px';
       cpTooltip.style.top = e.clientY + 'px';
-      cpTooltip.innerHTML = `<div class="yr">Age ${row.age}</div>Amount needed <b>${fmtUSD(row.amount)}</b><br>Your savings <b>${fmtUSD(row.savings)}</b>`;
+      cpTooltip.innerHTML = `<div class="yr">Age ${row.age}</div>Amount needed <b>${fmtUSD(row.amount)}</b>`;
     });
     group.addEventListener('mouseleave', () => { cpTooltip.style.opacity = 0; });
 
     cpSvg.appendChild(group);
   });
-
-  // ---- savings growth line, overlaid on the bars ----
-  if (savingsPoints.length){
-    const path = document.createElementNS(svgNS, 'path');
-    const d = savingsPoints.map((p, i) => (i === 0 ? 'M' : 'L') + p[0] + ',' + p[1]).join(' ');
-    path.setAttribute('d', d);
-    path.setAttribute('class', 'cp-savings-line');
-    cpSvg.appendChild(path);
-
-    savingsPoints.forEach(([px, py]) => {
-      const dot = document.createElementNS(svgNS, 'circle');
-      dot.setAttribute('class', 'cp-savings-dot');
-      dot.setAttribute('cx', px);
-      dot.setAttribute('cy', py);
-      dot.setAttribute('r', 2.5);
-      cpSvg.appendChild(dot);
-    });
-  }
 }
 
 function render(){
@@ -591,9 +502,9 @@ function render(){
 }
 
 const STORAGE_KEY = 'crossoverPointInputs';
-const DEFAULTS = {goal:'3000000', currentSavings:'0', age:'24', targetAge:'60', returnPct:'11'};
-const CURRENCY_FIELDS = ['goal', 'currentSavings'];
-const ALL_FIELDS = ['goal', 'currentSavings', 'age', 'targetAge', 'returnPct'];
+const DEFAULTS = {goal:'3000000', age:'24', targetAge:'60', returnPct:'11'};
+const CURRENCY_FIELDS = ['goal'];
+const ALL_FIELDS = ['goal', 'age', 'targetAge', 'returnPct'];
 
 function saveInputs(){
   const vals = {};

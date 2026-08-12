@@ -1,32 +1,38 @@
 /* =========================================================================
    FireNate — shared site chrome (nav + footer)
    Loaded on every page. All rules are scoped under #fn-site-nav /
-   #fn-site-footer (or the fn- prefix) so they never collide with a
+   #site-footer (or the fn- prefix) so they never collide with a
    calculator page's own inline styles.
    ========================================================================= */
 
 :root{
-  --fn-ink:#0B1210;
-  --fn-panel:#111A17;
-  --fn-panel-2:#0D1614;
-  --fn-line: rgba(237,230,211,0.10);
-  --fn-text:#EDE6D3;
-  --fn-text-dim:#9FB0AA;
-  --fn-text-faint:#63756F;
-  --fn-gold:#C9A659;
-  --fn-gold-soft: rgba(201,166,89,0.14);
-  --fn-jade:rgba(92,148,132,1.0);
-  --fn-jade-soft: rgba(92,148,132,0.16);
-  --fn-azure:rgba(0,150,220,1.00);  /*rgba*0,168,255,0.85(*/
-  --fn-azure-soft: rgba(0,168,255,0.25);
+  /* matches the site's vibrant dark-mode palette (bg/panel/text/accents) so the
+     always-dark nav reads as part of the same theme instead of its own muted one */
+  --fn-ink:#15111A;
+  --fn-panel:#1E1826;
+  --fn-panel-2:#241C30;
+  --fn-line: rgba(255,255,255,0.13);
+  --fn-text:#F3EEE4;
+  --fn-text-dim:#B8A8C0;
+  --fn-text-faint:#8A7A94;
+  --fn-gold:#F3B23A;
+  --fn-gold-soft: rgba(243,178,58,0.16);
+  --fn-jade:#4FDB8F;
+  --fn-jade-soft: rgba(79,219,143,0.16);
+  --fn-azure:#4FD8E8;
+  --fn-azure-soft: rgba(79,216,232,0.22);
+  --fn-plum:#D98CE8;
+  --fn-plum-soft: rgba(217,140,232,0.18);
+  --fn-rust:#FF7A5C;
+  --fn-rust-soft: rgba(255,122,92,0.18);
 
   --fn-serif:'Fraunces', Georgia, serif;
   --fn-sans:'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   --fn-mono:'IBM Plex Mono', 'JetBrains Mono', 'Courier New', monospace;
 }
 
-#fn-site-nav, #fn-site-footer{ font-family: var(--fn-sans); }
-#fn-site-nav *, #fn-site-footer *{ box-sizing:border-box; }
+#fn-site-nav, #site-footer{ font-family: var(--fn-sans); }
+#fn-site-nav *, #site-footer *{ box-sizing:border-box; }
 
 /* ---------------------------------------------------------------------- */
 /* NAV                                                                     */
@@ -35,12 +41,13 @@
   position:sticky;
   top:0;
   z-index:1000;
-  background:rgba(11,18,16,0.92);
+  background:rgba(21,17,26,0.92);
   backdrop-filter:blur(10px);
   -webkit-backdrop-filter:blur(10px);
   border-bottom:1px solid var(--fn-line);
 }
 .fn-nav-inner{
+  position:relative;
   max-width:1180px;
   margin:0 auto;
   padding:0 24px;
@@ -50,6 +57,23 @@
   justify-content:space-between;
   gap:20px;
 }
+.fn-page-title{
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  font-family:var(--fn-mono);
+  font-size:12.5px;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  color:var(--fn-text-dim);
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  max-width:min(38vw, 320px);
+  pointer-events:none;
+}
+@media (max-width:700px){ .fn-page-title{ display:none; } }
 .fn-brand{
   display:inline-flex;
   align-items:baseline;
@@ -96,13 +120,21 @@
   color:var(--fn-text-dim);
   font-size:13px;
   font-weight:500;
-  padding:11px 10px;
+  padding:11px 12px;
   border-radius:7px;
+  border-left:3px solid transparent;
   white-space:nowrap;
-  transition:color .15s, background .15s;
+  transition:color .15s, background .15s, border-color .15s;
 }
 .fn-links a:hover{ color:var(--fn-text); background:rgba(255,255,255,0.05); }
-.fn-links a.fn-active{ color:var(--fn-gold); background:var(--fn-gold-soft); }
+
+/* each link gets its own fun accent color (set via data-c in nav.js) for
+   hover + active state, instead of every link sharing the same gold */
+.fn-links a[data-c="gold"]:hover, .fn-links a[data-c="gold"].fn-active{ color:var(--fn-gold); background:var(--fn-gold-soft); border-left-color:var(--fn-gold); }
+.fn-links a[data-c="jade"]:hover, .fn-links a[data-c="jade"].fn-active{ color:var(--fn-jade); background:var(--fn-jade-soft); border-left-color:var(--fn-jade); }
+.fn-links a[data-c="azure"]:hover, .fn-links a[data-c="azure"].fn-active{ color:var(--fn-azure); background:var(--fn-azure-soft); border-left-color:var(--fn-azure); }
+.fn-links a[data-c="plum"]:hover, .fn-links a[data-c="plum"].fn-active{ color:var(--fn-plum); background:var(--fn-plum-soft); border-left-color:var(--fn-plum); }
+.fn-links a[data-c="rust"]:hover, .fn-links a[data-c="rust"].fn-active{ color:var(--fn-rust); background:var(--fn-rust-soft); border-left-color:var(--fn-rust); }
 
 .fn-nav-toggle{
   display:inline-flex;
@@ -117,6 +149,12 @@
   line-height:1;
   align-items:center;
   justify-content:center;
+  transition:border-color .15s, color .15s;
+}
+.fn-nav-toggle:hover,
+#fn-site-nav.fn-open .fn-nav-toggle{
+  border-color:var(--fn-jade);
+  color:var(--fn-jade);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -332,12 +370,11 @@
 /* ---------------------------------------------------------------------- */
 /* FOOTER                                                                  */
 /* ---------------------------------------------------------------------- */
-#fn-site-footer{
-  background:var(--fn-panel-2);
-  border-top:1px solid var(--fn-line);
-  color:var(--fn-text-dim);
-  margin-top:64px;
-}
+/* an #id selector always outranks a page's own bare "footer{...}" rule
+   (meant for that page's local disclaimer footer), so this keeps the
+   shared footer's spacing/border consistent everywhere regardless of
+   what each page's own stylesheet declares for plain <footer> elements */
+#site-footer{ margin:0; padding:0; border:none; text-align:inherit; }
 .fn-footer-inner{
   max-width:1180px;
   margin:0 auto;
@@ -391,5 +428,5 @@
 .fn-footer-bottom strong{ color:var(--fn-text-dim); }
 
 @media print{
-  #fn-site-nav, #fn-site-footer{ display:none !important; }
+  #fn-site-nav, #site-footer{ display:none !important; }
 }

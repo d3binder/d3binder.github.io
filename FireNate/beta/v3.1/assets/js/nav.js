@@ -30,14 +30,37 @@
     });
   }
 
+  function currentPageTitle() {
+    var match = null;
+    for (var i = 0; i < PAGES.length; i++) {
+      if (PAGES[i].id === CURRENT) { match = PAGES[i]; break; }
+    }
+    if (match) return match.label;
+    // fall back to the <title>, stripped of the "FireNate" branding wherever it
+    // sits (leading "FireNate - X" or trailing "X | FireNate"), for pages that
+    // aren't in the main nav list (e.g. GenInfo sub-pages)
+    var title = (document.title || "")
+      .replace(/^FireNate\s*[-—|]\s*/i, "")
+      .replace(/\s*[-—|]\s*FireNate$/i, "")
+      .trim();
+    return title;
+  }
+
+  // a rotating set of accent colors so each link in the dropdown gets its
+  // own fun highlight instead of every link sharing the same gold
+  var LINK_COLORS = ["gold", "jade", "azure", "plum", "rust"];
+
   function buildNav() {
     var links = PAGES.filter(function (p) { return p.id !== "home"; })
-      .map(function (p) {
+      .map(function (p, i) {
         var active = p.id === CURRENT ? " fn-active" : "";
-        return '<a href="' + p.href + '" class="fn-nav-link' + active + '">' + escapeHtml(p.label) + "</a>";
+        var color = LINK_COLORS[(i + 1) % LINK_COLORS.length];
+        return '<a href="' + p.href + '" class="fn-nav-link' + active + '" data-c="' + color + '">' + escapeHtml(p.label) + "</a>";
       }).join("");
 
     var homeActive = CURRENT === "home" ? " fn-active" : "";
+    var homeColor = LINK_COLORS[0];
+    var pageTitle = currentPageTitle();
 
     var gearIcon =
       '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
@@ -119,8 +142,9 @@
           '<span class="fn-dot">&#9670;</span>FireNate' +
           '<span class="fn-tag">FI Tools</span>' +
         "</a>" +
+        (pageTitle ? '<div class="fn-page-title">' + escapeHtml(pageTitle) + "</div>" : "") +
         '<nav class="fn-links" aria-label="Site">' +
-          '<a href="' + BASE + 'index.html' + '" class="fn-nav-link' + homeActive + '">Home</a>' +
+          '<a href="' + BASE + 'index.html' + '" class="fn-nav-link' + homeActive + '" data-c="' + homeColor + '">Home</a>' +
           links +
         "</nav>" +
         '<div class="fn-actions">' +
@@ -138,107 +162,32 @@
     );
   }
 
-  // function buildFooter() {
-  //   var year = new Date().getFullYear();
-  //   var linkItems = PAGES.filter(function (p) { return p.id !== "home"; })
-  //     .map(function (p) { return "<li><a href=\"" + p.href + "\">" + escapeHtml(p.label) + "</a></li>"; })
-  //     .join("");
+  async function renderFooter() {
+    try {
+      const response = await fetch(BASE + 'assets/html/footer.html');
+      if (!response.ok) throw new Error('Could not fetch footer template');
 
-  //   return (
-  //     '<div class="fn-footer-inner">' +
-  //       '<div class="fn-footer-grid">' +
-  //         "<div>" +
-  //           '<a href="' + BASE + 'index.html' + '" class="fn-footer-brand"><span class="fn-dot">&#9670;</span>FireNate</a>' +
-  //           "<p>A small toolset for financial-independence planning: time to FI, loan and amortization math, buy-vs-invest trade-offs, and the long arc of compounding.</p>" +
-  //         "</div>" +
-  //         "<div>" +
-  //           "<h5>Calculators</h5>" +
-  //           "<ul>" + linkItems + "</ul>" +
-  //         "</div>" +
-  //         "<div>" +
-  //           "<h5>Resources</h5>" +
-  //           "<ul>" +
-  //             '<li><a href="https://www.ssa.gov/myaccount/" target="_blank" rel="noopener">SSA.gov &mdash; my Social Security</a></li>' +
-  //             '<li><a href="' + BASE + 'index.html' + '">About this project</a></li>' +
-  //           "</ul>" +
-  //         "</div>" +
-  //       "</div>" +
-  //       '<div class="fn-footer-bottom">' +
-  //         "<strong>Not financial advice.</strong> These tools are provided for general educational and planning purposes only and do not constitute financial, tax, or legal advice. All results are estimates based on the assumptions you enter &mdash; actual returns, rates, and outcomes will vary and are not guaranteed. Please consult a licensed financial advisor before making decisions about savings, investing, or retirement. &copy; " + year + " FireNate. Built for planning, not promises." +
-  //       "</div>" +
-  //     "</div>"
-  //   );
-  // }
+      const htmlText = await response.text();
+      const footerContainer = document.getElementById('site-footer');
+      if (!footerContainer) return;
 
-async function buildFooter(containerId) {
-  try {
-    // 1. Fetch the external HTML file
-    const response = await fetch('../assets/html/footer.html'); // Adjust path if footer.html is in a subfolder
-    if (!response.ok) throw new Error('Failed to load footer template');
-    
-    const htmlText = await response.text();
-    
-    // 2. Inject into the DOM container
-    const container = document.getElementById(containerId);
-    if (!container) return;
-    container.innerHTML = htmlText;
-
-    // 3. Populate dynamic content (Year)
-    const yearSpan = container.querySelector('#footer-year');
-    if (yearSpan) {
-      yearSpan.textContent = new Date().getFullYear();
-    }
-
-  } catch (error) {
-    console.error('Error loading footer:', error);
-  }
-} // /buildFooter
-
-// Frender Footer
-async function renderFooter() {
-  try {
-    // 1. Fetch the external HTML snippet
-    const response = await fetch('../assets/html/footer.html');
-    if (!response.ok) throw new Error('Could not fetch footer template');
-    
-    const htmlText = await response.text();
-
-    // 2. Find your target container on the page
-    const footerContainer = document.getElementById('site-footer');
-    if (footerContainer) {
       footerContainer.innerHTML = htmlText;
 
-      // 3. Update dynamic values (like current year) after injection
       const yearSpan = footerContainer.querySelector('#footer-year');
-      if (yearSpan) {
-        yearSpan.textContent = new Date().getFullYear();
-      }
+      if (yearSpan) yearSpan.textContent = new Date().getFullYear();
+    } catch (error) {
+      console.error('Error rendering footer:', error);
     }
-  } catch (error) {
-    console.error('Error rendering footer:', error);
   }
-}
 
-// How & Where to Call It:
-// This listens for the HTML page to finish loading before running renderFooter()
-document.addEventListener('DOMContentLoaded', renderFooter);
-
-// /Render Footer
-
-
-
-// Call it when the DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-  buildFooter('site-footer');
-});
-
-
-
-
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", renderFooter);
+  } else {
+    renderFooter();
+  }
 
   function init() {
     var navHost = document.getElementById("fn-site-nav");
-    //var footerHost = document.getElementById("fn-site-footer");
 
     if (navHost) {
       navHost.innerHTML = buildNav();
@@ -391,10 +340,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       document.addEventListener("fn-profile-change", syncProfileFields);
     }
-
-    // if (footerHost) {
-    //   footerHost.innerHTML = buildFooter();
-    // }
   }
 
   if (document.readyState === "loading") {
