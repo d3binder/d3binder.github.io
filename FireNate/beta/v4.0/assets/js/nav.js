@@ -156,11 +156,11 @@
         "</div>" +
         '<div class="fn-profile-field">' +
           '<label for="fnProfileRetireAge">Target retirement age</label>' +
-          '<input type="number" id="fnProfileRetireAge" min="1" max="120" step="1" placeholder="65">' +
+          '<input type="number" id="fnProfileRetireAge" min="1" max="120" step="1" placeholder="62">' +
         "</div>" +
         '<div class="fn-profile-field">' +
           '<label for="fnProfileReturn">Expected annual return</label>' +
-          '<div class="fn-profile-inputwrap"><input type="number" id="fnProfileReturn" step="0.1" placeholder="8.0">' +
+          '<div class="fn-profile-inputwrap"><input type="number" id="fnProfileReturn" step="0.1" placeholder="10.0">' +
             '<span class="fn-profile-affix">%</span>' +
           "</div>" +
         "</div>" +
@@ -355,6 +355,12 @@
         if (v === null || v === undefined) return "";
         return v;
       }
+      // like numOrEmpty, but falls back to a default display value instead
+      // of blank when the user hasn't set anything of their own yet
+      function numOrDefault(v, fallback) {
+        if (v === null || v === undefined || v === "") return fallback;
+        return v;
+      }
 
       // currency fields (income/savings/goal) display with commas + up to 2
       // decimals, matching every calculator page's own $ inputs
@@ -405,8 +411,8 @@
         if (incomeInput && active !== incomeInput) incomeInput.value = currencyOrEmpty(profile.currentIncome);
         if (savingsInput && active !== savingsInput) savingsInput.value = currencyOrEmpty(profile.currentSavings);
         if (goalInput && active !== goalInput) goalInput.value = currencyOrEmpty(profile.goalAmount);
-        if (retireAgeInput && active !== retireAgeInput) retireAgeInput.value = numOrEmpty(profile.retireAge);
-        if (returnInput && active !== returnInput) returnInput.value = numOrEmpty(profile.expectedReturn);
+        if (retireAgeInput && active !== retireAgeInput) retireAgeInput.value = numOrDefault(profile.retireAge, 62);
+        if (returnInput && active !== returnInput) returnInput.value = numOrDefault(profile.expectedReturn, 10);
         if (ageValue) {
           var age = window.FNProfile.getAge(profile);
           ageValue.textContent = age === null ? "—" : age;
