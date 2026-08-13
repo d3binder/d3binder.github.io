@@ -465,7 +465,15 @@
       syncProfileFields();
 
       if (birthdayInput) {
-        birthdayInput.addEventListener("change", function () {
+        // "input" (not "change") on purpose — native date inputs only fire
+        // "change" reliably once focus fully leaves the field, which doesn't
+        // happen consistently across browsers when someone types the date
+        // via keyboard instead of using the picker. "input" fires as soon as
+        // the typed value becomes a complete, valid date (it stays "" while
+        // any segment is still incomplete, so partial typing is harmless).
+        // ReverseTimeToFI's own birthday field already uses this same fix.
+        birthdayInput.addEventListener("input", function () {
+          if (!birthdayInput.value) return; // still mid-type, incomplete date
           window.FNProfile.set({ birthday: birthdayInput.value });
           ensureProfileDefaults();
           syncProfileFields();
