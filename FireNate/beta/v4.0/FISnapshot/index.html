@@ -296,6 +296,35 @@ function renderDashboard(){
   renderCoastCard(m);
 }
 
+// pop + color-cycle glow on the profile icon and panel so the jump from
+// this page over to the nav actually catches the eye, instead of a dropdown
+// silently appearing somewhere the user wasn't looking
+function pulseAttention(el){
+  if (!el) return;
+  el.classList.remove('fn-attn');
+  void el.offsetWidth; // force reflow so the animation restarts on repeat clicks
+  el.classList.add('fn-attn');
+  // animationend is the normal cleanup path, but it can go missing if the
+  // tab loses focus/visibility mid-animation (browsers throttle or pause
+  // rAF/animations in background tabs) — a timeout fallback guarantees the
+  // class always comes back off instead of leaving a stray one-time class
+  // sitting there silently doing nothing on a later, unrelated open.
+  var cleared = false;
+  var clear = function(){
+    if (cleared) return;
+    cleared = true;
+    el.classList.remove('fn-attn');
+  };
+  el.addEventListener('animationend', clear, { once: true });
+  setTimeout(clear, 1400);
+}
+function openProfilePanelWithAttention(){
+  const toggle = document.querySelector('.fn-profile-toggle');
+  if (toggle) toggle.click();
+  pulseAttention(document.querySelector('.fn-profile-toggle'));
+  pulseAttention(document.querySelector('.fn-profile-panel'));
+}
+
 // stopPropagation matters here: these buttons live outside #fn-site-nav, so
 // once the nested .click() below opens the profile panel, letting this
 // original click event keep bubbling to document would hit nav.js's own
@@ -304,13 +333,11 @@ function renderDashboard(){
 // panel that was just opened.
 $('fsOpenProfileBtn').addEventListener('click', (e) => {
   e.stopPropagation();
-  const btn = document.querySelector('.fn-profile-toggle');
-  if (btn) btn.click();
+  openProfilePanelWithAttention();
 });
 $('fsEditProfileBtn').addEventListener('click', (e) => {
   e.stopPropagation();
-  const btn = document.querySelector('.fn-profile-toggle');
-  if (btn) btn.click();
+  openProfilePanelWithAttention();
 });
 
 document.addEventListener('fn-profile-change', renderDashboard);
