@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script src="../assets/js/theme-init.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FireNate - Time To FI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/site.css">
+<link rel="stylesheet" href="../assets/css/timeToFI.css">
+<script src="../assets/js/theme.js" defer></script>
+<script src="../assets/js/user-profile.js" defer></script>
+<script src="../assets/js/nav.js" defer></script>
+<script src="../assets/js/profile-autofill.js" defer></script>
+<script>
+window.FN_BASE = "../"; window.FN_PAGE = "time-to-fi";
+window.FN_PROFILE_FIELDS = {
+  currentAge: "#age",
+  currentIncome: "#income",
+  currentSavings: "#savings",
+  goalAmount: "#goal",
+  retireAge: "#targetAge",
+  expectedReturn: "#returnPct"
+};
+window.FN_PROFILE_LEGACY_KEY = "fi-runway-inputs";
+</script>
+<style>
+  /* ---------- STICKY COLLAPSIBLE INPUT TOOLBAR ---------- */
+  :root{
+    --toolbar-bg:
+      radial-gradient(1200px 260px at 10% -40%, rgba(217,132,15,0.30), transparent 60%),
+      radial-gradient(900px 300px at 90% 140%, rgba(219,59,35,0.22), transparent 60%),
+      linear-gradient(115deg, #3B1B4A 0%, #1B3A52 38%, #123B33 68%, #2E2117 100%);
+    --toolbar-bg-solid:#221A30;
+    --toolbar-line: rgba(243,238,221,0.18);
+    --toolbar-text:#F8F3E8;
+    --toolbar-muted:#C9BFDA;
+    --toolbar-muted-2:#9C8FAE;
+    --gold-bright:#F3B23A;
+    --sage-bright:#4FDB8F;
+    --teal-bright:#4FD8E8;
+    --rust-bright:#FF7A5C;
+    --plum-bright:#D98CE8;
+  }
+  .ti-inputs{
+    position:sticky; top:60px; z-index:38;
+    background:var(--toolbar-bg);
+    color:var(--toolbar-text);
+    border-bottom:1px solid var(--toolbar-line);
+    box-shadow:0 12px 28px rgba(0,0,0,0.22);
+  }
+  .ti-summary-row{ display:flex; justify-content:center; padding:11px 24px 0; }
+  .ti-summary{
+    max-width:100%;
+    font-family:var(--mono); font-weight:600; font-size:12px;
+    background:linear-gradient(90deg, var(--gold-bright), var(--rust-bright) 35%, var(--plum-bright) 65%, var(--teal-bright));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:center;
+  }
+  .ti-toggle-row{ display:flex; justify-content:center; padding:8px 24px 12px; }
+  .ti-toggle{
+    display:inline-flex; align-items:center; gap:7px; flex-shrink:0;
+    background:rgba(217,140,232,0.16); border:1px solid var(--plum-bright); color:var(--plum-bright);
+    font-family:var(--mono); font-size:11px; font-weight:600; letter-spacing:.05em; text-transform:uppercase;
+    padding:6px 14px; border-radius:20px; cursor:pointer;
+    transition:background-color .15s, border-color .15s, color .15s; white-space:nowrap;
+  }
+  .ti-toggle:hover{ background:linear-gradient(90deg, var(--plum-bright), var(--teal-bright)); border-color:var(--plum-bright); color:var(--toolbar-bg-solid); }
+  .ti-toggle:active{ transform:translateY(1px); }
+  .ti-toggle:focus-visible{ outline:2px solid var(--plum-bright); outline-offset:2px; }
+  .ti-chevron{ transition:transform .2s ease; flex-shrink:0; }
+  .ti-inputs.collapsed .ti-chevron{ transform:rotate(180deg); }
+  .ti-content{
+    max-height:600px; overflow:hidden; opacity:1;
+    transition:max-height .25s ease, opacity .2s ease;
+  }
+  .ti-inputs.collapsed .ti-content{ max-height:0; opacity:0; pointer-events:none; }
+  .ti-inner{
+    padding:4px 24px 16px;
+    display:flex; align-items:flex-end; flex-wrap:wrap; gap:18px 30px;
+  }
+  .ti-fields{ display:flex; align-items:flex-end; flex-wrap:wrap; gap:16px; flex:1 1 auto; }
+  .ti-field{ display:flex; flex-direction:column; gap:6px; }
+  .ti-field label{
+    font-family:var(--mono); font-size:10.5px; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--toolbar-muted); white-space:nowrap;
+  }
+  .ti-input-row{ display:flex; align-items:center; gap:4px; }
+  .ti-prefix, .ti-suffix{ font-family:var(--mono); font-size:14px; color:var(--gold-bright); font-weight:500; }
+  .ti-field input{
+    background:rgba(0,0,0,0.22); border:1px solid transparent; border-radius:7px; color:var(--toolbar-text);
+    font-family:var(--mono); font-size:14.5px; font-weight:500; padding:8px 10px; outline:none;
+    transition:border-color .15s, box-shadow .15s; box-shadow:0 1px 2px rgba(0,0,0,0.2);
+    width:112px; font-variant-numeric:tabular-nums;
+  }
+  .ti-field input.ti-narrow{ width:66px; }
+  .ti-field input:focus{ border-color:var(--gold-bright); box-shadow:0 0 0 3px rgba(243,178,58,0.28); }
+  .ti-save{ display:flex; flex-direction:column; align-items:flex-end; gap:8px; margin-left:auto; }
+  .ti-save .save-status{ font-family:var(--mono); font-size:11.5px; letter-spacing:.04em; color:var(--toolbar-muted-2); white-space:nowrap; }
+  .ti-save .reset-btn{
+    background:rgba(255,122,92,0.08); border:1px solid var(--rust-bright); color:var(--rust-bright);
+    font-family:var(--mono); font-size:11.5px; letter-spacing:.05em; text-transform:uppercase;
+    padding:7px 16px; border-radius:20px; cursor:pointer; transition:background-color .15s, color .15s; white-space:nowrap;
+  }
+  .ti-save .reset-btn:hover{ background:var(--rust-bright); color:var(--toolbar-bg-solid); }
+  .ti-save .reset-btn:active{ transform:translateY(1px); }
+  @media (max-width:820px){
+    .ti-save{ margin-left:0; align-items:flex-start; flex-direction:row; justify-content:space-between; width:100%; }
+  }
+
+  /* ---------- inline SVG bar chart (no external chart library) ---------- */
+  #fiChart{ width:100%; height:auto; display:block; overflow:visible; }
+  .fi-bar-age{ fill:var(--gold); transition:opacity .15s ease; cursor:pointer; }
+  .fi-bar-freedom{ fill:var(--jade); transition:opacity .15s ease; cursor:pointer; }
+  .fi-bar-ref{ fill:var(--ink-faint); transition:opacity .15s ease; cursor:pointer; }
+  .fi-bar-group:hover rect{ opacity:0.75; }
+  .fi-grid-line{ stroke:var(--line); stroke-width:1; }
+  .fi-grid-label, .fi-axis-label{
+    font-family:var(--mono); font-size:10px; fill:var(--ink-faint);
+  }
+  #fiTooltip{
+    position:fixed; pointer-events:none; background:var(--surface); border:1px solid var(--line);
+    border-radius:10px; padding:9px 13px; font-family:var(--mono); font-size:12px; color:var(--ink);
+    opacity:0; transform:translate(-50%,-115%); transition:opacity .12s; z-index:50;
+    white-space:nowrap; box-shadow:0 8px 24px -10px rgba(0,0,0,0.45);
+  }
+  #fiTooltip .yr{ color:var(--ink-faint); margin-bottom:3px; }
+  #fiTooltip b{ color:var(--gold); }
+</style>
+</head>
+<body>
+<div id="fn-site-nav"></div>
+
+<div class="ti-inputs" id="tiInputs">
+  <div class="wrap ti-summary-row">
+    <div class="ti-summary" id="tiSummary">&mdash;</div>
+  </div>
+  <div class="ti-content" id="tiContent">
+    <div class="wrap ti-inner">
+      <div class="ti-fields">
+        <div class="ti-field">
+          <label for="income">Current Annual Income</label>
+          <div class="ti-input-row"><span class="ti-prefix">$</span><input type="text" inputmode="decimal" pattern="[0-9,.]*" id="income" value="90,000.00"></div>
+        </div>
+        <div class="ti-field">
+          <label for="goal">Goal Amount (FI Number)</label>
+          <div class="ti-input-row"><span class="ti-prefix">$</span><input type="text" step="1000" inputmode="decimal" pattern="[0-9,.]*" id="goal" value="1,500,000.00"></div>
+        </div>
+        <div class="ti-field">
+          <label for="savings">Amount Currently in Savings</label>
+          <div class="ti-input-row"><span class="ti-prefix">$</span><input type="text" step="1000" inputmode="decimal" pattern="[0-9,.]*" id="savings" value="80,000.00"></div>
+        </div>
+        <div class="ti-field">
+          <label for="age">Current Age</label>
+          <div class="ti-input-row"><input class="ti-narrow" type="number" id="age" value="30" min="0" max="100" step="0.5"></div>
+        </div>
+        <div class="ti-field">
+          <label for="returnPct">Expected Investment Return</label>
+          <div class="ti-input-row"><input class="ti-narrow" type="number" inputmode="decimal" pattern="[0-9,.]*" id="returnPct" value="8.5" min="-20" max="30" step="0.1"><span class="ti-suffix">%</span></div>
+        </div>
+        <div class="ti-field">
+          <label for="lifespan">Life Expectancy</label>
+          <div class="ti-input-row"><input class="ti-narrow" type="number" id="lifespan" value="79" min="0" max="120" step="1"></div>
+        </div>
+        <div class="ti-field">
+          <label for="targetAge">Desired Retirement Age</label>
+          <div class="ti-input-row"><input class="ti-narrow" type="number" id="targetAge" value="45" min="0" max="120" step="0.5"></div>
+        </div>
+      </div>
+      <div class="ti-save">
+        <span class="save-status" id="tiSaveStatus">Not saved yet</span>
+        <button type="button" id="resetBtn" class="reset-btn">Reset to defaults</button>
+      </div>
+    </div>
+  </div>
+  <div class="wrap ti-toggle-row">
+    <button id="tiToggle" type="button" class="ti-toggle" aria-expanded="true" aria-controls="tiContent">
+      <svg class="ti-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+      <span id="tiToggleLabel">Hide inputs</span>
+    </button>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">FIRE Nate - Time To Financial Independence</p>
+    <h1 id="pageTitleHeader">How fast can you <em>fly</em> to <br/>financial independence?</h1>
+    <p class="lede">Enter your numbers below. Every point on the runway shows what a given savings rate buys you — in years, and in age — assuming your investments keep compounding along the way.</p>
+  </header>
+
+  <h2 class="ledger-title" style="margin-top: 40px; margin-bottom: 4px;">Summary</h2>
+  <div class="status" id="statusStrip"></div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h2>Age at FI, against the years you get to keep</h2>
+      <span class="sub">STACKED BY SAVINGS RATE, MEASURED AGAINST LIFE EXPECTANCY</span>
+    </div>
+    <div class="chart-card">
+      <svg id="fiChart" viewBox="0 0 1120 340"></svg>
+      <div id="fiTooltip"></div>
+      <div class="legend-row">
+        <span class="legend-dot gold"></span> Age reaching FI
+        <span class="legend-dot jade"></span> Years of freedom after
+        <span class="legend-dot grey"></span> Average life span (reference)
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h2 id="FullLegerHeader">Full ledger</h2>
+      <span class="sub">0% — 100%, STEP 1%</span>
+    </div>
+    <div class="table-card">
+      <div class="table-scroll">
+        <table id="fiTable">
+          <thead>
+            <tr>
+              <th>Savings Rate</th>
+              <th>Expenses</th>
+              <th>Savings / Year</th>
+              <th>Savings / Month</th>
+              <th>Years to Goal</th>
+              <th>Age Reaching Goal</th>
+              <th>Δ vs. prev. row</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- <footer>
+    <ul style="list-style-type: none;">
+      <li style="color:gold;">Based on Nate Ellison's workbook &quot;Nates F.I.R.E. Spreadsheet&quot; Version 15.0</li>
+      <li style="color:#4FD1E8;">Not financial advice — a ledger, not a promise. Compounding assumes a constant annual return.</li>
+      <li style="color:#4FD1E8;">Cookies are used to store &amp; retrieve your last values on your local machine and are not used anywhere else.</li>
+      <li style="color:rgb(90, 110, 105);">Site Version: 2026.0807.1905.005 (Last Revision Published: 2026-08-07 19:05; By: NN; ) </li>
+  </ul>
+</footer> -->
+
+<footer id="site-footer"></footer>
+
+
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const fmtUSD = n => n.toLocaleString('en-US', {style:'currency', currency:'USD', maximumFractionDigits:0});
+const fmtNum = n => n.toLocaleString('en-US', {maximumFractionDigits:1});
+const parseCurrency = id => parseFloat(String($(id).value).replace(/,/g, '')) || 0;
+const formatCurrencyField = id => {
+  const raw = parseCurrency(id);
+  $(id).value = raw.toLocaleString('en-US', {maximumFractionDigits:2});
+};
+function sanitizeCurrencyInput(id){
+  const el = $(id);
+  const before = el.value;
+  const cursorFromEnd = before.length - (el.selectionStart ?? before.length);
+
+  // keep only digits, commas, and a single decimal point
+  let cleaned = before.replace(/[^0-9.,]/g, '');
+  const parts = cleaned.split('.');
+  if (parts.length > 2){
+    cleaned = parts[0] + '.' + parts.slice(1).join('');
+  }
+
+  if (cleaned !== before){
+    el.value = cleaned;
+    const newPos = Math.max(0, cleaned.length - cursorFromEnd);
+    el.setSelectionRange(newPos, newPos);
+  }
+}
+
+function yearsToGoal(P, C, G, r){
+  // P: current savings, C: annual contribution, G: goal, r: annual return (decimal)
+  if (P >= G) return 0;
+  if (C <= 0){
+    if (r <= 0 || P <= 0) return Infinity;
+    return Math.log(G / P) / Math.log(1 + r);
+  }
+  if (Math.abs(r) < 1e-9){
+    return (G - P) / C;
+  }
+  const k = C / r;
+  const x = (G + k) / (P + k);
+  if (x <= 0) return Infinity;
+  return Math.log(x) / Math.log(1 + r);
+}
+
+function rateNeededForAge(targetAge, currentAge, P, G, r, income){
+  const n = targetAge - currentAge;
+  if (P >= G) return {status:'already'};
+  if (n <= 0) return {status:'past'};
+  if (income <= 0) return {status:'unreachable', rateNeeded:Infinity};
+
+  let C;
+  if (Math.abs(r) < 1e-9){
+    C = (G - P) / n;
+  } else {
+    const x = Math.pow(1 + r, n);
+    C = (G - P * x) * r / (x - 1);
+  }
+  const rate = Math.max(0, (C / income) * 100);
+  if (rate > 100) return {status:'unreachable', rateNeeded: rate};
+  return {status:'ok', rate};
+}
+
+// ---------- sticky, collapsible input toolbar ----------
+const COLLAPSE_KEY = 'fi-runway-inputs-collapsed';
+const tiInputsEl = $('tiInputs');
+const tiToggle = $('tiToggle');
+const tiToggleLabel = $('tiToggleLabel');
+const tiSummary = $('tiSummary');
+const tiSaveStatus = $('tiSaveStatus');
+
+let inputsCollapsed = false;
+function setInputsCollapsed(collapsed){
+  inputsCollapsed = collapsed;
+  if (tiInputsEl) tiInputsEl.classList.toggle('collapsed', collapsed);
+  if (tiToggle) tiToggle.setAttribute('aria-expanded', String(!collapsed));
+  if (tiToggleLabel) tiToggleLabel.textContent = collapsed ? 'Show inputs' : 'Hide inputs';
+  try { localStorage.setItem(COLLAPSE_KEY, collapsed ? '1' : '0'); } catch(e) {}
+}
+
+function updateTiSummary(){
+  if (!tiSummary) return;
+  const income = parseCurrency('income');
+  const goal = parseCurrency('goal');
+  const savings = parseCurrency('savings');
+  const returnPct = parseFloat($('returnPct').value) || 0;
+  const targetAge = parseFloat($('targetAge').value);
+  tiSummary.textContent = `Income: ${fmtUSD(income)}  |  Savings: ${fmtUSD(savings)} → Goal: ${fmtUSD(goal)}  |  Return: ${fmtNum(returnPct)}%/yr  |  Retire at ${isFinite(targetAge) ? fmtNum(targetAge) : '—'}`;
+}
+
+function pad2(n){ return String(n).padStart(2, '0'); }
+function updateSaveStatus(){
+  if (!tiSaveStatus) return;
+  const d = new Date();
+  tiSaveStatus.textContent = `Last saved: ${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
+}
+
+if (tiToggle){
+  tiToggle.addEventListener('click', () => setInputsCollapsed(!inputsCollapsed));
+}
+
+function compute(){
+  const income = parseCurrency('income');
+  const goal = parseCurrency('goal');
+  const savings = parseCurrency('savings');
+  const age = parseFloat($('age').value) || 0;
+  const r = (parseFloat($('returnPct').value) || 0) / 100;
+  const lifespan = parseFloat($('lifespan').value) || 0;
+  const targetAge = parseFloat($('targetAge').value);
+
+  const rows = [];
+  let prevYears = null;
+  for (let rate = 0; rate <= 100; rate += 1){
+    const contribution = income * (rate / 100);
+    const expenses = income - contribution;
+    const years = yearsToGoal(savings, contribution, goal, r);
+    const diff = (prevYears === null || !isFinite(prevYears) || !isFinite(years)) ? null : (years - prevYears);
+    const ageAt = isFinite(years) ? age + years : Infinity;
+    const freedomYears = isFinite(ageAt) ? Math.max(lifespan - ageAt, 0) : null;
+    rows.push({rate, contribution, expenses, years, ageAt, diff, freedomYears});
+    prevYears = years;
+  }
+  return {income, goal, savings, age, r, lifespan, targetAge, rows};
+}
+
+function render(){
+  const {rows, lifespan, income, goal, savings, age, r, targetAge} = compute();
+  const maxDiff = Math.max(0.001, ...rows.map(r => (r.diff !== null && isFinite(r.diff)) ? Math.abs(r.diff) : 0));
+  const targetResult = isFinite(targetAge) ? rateNeededForAge(targetAge, age, savings, goal, r, income) : {status:'none'};
+  const targetRateRounded = (targetResult.status === 'ok') ? Math.round(targetResult.rate) : null;
+
+  // ---- status strip: nearest whole-number match to a "typical" 20% rate as a headline stat, plus fastest & current savings status
+  const alreadyThere = rows[0].years === 0;
+  const strip = $('statusStrip');
+  strip.innerHTML = '';
+  const add = (k, v, cls) => {
+    const div = document.createElement('div');
+    div.className = 'stat';
+    div.innerHTML = `<div class="k">${k}</div><div class="v ${cls||''}">${v}</div>`;
+    strip.appendChild(div);
+  };
+  if (alreadyThere){
+    add('Status', 'Already there', 'jade');
+  } else {
+    [5, 10, 15, 20].forEach(rate => {
+      const r = rows[rate];
+      add(`At ${rate}% savings rate`, isFinite(r.years) ? `${fmtNum(r.years)} yrs` : 'Never');
+    });
+  }
+
+  if (isFinite(targetAge)){
+    let label = `Rate to retire at ${fmtNum(targetAge)}`;
+    if (targetResult.status === 'already'){
+      add(label, 'Already there', 'target');
+    } else if (targetResult.status === 'past'){
+      add(label, 'Target age has passed', 'target');
+    } else if (targetResult.status === 'unreachable'){
+      add(label, 'Not possible', 'target');
+    } else {
+      add(label, `${fmtNum(targetResult.rate)}%`, 'target');
+    }
+  }
+
+  // ---- table
+  const tbody = $('tableBody');
+  tbody.innerHTML = '';
+  rows.forEach(row => {
+    const tr = document.createElement('tr');
+    if (row.rate % 10 === 0) tr.classList.add('milestone');
+    else if (row.rate % 10 === 5) tr.classList.add('milestone-mid');
+    if (row.rate === targetRateRounded) tr.classList.add('target-row');
+    if (row.years === 0) tr.classList.add('reached');
+
+    const yearsCell = row.years === 0 ? 'Reached' : (isFinite(row.years) ? `${fmtNum(row.years)}` : '<span class="never">Never</span>');
+    const ageCell = row.years === 0 ? '—' : (isFinite(row.ageAt) ? fmtNum(row.ageAt) : '<span class="never">—</span>');
+    let diffCell = '—';
+    if (row.diff !== null){
+      const mag = Math.abs(row.diff) / maxDiff; // 0..1, higher = bigger time saved by this extra 1%
+      // interpolate a faint-to-vivid jade heat scale for a light background
+      const hue = 150; // jade hue
+      const sat = 35 + mag * 40;
+      const textLight = 30 - mag * 8;
+      const color = `hsl(${hue}, ${sat}%, ${textLight}%)`;
+      const bg = `hsla(${hue}, ${sat}%, 88%, ${0.15 + mag * 0.35})`;
+      const sign = row.diff > 0 ? '+' : (row.diff < 0 ? '−' : '');
+      diffCell = `<span style="color:${color}; background:${bg}; padding:2px 7px; border-radius:4px;">${sign}${fmtNum(Math.abs(row.diff))} yrs</span>`;
+    }
+
+    tr.innerHTML = `
+      <td>${row.rate}%</td>
+      <td>${fmtUSD(row.expenses)}</td>
+      <td>${fmtUSD(row.contribution)}</td>
+      <td>${fmtUSD(row.contribution / 12)}</td>
+      <td>${yearsCell}</td>
+      <td>${ageCell}</td>
+      <td>${diffCell}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // ---- chart: stacked bars, one per milestone savings rate (0,5,10,...,100),
+  // bottom segment = age reaching FI, top segment = years of freedom remaining vs. life expectancy,
+  // plus a leading reference bar showing life expectancy alone.
+  const milestones = rows.filter(r => r.rate % 5 === 0);
+  const chartItems = [
+    { label: 'Life exp.', isRef: true, age: null, freedom: lifespan },
+    ...milestones.map(r => ({
+      label: r.rate + '%',
+      isRef: false,
+      age: isFinite(r.ageAt) ? r.ageAt : null,
+      freedom: r.freedomYears
+    }))
+  ];
+  renderChart(chartItems);
+
+  updateTiSummary();
+}
+
+// ---------- inline SVG bar chart (no external chart library) ----------
+const svgNS = 'http://www.w3.org/2000/svg';
+const fiSvg = $('fiChart');
+const fiTooltip = $('fiTooltip');
+
+function niceCeil(v){
+  if (v <= 0) return 1;
+  const mag = Math.pow(10, Math.floor(Math.log10(v)));
+  const norm = v / mag;
+  let step;
+  if (norm <= 1) step = 1; else if (norm <= 2) step = 2; else if (norm <= 5) step = 5; else step = 10;
+  return step * mag;
+}
+
+function renderChart(items){
+  const W = 1120, H = 340;
+  const padL = 50, padR = 10, padT = 16, padB = 34;
+  const plotW = W - padL - padR;
+  const plotH = H - padT - padB;
+
+  const totals = items.map(it => (it.age || 0) + (it.freedom || 0));
+  const niceMax = niceCeil(Math.max(...totals, 1));
+
+  fiSvg.innerHTML = '';
+
+  // gridlines
+  const steps = 5;
+  for (let i = 0; i <= steps; i++){
+    const val = niceMax * i / steps;
+    const y = padT + plotH - (val / niceMax) * plotH;
+    const line = document.createElementNS(svgNS, 'line');
+    line.setAttribute('x1', padL); line.setAttribute('x2', W - padR);
+    line.setAttribute('y1', y); line.setAttribute('y2', y);
+    line.setAttribute('class', 'fi-grid-line');
+    fiSvg.appendChild(line);
+
+    const label = document.createElementNS(svgNS, 'text');
+    label.setAttribute('x', padL - 8);
+    label.setAttribute('y', y + 4);
+    label.setAttribute('text-anchor', 'end');
+    label.setAttribute('class', 'fi-grid-label');
+    label.textContent = fmtNum(val);
+    fiSvg.appendChild(label);
+  }
+
+  const n = items.length;
+  const barGap = n > 15 ? 6 : 10;
+  const barW = Math.max((plotW / n) - barGap, 1);
+  const baseY = padT + plotH;
+
+  items.forEach((item, i) => {
+    const x = padL + i * (barW + barGap);
+    const group = document.createElementNS(svgNS, 'g');
+    group.setAttribute('class', 'fi-bar-group');
+
+    if (item.isRef){
+      const h = Math.max((item.freedom / niceMax) * plotH, item.freedom > 0 ? 1 : 0);
+      const rect = document.createElementNS(svgNS, 'rect');
+      rect.setAttribute('class', 'fi-bar-ref');
+      rect.setAttribute('x', x);
+      rect.setAttribute('y', baseY - h);
+      rect.setAttribute('width', barW);
+      rect.setAttribute('height', h);
+      rect.setAttribute('rx', 1.5);
+      group.appendChild(rect);
+
+      group.addEventListener('mousemove', (e) => {
+        fiTooltip.style.opacity = 1;
+        fiTooltip.style.left = e.clientX + 'px';
+        fiTooltip.style.top = e.clientY + 'px';
+        fiTooltip.innerHTML = `<div class="yr">Reference</div>Life expectancy <b>${fmtNum(item.freedom)}</b>`;
+      });
+      group.addEventListener('mouseleave', () => { fiTooltip.style.opacity = 0; });
+    } else {
+      const ageH = item.age !== null ? Math.max((item.age / niceMax) * plotH, item.age > 0 ? 1 : 0) : 0;
+      const freedomH = item.freedom !== null ? Math.max((item.freedom / niceMax) * plotH, item.freedom > 0 ? 1 : 0) : 0;
+
+      if (item.age !== null){
+        const rAge = document.createElementNS(svgNS, 'rect');
+        rAge.setAttribute('class', 'fi-bar-age');
+        rAge.setAttribute('x', x);
+        rAge.setAttribute('y', baseY - ageH);
+        rAge.setAttribute('width', barW);
+        rAge.setAttribute('height', ageH);
+        group.appendChild(rAge);
+
+        const rFreedom = document.createElementNS(svgNS, 'rect');
+        rFreedom.setAttribute('class', 'fi-bar-freedom');
+        rFreedom.setAttribute('x', x);
+        rFreedom.setAttribute('y', baseY - ageH - freedomH);
+        rFreedom.setAttribute('width', barW);
+        rFreedom.setAttribute('height', freedomH);
+        rFreedom.setAttribute('rx', 1.5);
+        group.appendChild(rFreedom);
+      }
+
+      group.addEventListener('mousemove', (e) => {
+        fiTooltip.style.opacity = 1;
+        fiTooltip.style.left = e.clientX + 'px';
+        fiTooltip.style.top = e.clientY + 'px';
+        fiTooltip.innerHTML = item.age !== null
+          ? `<div class="yr">Savings rate ${item.label}</div>Age at FI <b>${fmtNum(item.age)}</b><br>Years of freedom <b>${fmtNum(item.freedom)}</b>`
+          : `<div class="yr">Savings rate ${item.label}</div><b>Never reaches goal</b>`;
+      });
+      group.addEventListener('mouseleave', () => { fiTooltip.style.opacity = 0; });
+    }
+
+    const lbl = document.createElementNS(svgNS, 'text');
+    lbl.setAttribute('x', x + barW / 2);
+    lbl.setAttribute('y', H - padB + 16);
+    lbl.setAttribute('text-anchor', 'middle');
+    lbl.setAttribute('class', 'fi-axis-label');
+    lbl.textContent = item.label;
+    fiSvg.appendChild(lbl);
+
+    fiSvg.appendChild(group);
+  });
+}
+
+const STORAGE_KEY = 'fi-runway-inputs';
+const DEFAULTS = {income:'90000', goal:'1500000', savings:'80000', age:'30', returnPct:'7', lifespan:'79', targetAge:'45'};
+const CURRENCY_FIELDS = ['income', 'goal', 'savings'];
+const ALL_FIELDS = ['income','goal','savings','age','returnPct','lifespan','targetAge'];
+
+function saveInputs(){
+  const vals = {};
+  ALL_FIELDS.forEach(id => { vals[id] = $(id).value; });
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(vals)); } catch(e) { /* storage unavailable, ignore */ }
+  updateSaveStatus();
+}
+function loadInputs(){
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const vals = JSON.parse(raw);
+    Object.keys(vals).forEach(id => { if ($(id)) $(id).value = vals[id]; });
+  } catch(e) { /* storage unavailable or corrupt, ignore */ }
+}
+
+ALL_FIELDS.forEach(id => {
+  if (CURRENCY_FIELDS.includes(id)) return; // wired separately below with sanitization
+  $(id).addEventListener('input', () => { saveInputs(); render(); });
+});
+CURRENCY_FIELDS.forEach(id => {
+  $(id).addEventListener('input', () => { sanitizeCurrencyInput(id); saveInputs(); render(); });
+  $(id).addEventListener('blur', () => { formatCurrencyField(id); saveInputs(); });
+});
+
+$('resetBtn').addEventListener('click', () => {
+  Object.keys(DEFAULTS).forEach(id => { $(id).value = DEFAULTS[id]; });
+  if (window.FNProfileAutofill) window.FNProfileAutofill.apply(true);
+  CURRENCY_FIELDS.forEach(formatCurrencyField);
+  saveInputs();
+  render();
+});
+
+loadInputs();
+CURRENCY_FIELDS.forEach(formatCurrencyField);
+try { setInputsCollapsed(localStorage.getItem(COLLAPSE_KEY) === '1'); } catch(e) { setInputsCollapsed(false); }
+render();
+</script>
+</body>
+</html>

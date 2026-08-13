@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script src="../assets/js/theme-init.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FireNate - Safe Withdrawal Rate</title>
+<meta name="description" content="Stress-test your withdrawal rate against every real historical market cycle since 1928 — inflation-adjusted S&P 500 returns, cycle by cycle.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/site.css">
+<link rel="stylesheet" href="../assets/css/timeToFI.css">
+<script src="../assets/js/theme.js" defer></script>
+<script src="../assets/js/user-profile.js" defer></script>
+<script src="../assets/js/nav.js" defer></script>
+<script src="../assets/js/profile-autofill.js" defer></script>
+<script>
+window.FN_BASE = "../"; window.FN_PAGE = "safe-withdrawal-rate";
+window.FN_PROFILE_FIELDS = {
+  startPortfolio: "#startPortfolio"
+};
+window.FN_PROFILE_LEGACY_KEY = "swrInputs";
+</script>
+<style>
+  /* ---------- STICKY COLLAPSIBLE INPUT TOOLBAR ---------- */
+  :root{
+    --toolbar-bg:
+      radial-gradient(1200px 260px at 10% -40%, rgba(217,132,15,0.30), transparent 60%),
+      radial-gradient(900px 300px at 90% 140%, rgba(219,59,35,0.22), transparent 60%),
+      linear-gradient(115deg, #3B1B4A 0%, #1B3A52 38%, #123B33 68%, #2E2117 100%);
+    --toolbar-bg-solid:#221A30;
+    --toolbar-line: rgba(243,238,221,0.18);
+    --toolbar-text:#F8F3E8;
+    --toolbar-muted:#C9BFDA;
+    --toolbar-muted-2:#9C8FAE;
+    --gold-bright:#F3B23A;
+    --sage-bright:#4FDB8F;
+    --teal-bright:#4FD8E8;
+    --rust-bright:#FF7A5C;
+    --plum-bright:#D98CE8;
+  }
+  .swr-inputs{
+    position:sticky; top:60px; z-index:38;
+    background:var(--toolbar-bg);
+    color:var(--toolbar-text);
+    border-bottom:1px solid var(--toolbar-line);
+    box-shadow:0 12px 28px rgba(0,0,0,0.22);
+  }
+  .swr-summary-row{ display:flex; justify-content:center; padding:11px 24px 0; }
+  .swr-summary{
+    max-width:100%;
+    font-family:var(--mono); font-weight:600; font-size:12px;
+    background:linear-gradient(90deg, var(--gold-bright), var(--rust-bright) 35%, var(--plum-bright) 65%, var(--teal-bright));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:center;
+  }
+  .swr-toggle-row{ display:flex; justify-content:center; padding:8px 24px 12px; }
+  .swr-toggle{
+    display:inline-flex; align-items:center; gap:7px; flex-shrink:0;
+    background:rgba(217,140,232,0.16); border:1px solid var(--plum-bright); color:var(--plum-bright);
+    font-family:var(--mono); font-size:11px; font-weight:600; letter-spacing:.05em; text-transform:uppercase;
+    padding:6px 14px; border-radius:20px; cursor:pointer;
+    transition:background-color .15s, border-color .15s, color .15s; white-space:nowrap;
+  }
+  .swr-toggle:hover{ background:linear-gradient(90deg, var(--plum-bright), var(--teal-bright)); border-color:var(--plum-bright); color:var(--toolbar-bg-solid); }
+  .swr-toggle:active{ transform:translateY(1px); }
+  .swr-toggle:focus-visible{ outline:2px solid var(--plum-bright); outline-offset:2px; }
+  .swr-chevron{ transition:transform .2s ease; flex-shrink:0; }
+  .swr-inputs.collapsed .swr-chevron{ transform:rotate(180deg); }
+  .swr-content{
+    max-height:600px; overflow:hidden; opacity:1;
+    transition:max-height .25s ease, opacity .2s ease;
+  }
+  .swr-inputs.collapsed .swr-content{ max-height:0; opacity:0; pointer-events:none; }
+  .swr-inner{
+    padding:4px 24px 16px;
+    display:flex; align-items:flex-end; flex-wrap:wrap; gap:18px 30px;
+    max-width:1080px; margin:0 auto;
+  }
+  .swr-fields{ display:flex; align-items:flex-end; flex-wrap:wrap; gap:16px; flex:1 1 auto; }
+  .swr-field{ display:flex; flex-direction:column; gap:6px; }
+  .swr-field label{
+    font-family:var(--mono); font-size:10.5px; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--toolbar-muted); white-space:nowrap;
+  }
+  .swr-input-row{ display:flex; align-items:center; gap:4px; }
+  .swr-prefix, .swr-suffix{ font-family:var(--mono); font-size:14px; color:var(--gold-bright); font-weight:500; }
+  .swr-field input{
+    background:rgba(0,0,0,0.22); border:1px solid transparent; border-radius:7px; color:var(--toolbar-text);
+    font-family:var(--mono); font-size:14.5px; font-weight:500; padding:8px 10px; outline:none;
+    transition:border-color .15s, box-shadow .15s; box-shadow:0 1px 2px rgba(0,0,0,0.2);
+    width:112px; font-variant-numeric:tabular-nums;
+  }
+  .swr-field input.swr-narrow{ width:66px; }
+  .swr-field input:focus{ border-color:var(--gold-bright); box-shadow:0 0 0 3px rgba(243,178,58,0.28); }
+  .swr-save{ display:flex; flex-direction:column; align-items:flex-end; gap:8px; margin-left:auto; }
+  .swr-save .save-status{ font-family:var(--mono); font-size:11.5px; letter-spacing:.04em; color:var(--toolbar-muted-2); white-space:nowrap; }
+  .swr-save .reset-btn{
+    background:rgba(255,122,92,0.08); border:1px solid var(--rust-bright); color:var(--rust-bright);
+    font-family:var(--mono); font-size:11.5px; letter-spacing:.05em; text-transform:uppercase;
+    padding:7px 16px; border-radius:20px; cursor:pointer; transition:background-color .15s, color .15s; white-space:nowrap;
+  }
+  .swr-save .reset-btn:hover{ background:var(--rust-bright); color:var(--toolbar-bg-solid); }
+  .swr-save .reset-btn:active{ transform:translateY(1px); }
+  @media (max-width:820px){
+    .swr-save{ margin-left:0; align-items:flex-start; flex-direction:row; justify-content:space-between; width:100%; }
+  }
+
+  /* ---------- SUMMARY CARD ---------- */
+  .swr-summary-card{
+    margin-top:4px; position:relative; overflow:hidden;
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    padding:28px 28px 24px;
+  }
+  .swr-summary-card::before{
+    content:''; position:absolute; top:0; left:0; right:0; height:4px;
+    background:linear-gradient(90deg, var(--jade), var(--danger));
+  }
+  .swr-summary-card .ss-eyebrow{
+    font-family:var(--serif); font-size:clamp(18px,2.6vw,26px); font-weight:600;
+    color:var(--target); margin:0 0 6px;
+  }
+  .swr-summary-card .ss-amount-row{ display:flex; align-items:baseline; flex-wrap:wrap; gap:12px 14px; margin:0 0 8px; }
+  .swr-summary-card .ss-amount{
+    font-family:var(--serif); font-size:clamp(32px,6vw,52px); font-weight:600;
+    margin:0; line-height:1;
+  }
+  .swr-summary-card .ss-amount.good{ color:var(--jade); }
+  .swr-summary-card .ss-amount.warn{ color:var(--gold); }
+  .swr-summary-card .ss-amount.bad{ color:var(--danger); }
+  .swr-summary-card .ss-sub{ color:var(--ink-dim); font-size:14.5px; line-height:1.55; max-width:70ch; margin:0; }
+  .swr-summary-card .ss-sub b{ color:var(--ink); }
+  .swr-summary-card .ss-note{ color:var(--ink-faint); font-size:12.5px; line-height:1.55; max-width:70ch; margin:12px 0 0; }
+  @media (max-width:640px){ .swr-summary-card{ padding:22px 18px 20px; } }
+
+  /* ---------- SPAGHETTI CHART ---------- */
+  #swrChart{ width:100%; height:auto; display:block; overflow:visible; }
+  .swr-line-ok{ fill:none; stroke:var(--jade); stroke-width:1.4; opacity:0.45; }
+  .swr-line-fail{ fill:none; stroke:var(--danger); stroke-width:1.6; opacity:0.65; }
+  .swr-grid-line{ stroke:var(--line); stroke-width:1; }
+  .swr-grid-label, .swr-axis-label{ font-family:var(--mono); font-size:10px; fill:var(--ink-faint); }
+  .swr-zero-line{ stroke:var(--ink-faint); stroke-width:1.5; }
+
+  /* ---------- TABLE ---------- */
+  .swr-outcome-ok{ color:var(--jade); font-weight:600; }
+  .swr-outcome-fail{ color:var(--danger); font-weight:600; }
+</style>
+</head>
+<body>
+<div id="fn-site-nav"></div>
+
+<div class="swr-inputs" id="swrInputs">
+  <div class="wrap swr-summary-row">
+    <div class="swr-summary" id="swrSummary">&mdash;</div>
+  </div>
+  <div class="swr-content" id="swrContent">
+    <div class="swr-inner">
+      <div class="swr-fields">
+        <div class="swr-field">
+          <label for="startPortfolio">Starting Portfolio</label>
+          <div class="swr-input-row"><span class="swr-prefix">$</span><input type="text" inputmode="decimal" pattern="[0-9,.]*" id="startPortfolio" value="1,000,000.00"></div>
+        </div>
+        <div class="swr-field">
+          <label for="withdrawRate">Withdrawal Rate</label>
+          <div class="swr-input-row"><input class="swr-narrow" type="number" step="0.1" inputmode="decimal" id="withdrawRate" value="4" min="1" max="10"><span class="swr-suffix">%</span></div>
+        </div>
+        <div class="swr-field">
+          <label for="retireLength">Retirement Length</label>
+          <div class="swr-input-row"><input class="swr-narrow" type="number" id="retireLength" value="30" min="5" max="60" step="1"><span class="swr-suffix">yrs</span></div>
+        </div>
+        <div class="swr-field">
+          <label for="feeRate">Annual Fees</label>
+          <div class="swr-input-row"><input class="swr-narrow" type="number" step="0.05" inputmode="decimal" id="feeRate" value="0.10" min="0" max="3"><span class="swr-suffix">%</span></div>
+        </div>
+      </div>
+      <div class="swr-save">
+        <span class="save-status" id="swrSaveStatus">Not saved yet</span>
+        <button type="button" id="resetBtn" class="reset-btn">Reset to defaults</button>
+      </div>
+    </div>
+  </div>
+  <div class="wrap swr-toggle-row">
+    <button id="swrToggle" type="button" class="swr-toggle" aria-expanded="true" aria-controls="swrContent">
+      <svg class="swr-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+      <span id="swrToggleLabel">Hide inputs</span>
+    </button>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">FIRE Nate - Safe Withdrawal Rate</p>
+    <h1 id="pageTitleHeader">Would your number have <em>survived the real thing</em>?</h1>
+    <p class="lede">Every complete historical retirement window since 1928, using real (inflation-adjusted) S&amp;P 500 total returns. Same cycle-testing method used by tools like FIRECalc and cFIREsim.</p>
+  </header>
+
+  <h2 class="ledger-title" style="margin-top: 40px; margin-bottom: 4px;">Summary</h2>
+  <div class="swr-summary-card">
+    <p class="ss-eyebrow" id="ssEyebrow">Historical success rate</p>
+    <div class="ss-amount-row">
+      <p class="ss-amount" id="ssAmount">&mdash;</p>
+    </div>
+    <p class="ss-sub" id="ssSub">&mdash;</p>
+    <p class="ss-note" id="ssNote">Based on 98 years of S&amp;P 500 total returns (1928&ndash;2025) deflated by annual U.S. CPI inflation. Only start years with a complete, fully-observed retirement window are counted. Fees are deducted annually; withdrawals are held constant in today's dollars (real terms) for the length of retirement.</p>
+  </div>
+  <div class="status" id="statusStrip" style="margin-top:16px;"></div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h2>Every historical cycle, overlaid</h2>
+      <span class="sub">PORTFOLIO BALANCE BY YEAR INTO RETIREMENT, ONE LINE PER STARTING YEAR</span>
+    </div>
+    <div class="chart-card">
+      <svg id="swrChart" viewBox="0 0 1120 360"></svg>
+      <div class="legend-row">
+        <span class="legend-dot" style="background:var(--jade);"></span> Survived the full period
+        <span class="legend-dot" style="background:var(--danger);"></span> Ran out of money
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h2>Every starting year, in detail</h2>
+      <span class="sub" id="swrTableSub">BY START YEAR</span>
+    </div>
+    <div class="table-card">
+      <div class="table-scroll">
+        <table id="swrTable">
+          <thead>
+            <tr>
+              <th>Started</th>
+              <th>Ended</th>
+              <th>Lowest Balance</th>
+              <th>Ending Balance</th>
+              <th>Outcome</th>
+            </tr>
+          </thead>
+          <tbody id="swrTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer id="site-footer"></footer>
+
+<script>
+/* Real (inflation-adjusted) S&P 500 total annual returns, 1928-2025.
+   Source: nominal returns from NYU Stern (Damodaran), CPI from usinflationcalculator.com. */
+const SP500_REAL_RETURNS = [
+  [1928,0.463],[1929,-0.083],[1930,-0.2336],[1931,-0.3829],[1932,0.014],[1933,0.5804],
+  [1934,-0.0416],[1935,0.4358],[1936,0.2999],[1937,-0.3759],[1938,0.3205],[1939,0.003],
+  [1940,-0.1129],[1941,-0.1692],[1942,0.0746],[1943,0.1787],[1944,0.1704],[1945,0.3277],
+  [1946,-0.1545],[1947,-0.0804],[1948,-0.0222],[1949,0.1974],[1950,0.2913],[1951,0.1462],
+  [1952,0.1595],[1953,-0.0199],[1954,0.515],[1955,0.3313],[1956,0.0585],[1957,-0.1332],
+  [1958,0.3981],[1959,0.1128],[1960,-0.0134],[1961,0.2539],[1962,-0.0971],[1963,0.2104],
+  [1964,0.1493],[1965,0.1063],[1966,-0.1251],[1967,0.2008],[1968,0.0634],[1969,-0.1302],
+  [1970,-0.0202],[1971,0.0941],[1972,0.1508],[1973,-0.1931],[1974,-0.3324],[1975,0.2557],
+  [1976,0.1704],[1977,-0.1266],[1978,-0.0101],[1979,0.0649],[1980,0.1607],[1981,-0.136],
+  [1982,0.1339],[1983,0.1855],[1984,0.0177],[1985,0.2668],[1986,0.1628],[1987,0.0213],
+  [1988,0.1195],[1989,0.2546],[1990,-0.0803],[1991,0.2498],[1992,0.0436],[1993,0.0677],
+  [1994,-0.0124],[1995,0.3346],[1996,0.1911],[1997,0.3011],[1998,0.2632],[1999,0.1829],
+  [2000,-0.1202],[2001,-0.1425],[2002,-0.232],[2003,0.2547],[2004,0.0783],[2005,0.0138],
+  [2006,0.1203],[2007,0.0261],[2008,-0.3887],[2009,0.2645],[2010,0.1301],[2011,-0.0107],
+  [2012,0.1351],[2013,0.302],[2014,0.1173],[2015,0.0128],[2016,0.1034],[2017,0.1911],
+  [2018,-0.0647],[2019,0.2889],[2020,0.1662],[2021,0.227],[2022,-0.2411],[2023,0.211],
+  [2024,0.2136],[2025,0.148]
+];
+
+const $ = id => document.getElementById(id);
+const fmtUSD = n => n.toLocaleString('en-US', {style:'currency', currency:'USD', maximumFractionDigits:0});
+const fmtNum = n => n.toLocaleString('en-US', {maximumFractionDigits:1});
+const parseCurrency = id => parseFloat(String($(id).value).replace(/,/g, '')) || 0;
+const formatCurrencyField = id => {
+  const raw = parseCurrency(id);
+  $(id).value = raw.toLocaleString('en-US', {maximumFractionDigits:2});
+};
+function sanitizeCurrencyInput(id){
+  const el = $(id);
+  const before = el.value;
+  const cursorFromEnd = before.length - (el.selectionStart ?? before.length);
+  let cleaned = before.replace(/[^0-9.,]/g, '');
+  const parts = cleaned.split('.');
+  if (parts.length > 2){
+    cleaned = parts[0] + '.' + parts.slice(1).join('');
+  }
+  if (cleaned !== before){
+    el.value = cleaned;
+    const newPos = Math.max(0, cleaned.length - cursorFromEnd);
+    el.setSelectionRange(newPos, newPos);
+  }
+}
+function fmtUSDShort(n){
+  const sign = n < 0 ? '-' : '';
+  const abs = Math.abs(n);
+  if (abs >= 1e6) return sign + '$' + (abs / 1e6).toFixed(1) + 'M';
+  if (abs >= 1e3) return sign + '$' + Math.round(abs / 1e3) + 'K';
+  return sign + '$' + Math.round(abs);
+}
+
+// ---------- sticky, collapsible input toolbar ----------
+const SWR_COLLAPSE_KEY = 'swrInputsCollapsed';
+const swrInputsEl = $('swrInputs');
+const swrToggle = $('swrToggle');
+const swrToggleLabel = $('swrToggleLabel');
+const swrSummary = $('swrSummary');
+const swrSaveStatus = $('swrSaveStatus');
+
+let swrInputsCollapsed = false;
+function setSwrInputsCollapsed(collapsed){
+  swrInputsCollapsed = collapsed;
+  if (swrInputsEl) swrInputsEl.classList.toggle('collapsed', collapsed);
+  if (swrToggle) swrToggle.setAttribute('aria-expanded', String(!collapsed));
+  if (swrToggleLabel) swrToggleLabel.textContent = collapsed ? 'Show inputs' : 'Hide inputs';
+  try { localStorage.setItem(SWR_COLLAPSE_KEY, collapsed ? '1' : '0'); } catch(e) {}
+}
+
+function updateSwrSummary(){
+  if (!swrSummary) return;
+  const portfolio = parseCurrency('startPortfolio');
+  const rate = parseFloat($('withdrawRate').value) || 0;
+  const length = parseFloat($('retireLength').value) || 0;
+  const fee = parseFloat($('feeRate').value) || 0;
+  swrSummary.textContent = `Portfolio: ${fmtUSD(portfolio)}  |  Withdrawing: ${fmtNum(rate)}%/yr  |  Length: ${fmtNum(length)} years  |  Fees: ${fmtNum(fee)}%/yr`;
+}
+
+function swrPad2(n){ return String(n).padStart(2, '0'); }
+function updateSwrSaveStatus(){
+  if (!swrSaveStatus) return;
+  const d = new Date();
+  swrSaveStatus.textContent = `Last saved: ${swrPad2(d.getHours())}:${swrPad2(d.getMinutes())}:${swrPad2(d.getSeconds())}`;
+}
+
+if (swrToggle){
+  swrToggle.addEventListener('click', () => setSwrInputsCollapsed(!swrInputsCollapsed));
+}
+
+function simulateCycle(startIdx, years, portfolio, withdrawRate, feeRate){
+  const withdrawal = portfolio * (withdrawRate / 100);
+  let balance = portfolio;
+  const balances = [balance];
+  let minBalance = balance;
+  let failYear = null;
+  for (let y = 0; y < years; y++){
+    const r = SP500_REAL_RETURNS[startIdx + y][1];
+    balance = balance * (1 + r - feeRate / 100) - withdrawal;
+    if (balance < 0) balance = 0;
+    balances.push(balance);
+    if (balance < minBalance) minBalance = balance;
+    if (balance <= 0 && failYear === null && y < years - 1) failYear = SP500_REAL_RETURNS[startIdx][0] + y + 1;
+  }
+  return {
+    startYear: SP500_REAL_RETURNS[startIdx][0],
+    endYear: SP500_REAL_RETURNS[startIdx][0] + years,
+    balances,
+    minBalance,
+    endingBalance: balances[balances.length - 1],
+    survived: balances[balances.length - 1] > 0,
+    failYear
+  };
+}
+
+function compute(){
+  const portfolio = parseCurrency('startPortfolio');
+  const withdrawRate = parseFloat($('withdrawRate').value) || 0;
+  const years = Math.max(1, Math.min(90, parseFloat($('retireLength').value) || 30));
+  const feeRate = parseFloat($('feeRate').value) || 0;
+
+  const maxStartIdx = SP500_REAL_RETURNS.length - years - 1;
+  const cycles = [];
+  for (let i = 0; i <= maxStartIdx; i++){
+    cycles.push(simulateCycle(i, years, portfolio, withdrawRate, feeRate));
+  }
+
+  const successCount = cycles.filter(c => c.survived).length;
+  const successRate = cycles.length > 0 ? (successCount / cycles.length) * 100 : null;
+
+  return { portfolio, withdrawRate, years, feeRate, cycles, successCount, successRate };
+}
+
+function renderSummary(state){
+  const { withdrawRate, years, cycles, successCount, successRate } = state;
+  $('ssEyebrow').textContent = `${fmtNum(withdrawRate)}% withdrawal, ${fmtNum(years)}-year retirement`;
+  const amountEl = $('ssAmount');
+  amountEl.classList.remove('good', 'warn', 'bad');
+
+  if (successRate === null){
+    amountEl.textContent = 'Not enough data';
+    amountEl.classList.add('bad');
+    $('ssSub').innerHTML = `A ${fmtNum(years)}-year retirement needs a full historical window that doesn't exist in the 1928&ndash;2025 dataset. Try a shorter retirement length.`;
+    return;
+  }
+
+  amountEl.textContent = fmtNum(successRate) + '%';
+  amountEl.classList.add(successRate >= 95 ? 'good' : successRate >= 80 ? 'warn' : 'bad');
+
+  $('ssSub').innerHTML = `This plan survived <b>${successCount} of ${cycles.length}</b> complete historical ${fmtNum(years)}-year periods starting between <b>${cycles[0].startYear}</b> and <b>${cycles[cycles.length - 1].startYear}</b> &mdash; a <b>${fmtNum(successRate)}%</b> historical success rate.`;
+}
+
+function renderStatusStrip(state){
+  const { cycles, successRate } = state;
+  const strip = $('statusStrip');
+  strip.innerHTML = '';
+  const add = (k, v, cls) => {
+    const div = document.createElement('div');
+    div.className = 'stat';
+    div.innerHTML = `<div class="k">${k}</div><div class="v ${cls || ''}">${v}</div>`;
+    strip.appendChild(div);
+  };
+  if (!cycles.length){
+    add('Cycles tested', '0');
+    return;
+  }
+  const endings = cycles.map(c => c.endingBalance);
+  const worst = Math.min(...endings);
+  const best = Math.max(...endings);
+  add('Success rate', fmtNum(successRate) + '%', successRate >= 95 ? 'jade' : successRate >= 80 ? 'gold' : '');
+  add('Cycles tested', cycles.length, 'target');
+  add('Worst ending balance', fmtUSDShort(worst));
+  add('Best ending balance', fmtUSDShort(best), 'jade');
+}
+
+function renderTable(state){
+  const { cycles, years } = state;
+  $('swrTableSub').textContent = cycles.length ? `${cycles[0].startYear} — ${cycles[cycles.length - 1].startYear}` : '—';
+  const tbody = $('swrTableBody');
+  tbody.innerHTML = '';
+  cycles.forEach(c => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${c.startYear}</td>
+      <td>${c.endYear}</td>
+      <td>${fmtUSD(c.minBalance)}</td>
+      <td>${fmtUSD(c.endingBalance)}</td>
+      <td class="${c.survived ? 'swr-outcome-ok' : 'swr-outcome-fail'}">${c.survived ? 'Survived ✓' : 'Failed' + (c.failYear ? ' (' + c.failYear + ')' : '')}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+const svgNS = 'http://www.w3.org/2000/svg';
+const swrSvg = $('swrChart');
+
+function niceCeil(v){
+  if (v <= 0) return 1;
+  const mag = Math.pow(10, Math.floor(Math.log10(v)));
+  const norm = v / mag;
+  let step;
+  if (norm <= 1) step = 1; else if (norm <= 2) step = 2; else if (norm <= 5) step = 5; else step = 10;
+  return step * mag;
+}
+
+function renderChart(state){
+  const { cycles, years, portfolio } = state;
+  const W = 1120, H = 360;
+  const padL = 74, padR = 10, padT = 16, padB = 34;
+  const plotW = W - padL - padR;
+  const plotH = H - padT - padB;
+
+  swrSvg.innerHTML = '';
+  if (!cycles.length) return;
+
+  // cap y-axis at a reasonable multiple so a handful of runaway bull-market
+  // cycles don't crush the rest of the lines toward the bottom
+  const cap = portfolio * 5;
+  const rawMax = Math.max(...cycles.map(c => Math.max(...c.balances)), portfolio);
+  const niceMax = niceCeil(Math.min(rawMax, cap) * 1.05);
+
+  const steps = 5;
+  for (let i = 0; i <= steps; i++){
+    const val = niceMax * i / steps;
+    const y = padT + plotH - (val / niceMax) * plotH;
+    const line = document.createElementNS(svgNS, 'line');
+    line.setAttribute('x1', padL); line.setAttribute('x2', W - padR);
+    line.setAttribute('y1', y); line.setAttribute('y2', y);
+    line.setAttribute('class', 'swr-grid-line');
+    swrSvg.appendChild(line);
+
+    const label = document.createElementNS(svgNS, 'text');
+    label.setAttribute('x', padL - 10);
+    label.setAttribute('y', y + 4);
+    label.setAttribute('text-anchor', 'end');
+    label.setAttribute('class', 'swr-grid-label');
+    label.textContent = fmtUSDShort(val);
+    swrSvg.appendChild(label);
+  }
+
+  const labelStep = years <= 15 ? 2 : years <= 30 ? 5 : 10;
+  for (let y = 0; y <= years; y += labelStep){
+    const x = padL + (y / years) * plotW;
+    const lbl = document.createElementNS(svgNS, 'text');
+    lbl.setAttribute('x', x);
+    lbl.setAttribute('y', H - padB + 16);
+    lbl.setAttribute('text-anchor', 'middle');
+    lbl.setAttribute('class', 'swr-axis-label');
+    lbl.textContent = 'Yr ' + y;
+    swrSvg.appendChild(lbl);
+  }
+
+  cycles.forEach(c => {
+    const pts = c.balances.map((bal, i) => {
+      const x = padL + (i / years) * plotW;
+      const clamped = Math.min(bal, niceMax);
+      const y = padT + plotH - (clamped / niceMax) * plotH;
+      return x + ',' + y;
+    });
+    const path = document.createElementNS(svgNS, 'path');
+    path.setAttribute('d', 'M' + pts.join(' L'));
+    path.setAttribute('class', c.survived ? 'swr-line-ok' : 'swr-line-fail');
+    const title = document.createElementNS(svgNS, 'title');
+    title.textContent = `${c.startYear}–${c.endYear}: ${c.survived ? 'survived' : 'failed'} (ended ${fmtUSD(c.endingBalance)})`;
+    path.appendChild(title);
+    swrSvg.appendChild(path);
+  });
+}
+
+function render(){
+  const state = compute();
+  renderSummary(state);
+  renderStatusStrip(state);
+  renderTable(state);
+  renderChart(state);
+  updateSwrSummary();
+}
+
+const STORAGE_KEY = 'swrInputs';
+const DEFAULTS = {startPortfolio:'1000000', withdrawRate:'4', retireLength:'30', feeRate:'0.10'};
+const CURRENCY_FIELDS = ['startPortfolio'];
+const ALL_FIELDS = ['startPortfolio', 'withdrawRate', 'retireLength', 'feeRate'];
+
+function saveInputs(){
+  const vals = {};
+  ALL_FIELDS.forEach(id => { vals[id] = $(id).value; });
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(vals)); } catch(e) {}
+  updateSwrSaveStatus();
+}
+function loadInputs(){
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const vals = JSON.parse(raw);
+    Object.keys(vals).forEach(id => { if ($(id)) $(id).value = vals[id]; });
+  } catch(e) {}
+}
+
+ALL_FIELDS.forEach(id => {
+  if (CURRENCY_FIELDS.includes(id)) return;
+  $(id).addEventListener('input', () => { saveInputs(); render(); });
+});
+CURRENCY_FIELDS.forEach(id => {
+  $(id).addEventListener('input', () => { sanitizeCurrencyInput(id); saveInputs(); render(); });
+  $(id).addEventListener('blur', () => { formatCurrencyField(id); saveInputs(); });
+});
+
+$('resetBtn').addEventListener('click', () => {
+  Object.keys(DEFAULTS).forEach(id => { $(id).value = DEFAULTS[id]; });
+  if (window.FNProfileAutofill) window.FNProfileAutofill.apply(true);
+  CURRENCY_FIELDS.forEach(formatCurrencyField);
+  saveInputs();
+  render();
+});
+
+loadInputs();
+CURRENCY_FIELDS.forEach(formatCurrencyField);
+try { setSwrInputsCollapsed(localStorage.getItem(SWR_COLLAPSE_KEY) === '1'); } catch(e) { setSwrInputsCollapsed(false); }
+render();
+</script>
+</body>
+</html>
