@@ -87,6 +87,12 @@
             '<span class="fn-theme-switch-thumb"></span>' +
           "</button>" +
         "</div>" +
+        '<div class="fn-settings-divider"></div>' +
+        '<div class="fn-settings-row fn-settings-row-stack">' +
+          '<span class="fn-settings-label">Reset this device</span>' +
+          '<p class="fn-settings-hint">Clears every saved input, your profile, scenarios, and theme &mdash; starts fresh as a new visitor.</p>' +
+          '<button type="button" class="fn-reset-all">Clear all local data</button>' +
+        "</div>" +
       "</div>";
 
     var userIcon =
@@ -95,6 +101,28 @@
         '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>' +
         '<circle cx="12" cy="7" r="4"></circle>' +
       "</svg>";
+
+    // a bouncing "fill this out" hint shown only for brand-new visitors who
+    // haven't entered anything into their profile yet, and haven't already
+    // dismissed it by clicking elsewhere
+    var onboardHint = "";
+    try {
+      var onboardDismissed = localStorage.getItem("fn-onboard-dismissed");
+      if (!onboardDismissed && window.FNProfile) {
+        var existingProfile = window.FNProfile.get();
+        var profileKeys = ["birthday", "currentIncome", "currentSavings", "goalAmount", "retireAge", "expectedReturn"];
+        var hasProfileData = profileKeys.some(function (k) {
+          return existingProfile[k] !== undefined && existingProfile[k] !== null && existingProfile[k] !== "";
+        });
+        if (!hasProfileData) {
+          onboardHint =
+            '<span class="fn-onboard-hint" id="fnOnboardHint" role="status">' +
+              '<span class="fn-onboard-arrow" aria-hidden="true">&#9650;</span>' +
+              '<span class="fn-onboard-bubble">New here? Add your info</span>' +
+            "</span>";
+        }
+      }
+    } catch (e) {}
 
     var profilePanel =
       '<div class="fn-profile-panel" role="menu" aria-label="Your info">' +
@@ -153,6 +181,7 @@
         '<div class="fn-actions">' +
           '<button type="button" class="fn-profile-toggle" aria-label="Your info" aria-haspopup="true" aria-expanded="false">' +
             userIcon +
+            onboardHint +
           "</button>" +
           profilePanel +
           '<button type="button" class="fn-settings-toggle" aria-label="Settings" aria-haspopup="true" aria-expanded="false">' +
@@ -198,6 +227,18 @@
       var settingsToggle = navHost.querySelector(".fn-settings-toggle");
       var themeSwitch = navHost.querySelector(".fn-theme-switch");
       var profileToggle = navHost.querySelector(".fn-profile-toggle");
+
+      // dismiss the "New here?" onboarding hint on the very next click
+      // anywhere on the page (including the profile icon itself — clicking
+      // it to open the panel counts as engaging with the hint)
+      var onboardHint = document.getElementById("fnOnboardHint");
+      if (onboardHint) {
+        document.addEventListener("click", function dismissOnboardHint() {
+          var hint = document.getElementById("fnOnboardHint");
+          if (hint && hint.parentNode) hint.parentNode.removeChild(hint);
+          try { localStorage.setItem("fn-onboard-dismissed", "1"); } catch (e) {}
+        }, { once: true });
+      }
 
       function closeAllPanels() {
         navHost.classList.remove("fn-open", "fn-settings-open", "fn-profile-open");
@@ -268,6 +309,38 @@
       }
       document.addEventListener("fn-theme-change", syncThemeSwitch);
 
+      // ---------- RESET THIS DEVICE ----------
+      var resetAllBtn = navHost.querySelector(".fn-reset-all");
+      if (resetAllBtn) {
+        resetAllBtn.addEventListener("click", function (e) {
+          // don't let this bubble to the document-level "dismiss onboarding
+          // hint" listener — it would re-write fn-onboard-dismissed right
+          // after we clear it, defeating the "clean slate" reset below
+          e.stopPropagation();
+
+          var confirmed = window.confirm(
+            "Clear all saved data on this device?\n\n" +
+            "This wipes every calculator's saved inputs, your profile, saved scenarios, and theme preference. " +
+            "You'll start over as a brand-new visitor. This can't be undone."
+          );
+          if (!confirmed) return;
+
+          try { localStorage.clear(); } catch (e) {}
+          try { sessionStorage.clear(); } catch (e) {}
+          try {
+            document.cookie.split(";").forEach(function (c) {
+              var eqPos = c.indexOf("=");
+              var name = (eqPos > -1 ? c.substr(0, eqPos) : c).trim();
+              if (!name) return;
+              document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+              document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=" + window.location.pathname;
+            });
+          } catch (e) {}
+
+          window.location.reload();
+        });
+      }
+
       // ---------- USER PROFILE ----------
       var birthdayInput = navHost.querySelector("#fnProfileBirthday");
       var ageValue = navHost.querySelector("#fnProfileAgeValue");
@@ -283,15 +356,57 @@
         return v;
       }
 
+      // currency fields (income/savings/goal) display with commas + up to 2
+      // decimals, matching every calculator page's own $ inputs
+      function currencyOrEmpty(v) {
+        if (v === null || v === undefined || v === "") return "";
+        var n = typeof v === "number" ? v : parseFloat(v);
+        return isNaN(n) ? "" : n.toLocaleString("en-US", { maximumFractionDigits: 2 });
+      }
+      function parseCurrencyValue(str) {
+        var n = parseFloat(String(str).replace(/,/g, ""));
+        return isNaN(n) ? null : n;
+      }
+      function sanitizeCurrencyInput(el) {
+        var before = el.value;
+        var cursorFromEnd = before.length - (el.selectionStart == null ? before.length : el.selectionStart);
+        var cleaned = before.replace(/[^0-9.,]/g, "");
+        var parts = cleaned.split(".");
+        if (parts.length > 2) cleaned = parts[0] + "." + parts.slice(1).join("");
+        if (cleaned !== before) {
+          el.value = cleaned;
+          var newPos = Math.max(0, cleaned.length - cursorFromEnd);
+          el.setSelectionRange(newPos, newPos);
+        }
+      }
+      function wireCurrencyField(input, profileKey) {
+        if (!input) return;
+        input.addEventListener("input", function () {
+          sanitizeCurrencyInput(input);
+          var n = parseCurrencyValue(input.value);
+          var patch = {};
+          patch[profileKey] = n === null ? "" : n;
+          window.FNProfile.set(patch);
+        });
+        input.addEventListener("blur", function () {
+          input.value = currencyOrEmpty(parseCurrencyValue(input.value));
+        });
+      }
+
       function syncProfileFields() {
         if (!window.FNProfile) return;
         var profile = window.FNProfile.get();
-        if (birthdayInput) birthdayInput.value = numOrEmpty(profile.birthday);
-        if (incomeInput) incomeInput.value = numOrEmpty(profile.currentIncome);
-        if (savingsInput) savingsInput.value = numOrEmpty(profile.currentSavings);
-        if (goalInput) goalInput.value = numOrEmpty(profile.goalAmount);
-        if (retireAgeInput) retireAgeInput.value = numOrEmpty(profile.retireAge);
-        if (returnInput) returnInput.value = numOrEmpty(profile.expectedReturn);
+        // skip whichever field the user is actively typing in — wireCurrencyField's
+        // own "input" listener calls FNProfile.set(), which fires fn-profile-change
+        // and would otherwise re-run this on every keystroke, jamming full comma
+        // formatting into the field (and the cursor) mid-type
+        var active = document.activeElement;
+        if (birthdayInput && active !== birthdayInput) birthdayInput.value = numOrEmpty(profile.birthday);
+        if (incomeInput && active !== incomeInput) incomeInput.value = currencyOrEmpty(profile.currentIncome);
+        if (savingsInput && active !== savingsInput) savingsInput.value = currencyOrEmpty(profile.currentSavings);
+        if (goalInput && active !== goalInput) goalInput.value = currencyOrEmpty(profile.goalAmount);
+        if (retireAgeInput && active !== retireAgeInput) retireAgeInput.value = numOrEmpty(profile.retireAge);
+        if (returnInput && active !== returnInput) returnInput.value = numOrEmpty(profile.expectedReturn);
         if (ageValue) {
           var age = window.FNProfile.getAge(profile);
           ageValue.textContent = age === null ? "—" : age;
@@ -305,24 +420,9 @@
           syncProfileFields();
         });
       }
-      if (incomeInput) {
-        incomeInput.addEventListener("change", function () {
-          var n = parseFloat(String(incomeInput.value).replace(/[^0-9.\-]/g, ""));
-          window.FNProfile.set({ currentIncome: isNaN(n) ? "" : n });
-        });
-      }
-      if (savingsInput) {
-        savingsInput.addEventListener("change", function () {
-          var n = parseFloat(String(savingsInput.value).replace(/[^0-9.\-]/g, ""));
-          window.FNProfile.set({ currentSavings: isNaN(n) ? "" : n });
-        });
-      }
-      if (goalInput) {
-        goalInput.addEventListener("change", function () {
-          var n = parseFloat(String(goalInput.value).replace(/[^0-9.\-]/g, ""));
-          window.FNProfile.set({ goalAmount: isNaN(n) ? "" : n });
-        });
-      }
+      wireCurrencyField(incomeInput, "currentIncome");
+      wireCurrencyField(savingsInput, "currentSavings");
+      wireCurrencyField(goalInput, "goalAmount");
       if (retireAgeInput) {
         retireAgeInput.addEventListener("change", function () {
           var n = parseFloat(retireAgeInput.value);

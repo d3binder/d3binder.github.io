@@ -296,11 +296,19 @@ function renderDashboard(){
   renderCoastCard(m);
 }
 
-$('fsOpenProfileBtn').addEventListener('click', () => {
+// stopPropagation matters here: these buttons live outside #fn-site-nav, so
+// once the nested .click() below opens the profile panel, letting this
+// original click event keep bubbling to document would hit nav.js's own
+// "click outside the nav closes every panel" listener — which sees this
+// button (outside the nav) as the click target and immediately closes the
+// panel that was just opened.
+$('fsOpenProfileBtn').addEventListener('click', (e) => {
+  e.stopPropagation();
   const btn = document.querySelector('.fn-profile-toggle');
   if (btn) btn.click();
 });
-$('fsEditProfileBtn').addEventListener('click', () => {
+$('fsEditProfileBtn').addEventListener('click', (e) => {
+  e.stopPropagation();
   const btn = document.querySelector('.fn-profile-toggle');
   if (btn) btn.click();
 });

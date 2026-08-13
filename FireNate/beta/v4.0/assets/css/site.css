@@ -217,6 +217,41 @@
 }
 .fn-settings-label{ font-size:13.5px; color:var(--fn-text); }
 
+.fn-settings-divider{
+  height:1px;
+  background:var(--fn-line);
+  margin:14px 0;
+}
+
+.fn-settings-row-stack{
+  flex-direction:column;
+  align-items:stretch;
+  gap:8px;
+}
+
+.fn-settings-hint{
+  font-size:11.5px;
+  line-height:1.5;
+  color:var(--fn-text-faint);
+  margin:0;
+}
+
+.fn-reset-all{
+  width:100%;
+  background:none;
+  border:1px solid var(--fn-rust);
+  color:var(--fn-rust);
+  font-family:var(--fn-mono);
+  font-size:11.5px;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+  padding:8px 10px;
+  border-radius:7px;
+  cursor:pointer;
+  transition:background-color .15s, color .15s;
+}
+.fn-reset-all:hover{ background:var(--fn-rust); color:var(--fn-ink); }
+
 .fn-theme-switch{
   position:relative;
   width:42px;
@@ -252,6 +287,7 @@
 /* USER PROFILE (user icon + "your info" form)                            */
 /* ---------------------------------------------------------------------- */
 .fn-profile-toggle{
+  position:relative;
   display:inline-flex;
   align-items:center;
   justify-content:center;
@@ -268,6 +304,53 @@
 #fn-site-nav.fn-profile-open .fn-profile-toggle{
   border-color:var(--fn-azure);
   color:var(--fn-azure);
+}
+
+/* "New here?" onboarding hint — points up at the profile icon until the
+   visitor either fills in their info or clicks anywhere else on the page */
+.fn-onboard-hint{
+  position:absolute;
+  top:calc(100% + 8px);
+  right:-6px;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  pointer-events:none;
+  z-index:1002;
+  animation:fn-onboard-fade-in .35s ease;
+}
+.fn-onboard-arrow{
+  margin-right:10px;
+  font-size:18px;
+  line-height:1;
+  color:var(--fn-azure);
+  filter:drop-shadow(0 2px 5px rgba(0,0,0,0.45));
+  animation:fn-onboard-bounce 1.15s ease-in-out infinite;
+}
+.fn-onboard-bubble{
+  margin-top:1px;
+  background:var(--fn-panel);
+  border:1px solid var(--fn-azure);
+  color:var(--fn-text);
+  font-family:var(--fn-sans);
+  font-size:12px;
+  font-weight:600;
+  letter-spacing:.01em;
+  padding:8px 13px;
+  border-radius:10px;
+  white-space:nowrap;
+  box-shadow:0 12px 28px rgba(0,0,0,0.45);
+}
+@keyframes fn-onboard-bounce{
+  0%, 100%{ transform:translateY(0); }
+  50%{ transform:translateY(-5px); }
+}
+@keyframes fn-onboard-fade-in{
+  from{ opacity:0; transform:translateY(-4px); }
+  to{ opacity:1; transform:translateY(0); }
+}
+@media (max-width:480px){
+  .fn-onboard-hint{ right:-40px; }
 }
 
 .fn-profile-panel{
@@ -301,7 +384,14 @@
   color:var(--fn-text-dim);
   margin-bottom:5px;
 }
-.fn-profile-field input{
+/* #fn-site-nav-prefixed (ID-level specificity) so these reliably beat a
+   calculator page's own bare `input[type=number]` / `input` rules — those
+   have matching class-tier specificity, so without the ID anchor here the
+   page's later-loaded stylesheet wins the cascade and its (page-theme-aware)
+   text color leaks into the nav's always-dark profile panel, making text in
+   the "Target retirement age" / "Expected annual return" fields unreadable
+   in light mode (dark text on the panel's dark background). */
+#fn-site-nav .fn-profile-field input{
   width:100%;
   background:rgba(255,255,255,0.05);
   border:1px solid var(--fn-line);
@@ -313,10 +403,10 @@
   outline:none;
   transition:border-color .15s;
 }
-.fn-profile-field input:focus{ border-color:var(--fn-azure); }
-.fn-profile-field input::-webkit-calendar-picker-indicator{ filter:invert(0.7); cursor:pointer; }
+#fn-site-nav .fn-profile-field input:focus{ border-color:var(--fn-azure); }
+#fn-site-nav .fn-profile-field input::-webkit-calendar-picker-indicator{ filter:invert(0.7); cursor:pointer; }
 
-.fn-profile-inputwrap{
+#fn-site-nav .fn-profile-inputwrap{
   display:flex;
   align-items:center;
   gap:6px;
@@ -326,15 +416,16 @@
   padding:0 9px;
   transition:border-color .15s;
 }
-.fn-profile-inputwrap:focus-within{ border-color:var(--fn-azure); }
-.fn-profile-inputwrap input{
+#fn-site-nav .fn-profile-inputwrap:focus-within{ border-color:var(--fn-azure); }
+#fn-site-nav .fn-profile-inputwrap input{
   background:none;
   border:none;
+  color:var(--fn-text);
   padding:7px 0;
   flex:1;
   min-width:0;
 }
-.fn-profile-inputwrap input:focus{ border-color:transparent; }
+#fn-site-nav .fn-profile-inputwrap input:focus{ border-color:transparent; }
 .fn-profile-affix{ font-size:12.5px; color:var(--fn-text-faint); }
 
 .fn-profile-age-row{
