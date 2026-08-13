@@ -526,10 +526,10 @@ tfoot td.name{ font-family:var(--font-body); }
               <label for="birthday">Birthday</label>
               <div class="rtf-input-row" id="birthdayShell"><input type="date" id="birthday"></div>
               <div class="rtf-field-note" id="birthdayWarning" role="alert"></div>
-              <div class="rtf-field-hint">We have a bug: please select a date instead of typing it in. You can manually update the date after one is picked.</div>
+              <div class="rtf-field-hint"> </div>
             </div>
             <div class="rtf-field">
-              <label for="retireAge">Retire at age</label>
+              <label for="retireAge">Retirement Age</label>
               <input class="rtf-narrow" type="number" id="retireAge" min="18" max="100" step="1" value="60">
             </div>
           </div>
@@ -541,7 +541,7 @@ tfoot td.name{ font-family:var(--font-body); }
           <span class="rtf-group-label">Financials</span>
           <div class="rtf-fields">
             <div class="rtf-field">
-              <label for="currentSavings">Current savings</label>
+              <label for="currentSavings">Savings</label>
               <div class="rtf-input-row"><span class="rtf-prefix">$</span><input type="text" inputmode="decimal" class="currency-input" id="currentSavings" value="1000"></div>
             </div>
             <div class="rtf-field">
@@ -554,12 +554,12 @@ tfoot td.name{ font-family:var(--font-body); }
               <div class="rtf-input-row"><input class="rtf-narrow" type="number" id="inflationRate" min="0" max="20" step="0.1" value="3.0"><span class="rtf-suffix">%</span></div>
             </div>
             <div class="rtf-field">
-              <label for="withdrawalRate">Withdrawal rate</label>
+              <label for="withdrawalRate">Withdrawal Rate</label>
               <div class="rtf-input-row"><input class="rtf-narrow" type="number" id="withdrawalRate" min="1" max="20" step="0.1" value="4.0"><span class="rtf-suffix">%</span></div>
               <div class="rtf-field-hint">4% is the commonly recommended safe withdrawal rate.</div>
             </div>
             <div class="rtf-field">
-              <label for="roi">Return on investments</label>
+              <label for="roi">Annual Return Rate</label>
               <div class="rtf-input-row"><input class="rtf-narrow" type="number" id="roi" min="0" max="30" step="0.1" value="10.0"><span class="rtf-suffix">%</span></div>
             </div>
           </div>
@@ -570,7 +570,7 @@ tfoot td.name{ font-family:var(--font-body); }
           <span class="autosave-dot" id="autosaveDot"></span>
           <span id="lastSavedText">Not saved yet — your entries save automatically in this browser</span>
         </div>
-        <button type="button" class="reset-btn" id="resetBtn">Restore default values</button>
+        <button type="button" class="reset-btn" id="resetBtn">Reset to defaults</button>
       </div>
     </div>
   </div>
@@ -596,7 +596,7 @@ tfoot td.name{ font-family:var(--font-body); }
           <div class="lbl">on the runway to financial independence</div>
         </div>
         <div class="runway-mini">
-          <div><div class="v" id="heroCurrentAge">—</div><div class="l">Current age</div></div>
+          <div><div class="v" id="heroCurrentAge">—</div><div class="l">Age</div></div>
           <div><div class="v" id="heroRetireAge">—</div><div class="l">Target age</div></div>
           <div><div class="v" id="heroRetireDate">—</div><div class="l">Freedom date</div></div>
         </div>
@@ -627,7 +627,7 @@ tfoot td.name{ font-family:var(--font-body); }
           </div>
           <div class="info-grid">
             <div><div class="k">Birthday</div><div class="v" id="sumBirthday">—</div></div>
-            <div><div class="k">Current age</div><div class="v" id="sumCurrentAge">—</div></div>
+            <div><div class="k">Age</div><div class="v" id="sumCurrentAge">—</div></div>
             <div><div class="k">Freedom date</div><div class="v" id="sumRetireDate">—</div></div>
             <div><div class="k">Months to go</div><div class="v" id="sumMonths">—</div></div>
           </div>

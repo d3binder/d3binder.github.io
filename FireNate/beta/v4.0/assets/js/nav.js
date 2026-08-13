@@ -133,33 +133,33 @@
           '<input type="date" id="fnProfileBirthday">' +
         "</div>" +
         '<div class="fn-profile-field fn-profile-age-row">' +
-          '<span>Current age</span>' +
+          '<span>Age</span>' +
           '<span class="fn-profile-age-value" id="fnProfileAgeValue">&mdash;</span>' +
         "</div>" +
         '<div class="fn-profile-field">' +
-          '<label for="fnProfileIncome">Current annual income</label>' +
+          '<label for="fnProfileIncome">Annual Income</label>' +
           '<div class="fn-profile-inputwrap"><span class="fn-profile-affix">$</span>' +
             '<input type="text" inputmode="decimal" id="fnProfileIncome" placeholder="0">' +
           "</div>" +
         "</div>" +
         '<div class="fn-profile-field">' +
-          '<label for="fnProfileSavings">Current savings</label>' +
+          '<label for="fnProfileSavings">Savings</label>' +
           '<div class="fn-profile-inputwrap"><span class="fn-profile-affix">$</span>' +
             '<input type="text" inputmode="decimal" id="fnProfileSavings" placeholder="0">' +
           "</div>" +
         "</div>" +
         '<div class="fn-profile-field">' +
-          '<label for="fnProfileGoal">Goal amount (FI number)</label>' +
+          '<label for="fnProfileGoal">Goal Amount (FI Number)</label>' +
           '<div class="fn-profile-inputwrap"><span class="fn-profile-affix">$</span>' +
             '<input type="text" inputmode="decimal" id="fnProfileGoal" placeholder="0">' +
           "</div>" +
         "</div>" +
         '<div class="fn-profile-field">' +
-          '<label for="fnProfileRetireAge">Target retirement age</label>' +
+          '<label for="fnProfileRetireAge">Retirement Age</label>' +
           '<input type="number" id="fnProfileRetireAge" min="1" max="120" step="1" placeholder="62">' +
         "</div>" +
         '<div class="fn-profile-field">' +
-          '<label for="fnProfileReturn">Expected annual return</label>' +
+          '<label for="fnProfileReturn">Annual Return Rate</label>' +
           '<div class="fn-profile-inputwrap"><input type="number" id="fnProfileReturn" step="0.1" placeholder="10.0">' +
             '<span class="fn-profile-affix">%</span>' +
           "</div>" +

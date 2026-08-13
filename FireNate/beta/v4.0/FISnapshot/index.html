@@ -254,11 +254,11 @@ function renderStatGrid(m){
     div.innerHTML = `<div class="k">${k}</div><div class="v${cls ? ' ' + cls : ''}">${v}</div>` + (sub ? `<div class="sub">${sub}</div>` : '');
     grid.appendChild(div);
   };
-  add('Current age', m.age === null ? '—' : fmtNum(m.age));
-  add('Current savings', fmtUSD(m.savings), 'jade');
-  add('FI goal', fmtUSD(m.goal), 'gold');
-  add('Target retire age', fmtNum(m.retireAge), '', m.yearsToRetire === null ? '' : `${fmtNum(m.yearsToRetire)} years away`);
-  add('Expected return', fmtNum(m.r * 100) + '%', 'target');
+  add('Age', m.age === null ? '—' : fmtNum(m.age));
+  add('Savings', fmtUSD(m.savings), 'jade');
+  add('Goal Amount', fmtUSD(m.goal), 'gold');
+  add('Retirement Age', fmtNum(m.retireAge), '', m.yearsToRetire === null ? '' : `${fmtNum(m.yearsToRetire)} years away`);
+  add('Annual Return Rate', fmtNum(m.r * 100) + '%', 'target');
   add('Progress to goal', fmtNum(Math.max(0, m.progressPct)) + '%', 'jade');
 }
 
