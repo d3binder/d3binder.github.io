@@ -223,6 +223,31 @@
 
     if (navHost) {
       navHost.innerHTML = buildNav();
+
+      // backfill retireAge/expectedReturn defaults on load too, not just
+      // reactively when a field changes in this panel — a profile set up
+      // (birthday/income/savings/goal) before these two fields existed, or
+      // in a session that never opened "Your info" since, would otherwise
+      // permanently lack them, and every other page's own reset-to-profile
+      // logic (e.g. Time to FI's "Reset to defaults") correctly skips a
+      // field it finds genuinely unset. Gated on the profile already having
+      // OTHER real data so a truly blank new-visitor profile is left alone
+      // (this also runs before onboardHint's own "is this a new user?"
+      // check further down, so it must not fire for a real first-time visit).
+      (function backfillDefaultsIfEngaged() {
+        if (!window.FNProfile) return;
+        var profile = window.FNProfile.get();
+        var otherKeys = ["birthday", "currentIncome", "currentSavings", "goalAmount"];
+        var hasOtherData = otherKeys.some(function (k) {
+          return profile[k] !== undefined && profile[k] !== null && profile[k] !== "";
+        });
+        if (!hasOtherData) return;
+        var patch = {};
+        if (profile.retireAge === undefined || profile.retireAge === null || profile.retireAge === "") patch.retireAge = 62;
+        if (profile.expectedReturn === undefined || profile.expectedReturn === null || profile.expectedReturn === "") patch.expectedReturn = 10;
+        if (Object.keys(patch).length) window.FNProfile.set(patch);
+      })();
+
       var toggle = navHost.querySelector(".fn-nav-toggle");
       var settingsToggle = navHost.querySelector(".fn-settings-toggle");
       var themeSwitch = navHost.querySelector(".fn-theme-switch");
@@ -362,6 +387,24 @@
         return v;
       }
 
+      // once someone starts filling out ANY part of their profile, actually
+      // write the retireAge/expectedReturn defaults into storage (not just
+      // display them) — other pages like FI Snapshot read window.FNProfile
+      // directly and have no idea about nav.js's display-only fallback, so
+      // without this their calculations silently treat those fields as unset
+      function ensureProfileDefaults() {
+        if (!window.FNProfile) return;
+        var profile = window.FNProfile.get();
+        var patch = {};
+        if (profile.retireAge === undefined || profile.retireAge === null || profile.retireAge === "") {
+          patch.retireAge = 62;
+        }
+        if (profile.expectedReturn === undefined || profile.expectedReturn === null || profile.expectedReturn === "") {
+          patch.expectedReturn = 10;
+        }
+        if (Object.keys(patch).length) window.FNProfile.set(patch);
+      }
+
       // currency fields (income/savings/goal) display with commas + up to 2
       // decimals, matching every calculator page's own $ inputs
       function currencyOrEmpty(v) {
@@ -396,6 +439,7 @@
         });
         input.addEventListener("blur", function () {
           input.value = currencyOrEmpty(parseCurrencyValue(input.value));
+          ensureProfileDefaults();
         });
       }
 
@@ -423,6 +467,7 @@
       if (birthdayInput) {
         birthdayInput.addEventListener("change", function () {
           window.FNProfile.set({ birthday: birthdayInput.value });
+          ensureProfileDefaults();
           syncProfileFields();
         });
       }
@@ -433,12 +478,14 @@
         retireAgeInput.addEventListener("change", function () {
           var n = parseFloat(retireAgeInput.value);
           window.FNProfile.set({ retireAge: isNaN(n) ? "" : n });
+          ensureProfileDefaults();
         });
       }
       if (returnInput) {
         returnInput.addEventListener("change", function () {
           var n = parseFloat(returnInput.value);
           window.FNProfile.set({ expectedReturn: isNaN(n) ? "" : n });
+          ensureProfileDefaults();
         });
       }
       if (clearBtn) {
