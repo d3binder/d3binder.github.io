@@ -406,10 +406,38 @@
 
     <div class="versions">
 
-      <a class="version-card is-active is-live-green" href="v4.0/index.html">
+      <a class="version-card is-disabled" href="v4.2/index.html" aria-disabled="true" tabindex="-1" onclick="return false;">
+        <div class="version-icon">B.4.2</div>
+        <div class="version-info">
+          <p class="name">Version 4.2</p>
+          <p class="path">/beta/v4.2</p>
+          <p class="notes">T.B.D.</p>
+        </div>
+        <span class="status-pill disabled">⛔ Disabled</span>
+      </a>
+
+      <a class="version-card is-active is-live-green" href="v4.1/index.html">
+        <div class="version-icon">B.4.1</div>
+        <div class="version-info">
+          <p class="name">Version 4.1 — Current</p>
+          <p class="path">/beta/v4.1</p>
+          <p class="notes"><ul>
+            <li>Full "Your info" profile panel — quick snapshot via camera icon, an automatic safety backup before "Clear my info", and a hover/tap quick-load menu for saved profiles</li>
+            <li>New Profile Manager page — save, load, delete, and compare named snapshots of your plan side by side</li>
+            <li>Snapshots, backups, exports, and imports now capture every calculator's own saved inputs too, not just your shared profile — one save covers your whole plan across the site</li>
+            <li>Export your saved profiles to a JSON file and import them back in, with an automatic backup made before any import that would overwrite your live data</li>
+            <li>Fun, unmistakable confirmation animations for taking a snapshot, loading a profile, and clearing your data</li>
+            <li>Hamburger menu and quick-load flyout both cap their height with scroll fades and hover-to-auto-scroll</li>
+          </ul></p>
+          <p class="cta-hint">Click to open the current build</p>
+        </div>
+        <span class="status-pill active">✔ Current</span>
+      </a>
+
+      <a class="version-card is-active is-live-orange" href="v4.0/index.html">
         <div class="version-icon">B.4.0</div>
         <div class="version-info">
-          <p class="name">Version 4.0 — Current</p>
+          <p class="name">Version 4.0 — Preview</p>
           <p class="path">/beta/v4.0</p>
           <p class="notes"><ul>
             <li>FI Snapshot dashboard — age, savings, and goal progress pulled straight from your saved profile</li>
@@ -418,9 +446,9 @@
             <li>Emergency Fund calculator — coverage targets, funded progress, and payoff projection</li>
             <li>"New!" ribbons on the homepage, reordered to lead with the FI Snapshot dashboard</li>
           </ul></p>
-          <p class="cta-hint">Click to open the current build</p>
+          <p class="cta-hint">Click to open the preview</p>
         </div>
-        <span class="status-pill active">✔ Current</span>
+        <span class="status-pill active">✔ Preview</span>
       </a>
 
       <a class="version-card is-active is-live-orange" href="v3.1/index.html">
@@ -528,7 +556,7 @@
           <li style="color:var(--accent)">No promises are made or implied.</li>
           <li style="color:var(--text-dim)">Always consult a licensed professional before making any changes, decisions, or actions.</li>
           <li style="color:goldenrod;">This site uses cookies, but no information is used for tracking purposes, and all information stays on your local device.</li>
-          <li style="color:var(--green-bright);">Page Last Updated: 2026-08-12 22:42</li>
+          <li style="color:var(--green-bright);">Page Last Updated: 2026-08-14</li>
       </ul>
       </footer>
   </div>

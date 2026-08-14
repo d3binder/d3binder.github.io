@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script src="../assets/js/theme-init.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Retirement, HSA &amp; Social Security Limits | FireNate</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/site.css">
+<!-- <link rel="stylesheet" href="../assets/css/timeToFI.css"> -->
+<script src="../assets/js/theme.js" defer></script>
+<script src="../assets/js/user-profile.js" defer></script>
+<script src="../assets/js/nav.js" defer></script>
+<script>window.FN_BASE = "../"; window.FN_PAGE = "contribution-limits";</script>
+<style>
+  :root{
+    /* ---- Palette: matches the rest of the site — tweak here if it ever drifts ---- */
+    --sage:        #6f9271;
+    --sage-dark:   #4f7052;
+    --sage-tint:   #eaf2ea;
+    --red:         #c1594a;
+    --red-dark:    #a2453a;
+    --red-tint:    #fbeae8;
+    --blue:        #3f6b8a;
+    --blue-dark:   #2c4f68;
+    --blue-tint:   #eaf1f6;
+    --gold:        #b8863b;
+    --gold-dark:   #92692a;
+    --gold-tint:   #f8f0e2;
+    --ink:         #2b2f2c;
+    --ink-soft:    #6b6f6c;
+    --paper:       #f7f7f4;
+    --card:        #ffffff;
+    --line:        #e3e2dc;
+    --shadow:      0 2px 10px rgba(30,30,25,0.06);
+    --radius:      14px;
+    --badge-bg:    #2b2f2c;
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --nav-offset:  0px; /* set at runtime to the site nav's rendered height */
+  }
+
+  /* ---------- VIBRANT DARK MODE ---------- */
+  :root[data-theme="dark"]{
+    --sage:        #4FDB8F;
+    --sage-dark:   #7DE8AC;
+    --sage-tint:   #17331F;
+    --red:         #FF7A5C;
+    --red-dark:    #FFA089;
+    --red-tint:    #3D2018;
+    --blue:        #4FD8E8;
+    --blue-dark:   #7DE4EE;
+    --blue-tint:   #17313A;
+    --gold:        #F3B23A;
+    --gold-dark:   #F8CC7A;
+    --gold-tint:   #332812;
+    --ink:         #F3EEE4;
+    --ink-soft:    #B8A8C0;
+    --paper:       #15111A;
+    --card:        #1E1826;
+    --line:        rgba(255,255,255,0.14);
+    --badge-bg:    #2A2140;
+  }
+
+  *{ box-sizing: border-box; }
+
+  body{
+    margin:0;
+    font-family: var(--font);
+    background: var(--paper);
+    color: var(--ink);
+    line-height: 1.45;
+  }
+
+  a{ color: var(--blue); }
+
+  .wrap{
+    max-width: 1160px;
+    margin: 0 auto;
+    padding: 0 20px 60px;
+  }
+
+  /* ---------- Header ---------- */
+  .top-nav{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding: 16px 20px;
+    max-width: 1160px;
+    margin: 0 auto;
+  }
+  .brand{
+    font-weight: 800;
+    letter-spacing: .5px;
+    color: var(--sage-dark);
+    text-decoration: none;
+    font-size: 1.05rem;
+  }
+  .back-link{
+    font-size: .9rem;
+    color: var(--ink-soft);
+    text-decoration: none;
+  }
+  .back-link:hover{ color: var(--sage-dark); }
+
+  header.hero{
+    text-align:center;
+    padding: 6px 20px 26px;
+  }
+  header.hero h1{
+    font-size: 2rem;
+    margin: 0 0 8px;
+    color: var(--ink);
+  }
+  header.hero p.sub{
+    max-width: 680px;
+    margin: 0 auto;
+    color: var(--ink-soft);
+    font-size: 1.02rem;
+  }
+
+  .banner{
+    background: var(--blue-tint);
+    border: 1px solid #d7e3ea;
+    color: var(--blue-dark);
+    text-align:center;
+    padding: 12px 18px;
+    border-radius: var(--radius);
+    font-weight: 600;
+    margin: 18px 0 8px;
+  }
+  .banner b{ color: var(--red-dark); }
+
+  /* ---------- Quicklinks ---------- */
+  .quicklinks{
+    display:flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin: 18px 0 4px;
+  }
+  .quicklinks a{
+    font-size: .82rem;
+    font-weight: 700;
+    color: var(--ink-soft);
+    text-decoration: none;
+    background: var(--card);
+    border: 1px solid var(--line);
+    padding: 6px 14px;
+    border-radius: 999px;
+    transition: color .15s ease, border-color .15s ease;
+  }
+  .quicklinks a:hover{ color: var(--sage-dark); border-color: var(--sage); }
+
+  /* ---------- Sections ---------- */
+  section.block{ margin-top: 40px; }
+  .section-head{
+    display:flex;
+    align-items:center;
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+  .section-num{
+    flex: none;
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: var(--badge-bg);
+    color: #fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight: 800;
+    font-size: .95rem;
+  }
+  .section-head h2{
+    margin: 0;
+    font-size: 1.3rem;
+  }
+  .section-head p{
+    margin: 2px 0 0;
+    color: var(--ink-soft);
+    font-size: .9rem;
+  }
+
+  /* ---------- Table card ---------- */
+  .card{
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .card-head{
+    padding: 12px 18px;
+    font-weight: 800;
+    color: #fff;
+    font-size: .95rem;
+    letter-spacing: .02em;
+  }
+  .card.hsa .card-head{ background: var(--sage); }
+  .card.k401 .card-head{ background: var(--gold); }
+  .card.ira .card-head{ background: var(--blue); }
+  .card.ss .card-head{ background: var(--badge-bg); }
+
+  .table-scroll{
+    overflow-x: auto;
+  }
+
+  table.limits{
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .92rem;
+    min-width: 560px;
+  }
+  table.limits th, table.limits td{
+    padding: 12px 16px;
+    text-align: right;
+    white-space: nowrap;
+  }
+  table.limits th:first-child, table.limits td:first-child{
+    text-align: left;
+  }
+  table.limits thead th{
+    background: var(--paper);
+    color: var(--ink-soft);
+    font-size: .74rem;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    font-weight: 700;
+    border-bottom: 2px solid var(--line);
+  }
+  table.limits tbody tr{
+    border-bottom: 1px solid var(--line);
+    transition: box-shadow .12s;
+  }
+  table.limits tbody tr:last-child{ border-bottom: none; }
+  table.limits tbody tr:hover{ box-shadow: inset 0 0 0 999px rgba(43,47,44,0.045); }
+  table.limits tbody td{
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+  }
+  table.limits tbody td:first-child{
+    font-weight: 700;
+  }
+  table.limits tbody tr.current-year{
+    background: var(--sage-tint);
+  }
+  table.limits tbody tr.next-year{
+    background: var(--gold-tint);
+  }
+  .year-tag{
+    display: inline-block;
+    margin-left: 8px;
+    font-size: .66rem;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 999px;
+    vertical-align: middle;
+  }
+  .year-tag.this-year{ background: var(--sage); color: #fff; }
+  .year-tag.next-year{ background: var(--gold); color: #fff; }
+  .na{ color: var(--line); }
+
+  .table-note{
+    padding: 14px 18px 18px;
+    font-size: .82rem;
+    color: var(--ink-soft);
+    border-top: 1px solid var(--line);
+  }
+  .table-note strong{ color: var(--ink); }
+  .table-note .projected-flag{
+    color: var(--gold-dark);
+    font-weight: 700;
+  }
+
+  .callout{
+    margin-top: 14px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-size: .88rem;
+    color: var(--ink-soft);
+  }
+  .callout strong{ color: var(--ink); }
+
+  /* ---------- Social Security stat grid ---------- */
+  .stat-grid{
+    display:grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--line);
+  }
+  @media (max-width: 760px){ .stat-grid{ grid-template-columns: repeat(2, 1fr); } }
+
+  .stat{
+    background: var(--card);
+    padding: 16px 18px;
+  }
+  .stat .stat-label{
+    font-size: .74rem;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: var(--ink-soft);
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .stat .stat-value{
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+  .stat .stat-note{
+    font-size: .76rem;
+    color: var(--ink-soft);
+    margin-top: 4px;
+  }
+
+  /* ---------- Important links grid ---------- */
+  .link-grid{
+    display:grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+  @media (max-width: 760px){ .link-grid{ grid-template-columns: 1fr; } }
+
+  .link-card{
+    display:flex;
+    align-items:flex-start;
+    gap: 12px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--sage);
+    border-radius: 10px;
+    padding: 14px 16px;
+    text-decoration: none;
+    box-shadow: var(--shadow);
+    transition: transform .12s ease, border-left-color .12s ease;
+  }
+  .link-card:hover{ transform: translateY(-1px); border-left-color: var(--blue); }
+  .link-card.ss{ border-left-color: var(--badge-bg); }
+  .link-card .link-title{
+    font-weight: 700;
+    color: var(--ink);
+    font-size: .95rem;
+    margin-bottom: 3px;
+  }
+  .link-card .link-desc{
+    font-size: .82rem;
+    color: var(--ink-soft);
+    line-height: 1.4;
+  }
+  .link-card .link-arrow{
+    flex: none;
+    color: var(--ink-soft);
+    font-size: 1.1rem;
+    margin-left: auto;
+    padding-left: 8px;
+  }
+
+  /* ---------- Footer ---------- */
+  footer{
+    margin-top: 46px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+  }
+  footer p{
+    color: var(--ink-soft);
+    font-size: .82rem;
+    max-width: 780px;
+    margin: 0 0 8px;
+  }
+  footer .sources{
+    font-size: .78rem;
+    color: var(--ink-soft);
+  }
+  footer .sources a{ color: var(--blue); }
+</style>
+</head>
+<body>
+<div id="fn-site-nav"></div>
+
+<div class="wrap">
+
+  <div class="top-nav">
+    <a class="brand" href="../../index.html">FireNate</a>
+    <a class="back-link" href="../NetWorth-Calculator/index.html">← Back to Net Worth Calculator</a>
+  </div>
+
+  <header class="hero">
+    <h1>Retirement, HSA &amp; Social Security Reference</h1>
+    <p class="sub">IRS and SSA figures for HSAs, 401(k)s, IRAs, and Social Security — plus links to the official sources — so you have one place to check before making contribution decisions.</p>
+  </header>
+
+  <div class="banner">These limits are set by the IRS and SSA and adjusted most years for inflation — <b>always confirm the current-year figure</b> before finalizing your contribution elections.</div>
+
+  <nav class="quicklinks" aria-label="Jump to section">
+    <a href="#hsa">HSA Limits</a>
+    <a href="#k401">401(k) Limits</a>
+    <a href="#other-accounts">IRA / SEP / SIMPLE</a>
+    <a href="#social-security">Social Security</a>
+    <a href="#links">Official Links</a>
+  </nav>
+
+  <!-- ===================== SECTION 1: HSA ===================== -->
+  <section class="block" id="hsa">
+    <div class="section-head">
+      <div class="section-num">01</div>
+      <div>
+        <h2>HSA Contribution Limits</h2>
+        <p>Maximum annual contributions to a Health Savings Account, by coverage type.</p>
+      </div>
+    </div>
+
+    <div class="card hsa">
+      <div class="card-head">Health Savings Account (HSA)</div>
+      <div class="table-scroll">
+        <table class="limits">
+          <thead>
+            <tr>
+              <th>Year</th>
+              <th>Self-Only Coverage</th>
+              <th>Family Coverage</th>
+              <th>Catch-Up (Age 55+)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>2022</td><td>$3,650</td><td>$7,300</td><td>$1,000</td></tr>
+            <tr><td>2023</td><td>$3,850</td><td>$7,750</td><td>$1,000</td></tr>
+            <tr><td>2024</td><td>$4,150</td><td>$8,300</td><td>$1,000</td></tr>
+            <tr><td>2025</td><td>$4,300</td><td>$8,550</td><td>$1,000</td></tr>
+            <tr class="current-year"><td>2026<span class="year-tag this-year">This Year</span></td><td>$4,400</td><td>$8,750</td><td>$1,000</td></tr>
+            <tr class="next-year"><td>2027<span class="year-tag next-year">Next Year</span></td><td>$4,500</td><td>$9,000</td><td>$1,000</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="table-note">
+        The age-55+ catch-up contribution is fixed by law at <strong>$1,000</strong> and is not indexed for inflation. The 2027 figures are already finalized by the IRS — HSA limits are typically announced about a year and a half in advance, well before the plan year begins.
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== SECTION 2: 401(k) ===================== -->
+  <section class="block" id="k401">
+    <div class="section-head">
+      <div class="section-num">02</div>
+      <div>
+        <h2>401(k) Contribution Limits</h2>
+        <p>Maximum employee elective deferrals, catch-up contributions, and the combined employee + employer cap.</p>
+      </div>
+    </div>
+
+    <div class="card k401">
+      <div class="card-head">401(k) / 403(b) / 457 Elective Deferrals</div>
+      <div class="table-scroll">
+        <table class="limits">
+          <thead>
+            <tr>
+              <th>Year</th>
+              <th>Employee Deferral Limit</th>
+              <th>Catch-Up (Age 50+)</th>
+              <th>Super Catch-Up (Age 60–63)</th>
+              <th>Combined Employee + Employer</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>2022</td><td>$20,500</td><td>$6,500</td><td class="na">—</td><td>$61,000</td></tr>
+            <tr><td>2023</td><td>$22,500</td><td>$7,500</td><td class="na">—</td><td>$66,000</td></tr>
+            <tr><td>2024</td><td>$23,000</td><td>$7,500</td><td class="na">—</td><td>$69,000</td></tr>
+            <tr><td>2025</td><td>$23,500</td><td>$7,500</td><td>$11,250</td><td>$70,000</td></tr>
+            <tr class="current-year"><td>2026<span class="year-tag this-year">This Year</span></td><td>$24,500</td><td>$8,000</td><td>$11,250</td><td>$72,000</td></tr>
+            <tr class="next-year"><td>2027<span class="year-tag next-year">Next Year</span></td><td>$25,000*</td><td>$8,000*</td><td>$11,750*</td><td>TBD</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="table-note">
+        <span class="projected-flag">* 2027 figures are projected, not yet official.</span> The IRS typically announces the following year's 401(k) limits in late October or early November — the figures shown for 2027 are actuarial forecasts (based on inflation trends) and will be confirmed once the IRS releases its official notice, likely around November 2026.
+      </div>
+    </div>
+
+    <div class="callout">
+      <strong>What's the "Super Catch-Up"?</strong> Starting in 2025, SECURE 2.0 introduced a higher catch-up contribution limit for savers who turn 60, 61, 62, or 63 during the year — it replaces (rather than stacks on top of) the standard 50+ catch-up for that age band. It didn't exist prior to 2025, which is why those cells are blank for 2022–2024.
+    </div>
+  </section>
+
+  <!-- ===================== SECTION 3: IRA / SEP / SIMPLE ===================== -->
+  <section class="block" id="other-accounts">
+    <div class="section-head">
+      <div class="section-num">03</div>
+      <div>
+        <h2>IRA, SEP IRA &amp; SIMPLE IRA Limits (2026)</h2>
+        <p>The other common tax-advantaged accounts, at this year's limits.</p>
+      </div>
+    </div>
+
+    <div class="card ira">
+      <div class="card-head">Traditional / Roth, SEP &amp; SIMPLE IRAs — 2026</div>
+      <div class="table-scroll">
+        <table class="limits">
+          <thead>
+            <tr>
+              <th>Account Type</th>
+              <th>Standard Limit</th>
+              <th>Catch-Up (Age 50–59, 64+)</th>
+              <th>Super Catch-Up (Age 60–63)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Traditional &amp; Roth IRA (combined)</td><td>$7,500</td><td>$1,100</td><td class="na">— (same as 50+)</td></tr>
+            <tr><td>SEP IRA</td><td>Lesser of 25% of compensation or $72,000</td><td class="na">—</td><td class="na">—</td></tr>
+            <tr><td>SIMPLE IRA (standard)</td><td>$17,000</td><td>$4,000</td><td>$5,250</td></tr>
+            <tr><td>SIMPLE IRA (small employer, ≤25 employees)</td><td>$18,100</td><td>$3,850</td><td>$5,250</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="table-note">
+        Your traditional and Roth IRA contributions <strong>share one combined limit</strong> — $7,500 total across both (or $8,600 if you're 50+), not $7,500 each. SEP IRAs are funded by the employer (or by you, if self-employed) rather than through employee payroll deferrals, so there's no employee catch-up. SIMPLE IRA catch-up amounts vary depending on whether your employer has adopted the higher small-employer limits available since SECURE 2.0.
+      </div>
+    </div>
+
+    <div class="callout">
+      <strong>Roth &amp; traditional IRA income limits (2026):</strong> Roth IRA eligibility phases out between <strong>$153,000–$168,000</strong> MAGI (single) or <strong>$242,000–$252,000</strong> (married filing jointly). If you're covered by a workplace plan, your traditional IRA deduction phases out between <strong>$81,000–$91,000</strong> (single) or <strong>$129,000–$149,000</strong> (married, contributor covered); if only your spouse is covered, the range is <strong>$242,000–$252,000</strong>. Above the top of these ranges, a "backdoor Roth" conversion is a common workaround.
+    </div>
+  </section>
+
+  <!-- ===================== SECTION 4: SOCIAL SECURITY ===================== -->
+  <section class="block" id="social-security">
+    <div class="section-head">
+      <div class="section-num">04</div>
+      <div>
+        <h2>Social Security (2026)</h2>
+        <p>Key figures for this year, plus when you become eligible for full benefits.</p>
+      </div>
+    </div>
+
+    <div class="card ss">
+      <div class="card-head">2026 Social Security Facts</div>
+      <div class="stat-grid">
+        <div class="stat">
+          <div class="stat-label">2026 COLA</div>
+          <div class="stat-value">2.8%</div>
+          <div class="stat-note">Annual cost-of-living increase to benefits.</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Max Taxable Earnings</div>
+          <div class="stat-value">$184,500</div>
+          <div class="stat-note">Wage base subject to Social Security tax; up from $176,100 in 2025.</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Avg. Monthly Benefit</div>
+          <div class="stat-value">$2,071</div>
+          <div class="stat-note">All retired workers, starting January 2026.</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Max Benefit at Full Retirement Age</div>
+          <div class="stat-value">$4,152 / mo</div>
+          <div class="stat-note">For a worker retiring in 2026 who earned the taxable max every year.</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Max Benefit at Age 70</div>
+          <div class="stat-value">$5,181 / mo</div>
+          <div class="stat-note">Delaying past full retirement age boosts your benefit ~8%/year up to 70.</div>
+        </div>
+        <div class="stat" style="grid-column: span 3;">
+          <div class="stat-label">Full Retirement Age (FRA)</div>
+          <div class="stat-note" style="margin-top:2px;">
+            Born 1943–1954: <strong>66</strong> &nbsp;•&nbsp; 1955: <strong>66 &amp; 2 mo</strong> &nbsp;•&nbsp; 1956: <strong>66 &amp; 4 mo</strong> &nbsp;•&nbsp; 1957: <strong>66 &amp; 6 mo</strong> &nbsp;•&nbsp; 1958: <strong>66 &amp; 8 mo</strong> &nbsp;•&nbsp; 1959: <strong>66 &amp; 10 mo</strong> &nbsp;•&nbsp; 1960 or later: <strong>67</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout">
+      Claiming before your FRA (as early as 62) permanently reduces your monthly benefit; delaying past FRA (up to age 70) permanently increases it. These figures assume a hypothetical maximum earner — most people's actual benefit will be lower and depends entirely on your own earnings history, which you can check anytime at <a href="https://www.ssa.gov/myaccount/" target="_blank" rel="noopener">ssa.gov/myaccount</a>.
+    </div>
+  </section>
+
+  <!-- ===================== SECTION 5: IMPORTANT LINKS ===================== -->
+  <section class="block" id="links">
+    <div class="section-head">
+      <div class="section-num">05</div>
+      <div>
+        <h2>Official Links</h2>
+        <p>Go straight to the source — these are the primary references this page is built from.</p>
+      </div>
+    </div>
+
+    <div class="link-grid">
+      <a class="link-card" href="https://www.irs.gov/retirement-plans/plan-participant-employee/retirement-topics-contributions" target="_blank" rel="noopener">
+        <div>
+          <div class="link-title">IRS — Retirement Topics: Contributions</div>
+          <div class="link-desc">Official rules for how much you can contribute across 401(k), 403(b), and other employer plans.</div>
+        </div>
+        <span class="link-arrow">↗</span>
+      </a>
+      <a class="link-card" href="https://www.irs.gov/retirement-plans/plan-participant-employee/retirement-topics-catch-up-contributions" target="_blank" rel="noopener">
+        <div>
+          <div class="link-title">IRS — Catch-Up Contributions</div>
+          <div class="link-desc">Details on age 50+ and the new age 60–63 "super" catch-up rules.</div>
+        </div>
+        <span class="link-arrow">↗</span>
+      </a>
+      <a class="link-card" href="https://www.irs.gov/retirement-plans/plan-participant-employee/sep-contribution-limits-including-grandfathered-sarseps" target="_blank" rel="noopener">
+        <div>
+          <div class="link-title">IRS — SEP Contribution Limits</div>
+          <div class="link-desc">How SEP IRA contribution limits are calculated for the self-employed and small employers.</div>
+        </div>
+        <span class="link-arrow">↗</span>
+      </a>
+      <a class="link-card" href="https://www.irs.gov/retirement-plans/cola-increases-for-dollar-limitations-on-benefits-and-contributions" target="_blank" rel="noopener">
+        <div>
+          <div class="link-title">IRS — COLA Increases (All Plan Limits)</div>
+          <div class="link-desc">The master IRS table of every retirement plan dollar limit, updated each year.</div>
+        </div>
+        <span class="link-arrow">↗</span>
+      </a>
+      <a class="link-card ss" href="https://www.ssa.gov/news/en/cola/index.html" target="_blank" rel="noopener">
+        <div>
+          <div class="link-title">SSA — Cost-of-Living Adjustment (COLA)</div>
+          <div class="link-desc">The official annual COLA announcement and fact sheet from the Social Security Administration.</div>
+        </div>
+        <span class="link-arrow">↗</span>
+      </a>
+      <a class="link-card ss" href="https://www.ssa.gov/retirement/full-retirement-age" target="_blank" rel="noopener">
+        <div>
+          <div class="link-title">SSA — Full Retirement Age</div>
+          <div class="link-desc">Look up your exact full retirement age based on your birth date.</div>
+        </div>
+        <span class="link-arrow">↗</span>
+      </a>
+      <a class="link-card ss" href="https://www.ssa.gov/myaccount/" target="_blank" rel="noopener">
+        <div>
+          <div class="link-title">SSA — my Social Security Account</div>
+          <div class="link-desc">Check your real earnings record and get personalized benefit estimates at different claiming ages.</div>
+        </div>
+        <span class="link-arrow">↗</span>
+      </a>
+      <a class="link-card" href="https://thefinancebuff.com/hsa-contribution-limits.html" target="_blank" rel="noopener">
+        <div>
+          <div class="link-title">The Finance Buff — HSA &amp; HDHP Limits</div>
+          <div class="link-desc">A well-maintained, plain-English summary of current and upcoming HSA/HDHP limits.</div>
+        </div>
+        <span class="link-arrow">↗</span>
+      </a>
+    </div>
+  </section>
+
+  <footer>
+    <p>Figures shown are the official IRS and SSA limits for the years indicated, except where marked as projected. Limits, income phase-outs, and eligibility rules can change; this page is for general reference only and isn't tax or financial advice — confirm current figures with the IRS, SSA, or your plan administrator before making contribution or claiming decisions.</p>
+    <p class="sources">Sources: <a href="https://www.irs.gov/newsroom/401k-limit-increases-to-24500-for-2026-ira-limit-increases-to-7500" target="_blank" rel="noopener">IRS.gov — 2026 401(k) &amp; IRA limits</a>, <a href="https://www.irs.gov/retirement-plans/plan-participant-employee/retirement-topics-catch-up-contributions" target="_blank" rel="noopener">IRS.gov — Catch-up contributions</a>, <a href="https://www.irs.gov/retirement-plans/plan-participant-employee/sep-contribution-limits-including-grandfathered-sarseps" target="_blank" rel="noopener">IRS.gov — SEP limits</a>, <a href="https://www.ssa.gov/news/en/cola/factsheets/2026.html" target="_blank" rel="noopener">SSA.gov — 2026 COLA fact sheet</a>, <a href="https://www.ssa.gov/retirement/full-retirement-age" target="_blank" rel="noopener">SSA.gov — Full retirement age</a>. Page last updated August 2026.</p>
+  </footer>
+</div>
+
+<footer id="site-footer"></footer>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---- Keep any fixed/sticky site nav from overlapping page content ----
+  // Mirrors the approach used on the Net Worth Calculator page: measure whatever
+  // nav.js renders into #fn-site-nav and expose it as --nav-offset, in case any
+  // future sticky element on this page needs to sit below the nav.
+  (function initNavOffset(){
+    var navHost = document.getElementById('fn-site-nav');
+    if(!navHost) return;
+
+    function isPinned(el){
+      var pos = getComputedStyle(el).position;
+      return pos === 'fixed' || pos === 'sticky';
+    }
+
+    function findPinnedEl(){
+      if(isPinned(navHost)) return navHost;
+      for(var i = 0; i < navHost.children.length; i++){
+        if(isPinned(navHost.children[i])) return navHost.children[i];
+      }
+      return null;
+    }
+
+    function updateNavOffset(){
+      var pinnedEl = findPinnedEl();
+      var h = pinnedEl ? pinnedEl.getBoundingClientRect().height : 0;
+      document.documentElement.style.setProperty('--nav-offset', h + 'px');
+    }
+
+    updateNavOffset();
+    window.addEventListener('load', updateNavOffset);
+    window.addEventListener('resize', updateNavOffset);
+    new MutationObserver(updateNavOffset).observe(navHost, { childList: true, subtree: true });
+    if(window.ResizeObserver){ new ResizeObserver(updateNavOffset).observe(navHost); }
+  })();
+
+})();
+</script>
+
+</body>
+</html>
