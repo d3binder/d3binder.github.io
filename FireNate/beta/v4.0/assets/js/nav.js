@@ -181,34 +181,36 @@
             '<span class="fn-profile-age-value" id="fnProfileAgeValue">&mdash;</span>' +
           "</div>" +
         "</div>" +
-        '<div class="fn-profile-field">' +
-          '<label for="fnProfileIncome">Annual Income</label>' +
-          '<div class="fn-profile-inputwrap"><span class="fn-profile-affix">$</span>' +
-            '<input type="text" inputmode="decimal" id="fnProfileIncome" placeholder="0">' +
+        '<div class="fn-profile-field-row">' +
+          '<div class="fn-profile-field">' +
+            '<label for="fnProfileIncome">Annual Income</label>' +
+            '<div class="fn-profile-inputwrap"><span class="fn-profile-affix">$</span>' +
+              '<input type="text" inputmode="decimal" id="fnProfileIncome" placeholder="0">' +
+            "</div>" +
+          "</div>" +
+          '<div class="fn-profile-field fn-profile-field-narrow">' +
+            '<label for="fnProfileRetireAge">Retirement Age</label>' +
+            '<input class="fn-profile-input-narrow" type="number" id="fnProfileRetireAge" min="1" max="120" step="1" placeholder="62">' +
           "</div>" +
         "</div>" +
-        '<div class="fn-profile-field">' +
-          '<label for="fnProfileSavings">Savings</label>' +
-          '<div class="fn-profile-inputwrap"><span class="fn-profile-affix">$</span>' +
-            '<input type="text" inputmode="decimal" id="fnProfileSavings" placeholder="0">' +
+        '<div class="fn-profile-field-row">' +
+          '<div class="fn-profile-field">' +
+            '<label for="fnProfileSavings">Savings</label>' +
+            '<div class="fn-profile-inputwrap"><span class="fn-profile-affix">$</span>' +
+              '<input type="text" inputmode="decimal" id="fnProfileSavings" placeholder="0">' +
+            "</div>" +
+          "</div>" +
+          '<div class="fn-profile-field fn-profile-field-narrow">' +
+            '<label for="fnProfileReturn">Annual Return Rate</label>' +
+            '<div class="fn-profile-inputwrap fn-profile-inputwrap-narrow"><input class="fn-profile-input-narrow" type="number" id="fnProfileReturn" step="0.1" placeholder="10.0">' +
+              '<span class="fn-profile-affix">%</span>' +
+            "</div>" +
           "</div>" +
         "</div>" +
         '<div class="fn-profile-field">' +
           '<label for="fnProfileGoal">Goal Amount</label>' +
           '<div class="fn-profile-inputwrap"><span class="fn-profile-affix">$</span>' +
             '<input type="text" inputmode="decimal" id="fnProfileGoal" placeholder="0">' +
-          "</div>" +
-        "</div>" +
-        '<div class="fn-profile-field-row">' +
-          '<div class="fn-profile-field">' +
-            '<label for="fnProfileRetireAge">Retirement Age</label>' +
-            '<input class="fn-profile-input-narrow" type="number" id="fnProfileRetireAge" min="1" max="120" step="1" placeholder="62">' +
-          "</div>" +
-          '<div class="fn-profile-field">' +
-            '<label for="fnProfileReturn">Annual Return Rate</label>' +
-            '<div class="fn-profile-inputwrap fn-profile-inputwrap-narrow"><input class="fn-profile-input-narrow" type="number" id="fnProfileReturn" step="0.1" placeholder="10.0">' +
-              '<span class="fn-profile-affix">%</span>' +
-            "</div>" +
           "</div>" +
         "</div>" +
       "</div>";

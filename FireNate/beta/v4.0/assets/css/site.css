@@ -420,6 +420,7 @@
 }
 #fn-site-nav .fn-profile-field input.fn-profile-input-narrow{
   width:72px;
+  text-align:right;
 }
 #fn-site-nav .fn-profile-inputwrap-narrow{
   width:92px;
@@ -476,7 +477,18 @@
 
 .fn-profile-field-row .fn-profile-field-birthday{ flex:1 1 auto; }
 .fn-profile-field-row .fn-profile-field.fn-profile-age-row{ flex:0 0 auto; min-width:68px; }
-.fn-profile-age-row label{ margin-bottom:5px; }
+
+/* right-align the narrow companion fields (Age, Retirement Age, Annual
+   Return Rate) so their labels and boxes all line up along the same right
+   edge, instead of the box sitting flush-left in its half-width column */
+.fn-profile-field-row .fn-profile-field.fn-profile-field-narrow,
+.fn-profile-field-row .fn-profile-field.fn-profile-age-row{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+}
+.fn-profile-field-narrow label,
+.fn-profile-age-row label{ margin-bottom:5px; text-align:right; }
 .fn-profile-age-value{
   display:block;
   font-family:var(--fn-mono);
@@ -486,7 +498,7 @@
   border:1px solid transparent;
   border-radius:7px;
   padding:6px 9px;
-  text-align:center;
+  text-align:right;
 }
 
 .fn-settings-title-actions{
