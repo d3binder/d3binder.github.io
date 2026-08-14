@@ -24,7 +24,8 @@
     { id: "payoff-or-invest", label: "Payoff or Invest", href: BASE + "Payoff-or-Invest/index.html" },
     { id: "homes-vs-stocks", label: "Homes vs. Stocks", href: BASE + "RealEstateVsStocks/index.html" },
     { id: "gen-info", label: "Info", href: BASE + "GenInfo/index.html" },
-    { id: "files", label: "Files", href: BASE + "Downloads/index.html" }
+    { id: "files", label: "Files", href: BASE + "Downloads/index.html" },
+    { id: "profile-manager", label: "Profile Manager", href: BASE + "ProfileManager/index.html" }
   ];
 
   function escapeHtml(s) {
@@ -124,17 +125,61 @@
       }
     } catch (e) {}
 
+    var trashIcon =
+      '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+        'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+        '<polyline points="3 6 5 6 21 6"></polyline>' +
+        '<path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>' +
+        '<path d="M10 11v6"></path>' +
+        '<path d="M14 11v6"></path>' +
+        '<path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>' +
+      "</svg>";
+
+    var usersIcon =
+      '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+        'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+        '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>' +
+        '<circle cx="9" cy="7" r="4"></circle>' +
+        '<path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>' +
+        '<path d="M16 3.13a4 4 0 0 1 0 7.75"></path>' +
+      "</svg>";
+
+    var cameraIcon =
+      '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+        'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+        '<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>' +
+        '<circle cx="12" cy="13" r="4"></circle>' +
+      "</svg>";
+
     var profilePanel =
       '<div class="fn-profile-panel" role="menu" aria-label="Your info">' +
-        '<div class="fn-settings-title">Your info</div>' +
-        '<p class="fn-profile-hint">Saved on this device, and used to pre-fill common fields across calculators.</p>' +
-        '<div class="fn-profile-field">' +
-          '<label for="fnProfileBirthday">Birthday</label>' +
-          '<input type="date" id="fnProfileBirthday">' +
+        '<div class="fn-settings-title-row">' +
+          '<div class="fn-settings-title">Your info</div>' +
+          '<div class="fn-settings-title-actions">' +
+            '<button type="button" class="fn-profile-snapshot" id="fnProfileSnapshot" aria-label="Take a quick snapshot" title="Take a quick snapshot">' +
+              cameraIcon +
+            "</button>" +
+            '<div class="fn-quickload" id="fnQuickload">' +
+              '<button type="button" class="fn-quickload-toggle" id="fnQuickloadToggle" aria-haspopup="true" aria-expanded="false" aria-label="Load saved profile" title="Load saved profile">' +
+                usersIcon +
+              "</button>" +
+              '<div class="fn-quickload-menu" id="fnQuickloadMenu" role="menu"></div>' +
+            "</div>" +
+            '<button type="button" class="fn-profile-clear" aria-label="Clear my info" title="Clear my info">' +
+              trashIcon +
+            "</button>" +
+          "</div>" +
         "</div>" +
-        '<div class="fn-profile-field fn-profile-age-row">' +
-          '<span>Age</span>' +
-          '<span class="fn-profile-age-value" id="fnProfileAgeValue">&mdash;</span>' +
+        '<p class="fn-profile-hint">Saved on this device, and used to pre-fill common fields across calculators.</p>' +
+        '<div class="fn-profile-field-row">' +
+          '<div class="fn-profile-field fn-profile-field-birthday">' +
+            '<label for="fnProfileBirthday">Birthday</label>' +
+            '<input type="date" id="fnProfileBirthday">' +
+          "</div>" +
+          '<div class="fn-profile-field fn-profile-age-row">' +
+            '<label>Age</label>' +
+            '<span class="fn-profile-age-value" id="fnProfileAgeValue">&mdash;</span>' +
+          "</div>" +
         "</div>" +
         '<div class="fn-profile-field">' +
           '<label for="fnProfileIncome">Annual Income</label>' +
@@ -149,22 +194,23 @@
           "</div>" +
         "</div>" +
         '<div class="fn-profile-field">' +
-          '<label for="fnProfileGoal">Goal Amount (FI Number)</label>' +
+          '<label for="fnProfileGoal">Goal Amount</label>' +
           '<div class="fn-profile-inputwrap"><span class="fn-profile-affix">$</span>' +
             '<input type="text" inputmode="decimal" id="fnProfileGoal" placeholder="0">' +
           "</div>" +
         "</div>" +
-        '<div class="fn-profile-field">' +
-          '<label for="fnProfileRetireAge">Retirement Age</label>' +
-          '<input type="number" id="fnProfileRetireAge" min="1" max="120" step="1" placeholder="62">' +
-        "</div>" +
-        '<div class="fn-profile-field">' +
-          '<label for="fnProfileReturn">Annual Return Rate</label>' +
-          '<div class="fn-profile-inputwrap"><input type="number" id="fnProfileReturn" step="0.1" placeholder="10.0">' +
-            '<span class="fn-profile-affix">%</span>' +
+        '<div class="fn-profile-field-row">' +
+          '<div class="fn-profile-field">' +
+            '<label for="fnProfileRetireAge">Retirement Age</label>' +
+            '<input class="fn-profile-input-narrow" type="number" id="fnProfileRetireAge" min="1" max="120" step="1" placeholder="62">' +
+          "</div>" +
+          '<div class="fn-profile-field">' +
+            '<label for="fnProfileReturn">Annual Return Rate</label>' +
+            '<div class="fn-profile-inputwrap fn-profile-inputwrap-narrow"><input class="fn-profile-input-narrow" type="number" id="fnProfileReturn" step="0.1" placeholder="10.0">' +
+              '<span class="fn-profile-affix">%</span>' +
+            "</div>" +
           "</div>" +
         "</div>" +
-        '<button type="button" class="fn-profile-clear">Clear my info</button>' +
       "</div>";
 
     return (
@@ -270,6 +316,7 @@
         if (toggle) toggle.setAttribute("aria-expanded", "false");
         if (settingsToggle) settingsToggle.setAttribute("aria-expanded", "false");
         if (profileToggle) profileToggle.setAttribute("aria-expanded", "false");
+        closeQuickload();
       }
 
       if (toggle) {
@@ -313,6 +360,9 @@
 
       document.addEventListener("click", function (e) {
         if (!navHost.contains(e.target)) closeAllPanels();
+      });
+      document.addEventListener("click", function (e) {
+        if (quickload && !quickload.contains(e.target)) closeQuickload();
       });
       document.addEventListener("keydown", function (e) {
         if (e.key === "Escape") closeAllPanels();
@@ -461,8 +511,77 @@
           var age = window.FNProfile.getAge(profile);
           ageValue.textContent = age === null ? "—" : age;
         }
+        renderQuickloadMenu();
       }
       syncProfileFields();
+
+      // ---------- QUICK-LOAD SAVED PROFILES ----------
+      // hover (desktop) or tap the toggle (touch/keyboard) to reveal a list
+      // of every profile saved via the Profile Manager page; click one to
+      // load it straight into the live profile without leaving the panel
+      var quickload = document.getElementById("fnQuickload");
+      var quickloadToggle = document.getElementById("fnQuickloadToggle");
+
+      function closeQuickload() {
+        if (quickload) quickload.classList.remove("open");
+        if (quickloadToggle) quickloadToggle.setAttribute("aria-expanded", "false");
+      }
+
+      function renderQuickloadMenu() {
+        var menu = document.getElementById("fnQuickloadMenu");
+        if (!menu) return;
+        var list = [];
+        try {
+          var raw = localStorage.getItem("fn-scenarios");
+          list = raw ? JSON.parse(raw) : [];
+        } catch (e) {}
+
+        var itemsHtml = !list.length
+          ? '<div class="fn-quickload-empty">No saved profiles yet</div>'
+          : list.slice().reverse().map(function (scenario) {
+              var when = "";
+              try {
+                when = new Date(scenario.savedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+              } catch (e) {}
+              return (
+                '<button type="button" class="fn-quickload-item" data-scenario-id="' + escapeHtml(scenario.id) + '">' +
+                  '<span class="name">' + escapeHtml(scenario.name) + "</span>" +
+                  (when ? '<span class="when">' + escapeHtml(when) + "</span>" : "") +
+                "</button>"
+              );
+            }).join("");
+
+        menu.innerHTML = itemsHtml +
+          '<div class="fn-quickload-divider"></div>' +
+          '<a class="fn-quickload-manage" href="' + BASE + 'ProfileManager/index.html' + '">Manage saved profiles &rarr;</a>';
+
+        menu.querySelectorAll("[data-scenario-id]").forEach(function (btn) {
+          btn.addEventListener("click", function (e) {
+            // stopPropagation matters here: syncProfileFields() (called below)
+            // regenerates this menu's innerHTML, which removes this very
+            // button from the DOM while the click is still bubbling — the
+            // document-level "click outside the nav" listener would then see
+            // a detached e.target, read that as "outside", and close the
+            // whole panel instead of just this flyout.
+            e.stopPropagation();
+            var id = btn.getAttribute("data-scenario-id");
+            var scenario = list.find(function (s) { return s.id === id; });
+            if (!scenario || !window.FNProfile) return;
+            window.FNProfile.set(scenario.profile);
+            ensureProfileDefaults();
+            syncProfileFields();
+            closeQuickload();
+          });
+        });
+      }
+
+      if (quickloadToggle) {
+        quickloadToggle.addEventListener("click", function (e) {
+          e.stopPropagation();
+          var open = quickload.classList.toggle("open");
+          quickloadToggle.setAttribute("aria-expanded", open ? "true" : "false");
+        });
+      }
 
       if (birthdayInput) {
         // "input" (not "change") on purpose — native date inputs only fire
@@ -496,9 +615,70 @@
           ensureProfileDefaults();
         });
       }
+      // saves the current live profile into fn-scenarios under an
+      // auto-generated, date-stamped name. Returns true if it actually saved
+      // something (skips a profile with nothing in it — no point naming and
+      // storing a blank snapshot). Shared by the camera "quick snapshot"
+      // button and the trash button's pre-clear safety backup below.
+      function saveCurrentProfileAsScenario(namePrefix) {
+        if (!window.FNProfile) return false;
+        var current = window.FNProfile.get();
+        var profileKeys = ["birthday", "currentIncome", "currentSavings", "goalAmount", "retireAge", "expectedReturn"];
+        var hasData = profileKeys.some(function (k) {
+          return current[k] !== undefined && current[k] !== null && current[k] !== "";
+        });
+        if (!hasData) return false;
+        try {
+          var raw = localStorage.getItem("fn-scenarios");
+          var list = raw ? JSON.parse(raw) : [];
+          var now = new Date();
+          var name = namePrefix +
+            now.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) +
+            " " + now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+          list.push({
+            id: "sc_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8),
+            name: name,
+            savedAt: Date.now(),
+            profile: {
+              birthday: current.birthday || "",
+              currentIncome: current.currentIncome || "",
+              currentSavings: current.currentSavings || "",
+              goalAmount: current.goalAmount || "",
+              retireAge: current.retireAge || "",
+              expectedReturn: current.expectedReturn || ""
+            }
+          });
+          localStorage.setItem("fn-scenarios", JSON.stringify(list));
+          return true;
+        } catch (e) {
+          return false;
+        }
+      }
+
+      var snapshotBtn = document.getElementById("fnProfileSnapshot");
+      if (snapshotBtn) {
+        snapshotBtn.addEventListener("click", function (e) {
+          e.stopPropagation();
+          var saved = saveCurrentProfileAsScenario("Snapshot ");
+          if (!saved) return;
+          renderQuickloadMenu();
+          // quick camera-flash pulse so the click has an obvious payoff
+          snapshotBtn.classList.remove("flash");
+          void snapshotBtn.offsetWidth;
+          snapshotBtn.classList.add("flash");
+          setTimeout(function () { snapshotBtn.classList.remove("flash"); }, 500);
+        });
+      }
+
       if (clearBtn) {
         clearBtn.addEventListener("click", function () {
-          if (window.FNProfile) window.FNProfile.clear();
+          if (window.FNProfile) {
+            // auto-backup before wiping, so an accidental click is a
+            // one-second recovery via "Load saved profile" instead of a
+            // permanently lost profile
+            saveCurrentProfileAsScenario("Backup ");
+            window.FNProfile.clear();
+          }
           syncProfileFields();
         });
       }

@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script src="../assets/js/theme-init.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FireNate - Profile Manager</title>
+<meta name="description" content="Manage your saved profile and named what-if scenarios — save, load, and delete snapshots of your age, savings, goal, and return assumptions.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/site.css">
+<link rel="stylesheet" href="../assets/css/timeToFI.css">
+<script src="../assets/js/theme.js" defer></script>
+<script src="../assets/js/user-profile.js" defer></script>
+<script src="../assets/js/nav.js" defer></script>
+<script>
+window.FN_BASE = "../"; window.FN_PAGE = "profile-manager";
+</script>
+<style>
+  .pm-empty{
+    margin-top:24px; text-align:center; padding:56px 28px;
+    background:var(--surface); border:1px solid var(--line); border-top:4px solid var(--plum);
+    border-radius:var(--radius);
+  }
+  .pm-empty h2{ font-family:var(--serif); font-size:26px; margin:0 0 10px; }
+  .pm-empty p{ color:var(--ink-dim); font-size:15px; max-width:48ch; margin:0 auto 22px; }
+  .pm-btn{
+    display:inline-flex; align-items:center; gap:8px;
+    background:linear-gradient(135deg, var(--gold), var(--gold-dim));
+    color:#201205; font-weight:700; font-size:13.5px;
+    padding:11px 22px; border-radius:999px; border:none; cursor:pointer;
+    font-family:var(--sans); transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .pm-btn:hover{ transform:translateY(-1px); box-shadow:0 8px 20px -6px rgba(217,132,15,0.45); }
+  .pm-btn:active{ transform:translateY(0); }
+  .pm-btn.pm-btn-ghost{
+    background:none; border:1px solid var(--line); color:var(--ink-dim); font-weight:600;
+  }
+  .pm-btn.pm-btn-ghost:hover{ border-color:var(--gold-dim); color:var(--gold); box-shadow:none; }
+  .pm-btn.pm-btn-danger{
+    background:none; border:1px solid var(--danger); color:var(--danger); font-weight:600; padding:7px 14px; font-size:12px;
+  }
+  .pm-btn.pm-btn-danger:hover{ background:var(--danger); color:#fff; }
+
+  .pm-editnote{
+    display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+    margin-top:4px; padding:14px 22px; background:var(--surface-2); border:1px solid var(--line);
+    border-radius:var(--radius); color:var(--ink-dim); font-size:13.5px;
+  }
+
+  /* ---------- LIVE PROFILE STAT GRID ---------- */
+  .pm-grid{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:14px;
+    margin-top:20px;
+  }
+  .pm-card{
+    background:var(--surface); border:1px solid var(--line); border-top:4px solid var(--gold);
+    border-radius:var(--radius); padding:16px 18px;
+  }
+  .pm-card.jade{ border-top-color:var(--jade); }
+  .pm-card.target{ border-top-color:var(--target); }
+  .pm-card .k{ font-family:var(--mono); font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:6px; }
+  .pm-card .v{ font-family:var(--serif); font-size:22px; color:var(--ink); font-weight:500; line-height:1.15; }
+  .pm-card .v.gold{ color:var(--gold); }
+  .pm-card .v.jade{ color:var(--jade); }
+  .pm-card .v.target{ color:var(--target); }
+
+  /* ---------- SAVE FORM ---------- */
+  .pm-save-ledger{
+    margin-top:4px; background:var(--surface); border:1px solid var(--line); border-top:4px solid var(--plum);
+    border-radius:var(--radius); padding:22px 24px; display:flex; align-items:flex-end; gap:16px; flex-wrap:wrap;
+  }
+  .pm-save-ledger .pm-field{ display:flex; flex-direction:column; gap:6px; flex:1 1 220px; }
+  .pm-save-ledger label{ font-size:12px; color:var(--ink-dim); margin:0; }
+  .pm-save-ledger input{
+    background:var(--surface-2); border:1px solid var(--line); border-radius:8px; color:var(--ink);
+    font-family:var(--sans); font-size:14px; padding:10px 12px; outline:none;
+  }
+  .pm-save-ledger input:focus{ border-color:var(--plum); }
+
+  .pm-scenario-empty{
+    margin-top:16px; padding:28px; text-align:center; color:var(--ink-faint); font-size:13.5px;
+    background:var(--surface-2); border:1px dashed var(--line); border-radius:var(--radius);
+  }
+
+  .pm-scenario-card{
+    background:var(--surface); border:1px solid var(--line); border-top:4px solid var(--target);
+    border-radius:var(--radius); padding:20px 22px; margin-top:14px;
+  }
+  .pm-scenario-card.is-live{ border-top-color:var(--jade); }
+  .pm-scenario-head{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+  .pm-scenario-head h4{ font-family:var(--serif); font-size:19px; font-weight:600; margin:0; }
+  .pm-scenario-head .when{ font-family:var(--mono); font-size:11px; color:var(--ink-faint); }
+  .pm-live-badge{
+    font-family:var(--mono); font-size:10.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase;
+    color:var(--jade); background:rgba(79,219,143,0.15); padding:3px 10px; border-radius:999px;
+  }
+  .pm-scenario-stats{ display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:14px; margin-bottom:14px; }
+  .pm-scenario-stats .k{ font-family:var(--mono); font-size:10px; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:4px; }
+  .pm-scenario-stats .v{ font-family:var(--mono); font-size:15px; color:var(--ink); font-weight:600; }
+  .pm-scenario-actions{ display:flex; gap:10px; flex-wrap:wrap; }
+</style>
+</head>
+<body>
+<div id="fn-site-nav"></div>
+
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">FIRE Nate - Profile Manager</p>
+    <h1 id="pageTitleHeader">Every version of your plan, <em>in one place</em>.</h1>
+    <p class="lede">Your live profile powers every calculator on the site. Save it as a named snapshot before trying a different return rate, retirement age, or goal — then load any snapshot back whenever you want.</p>
+  </header>
+
+  <div id="pmEmptyState" class="pm-empty" style="display:none;">
+    <h2>Let's set up your profile first</h2>
+    <p>Add your age, savings, goal, and target retirement age once, and every calculator on the site — plus this manager — will use them.</p>
+    <button type="button" class="pm-btn" id="pmOpenProfileBtn">Set up my profile</button>
+  </div>
+
+  <div id="pmLive" style="display:none;">
+    <h2 class="ledger-title" style="margin-top:40px; margin-bottom:4px;">Your live profile</h2>
+    <div class="pm-editnote">
+      <span>This is what every calculator on the site currently reads.</span>
+      <button type="button" class="pm-btn pm-btn-ghost" id="pmEditProfileBtn">Edit my profile &rarr;</button>
+    </div>
+    <div class="pm-grid" id="pmLiveGrid"></div>
+  </div>
+
+  <h2 class="ledger-title" style="margin-top:48px; margin-bottom:4px;">Save a snapshot</h2>
+  <p class="lede" style="margin-bottom:16px;">Duplicate your current profile into a labeled snapshot — try a different return rate, retirement age, or savings goal, then compare them side by side.</p>
+
+  <div class="pm-save-ledger">
+    <div class="pm-field">
+      <label for="pmScenarioName">Snapshot name</label>
+      <input type="text" id="pmScenarioName" placeholder="e.g. Conservative 6% return">
+    </div>
+    <button type="button" class="pm-btn" id="pmSaveScenarioBtn">Save current profile as snapshot</button>
+  </div>
+
+  <h2 class="ledger-title" style="margin-top:40px; margin-bottom:4px;">Saved profiles</h2>
+  <div id="pmScenarioList"></div>
+</div>
+
+<footer id="site-footer"></footer>
+
+<script>
+const $ = id => document.getElementById(id);
+const fmtUSD = n => n.toLocaleString('en-US', {style:'currency', currency:'USD', maximumFractionDigits:0});
+const fmtNum = n => n.toLocaleString('en-US', {maximumFractionDigits:1});
+
+function crossoverAmount(goal, r, yearsRemaining){
+  const yrs = Math.max(0, yearsRemaining);
+  const base = 1 + r;
+  if (base <= 0) return goal;
+  return goal / Math.pow(base, yrs);
+}
+
+function deriveMetrics(profile){
+  const age = window.FNProfile.getAge(profile);
+  const savings = parseFloat(profile.currentSavings) || 0;
+  const goal = parseFloat(profile.goalAmount) || 0;
+  const retireAge = parseFloat(profile.retireAge) || 0;
+  const r = (parseFloat(profile.expectedReturn) || 0) / 100;
+  const yearsToRetire = age !== null ? Math.max(0, retireAge - age) : null;
+  const progressPct = goal > 0 ? (savings / goal) * 100 : 0;
+  const requiredNow = (age !== null && yearsToRetire !== null) ? crossoverAmount(goal, r, yearsToRetire) : null;
+  const coastFI = requiredNow !== null ? savings >= requiredNow : null;
+  return { age, savings, goal, retireAge, r, progressPct, coastFI };
+}
+
+function profileComplete(profile){
+  return !!(profile && profile.birthday && profile.goalAmount && profile.retireAge && profile.currentSavings !== undefined && profile.currentSavings !== '');
+}
+
+function renderLiveGrid(m){
+  const grid = $('pmLiveGrid');
+  grid.innerHTML = '';
+  const add = (k, v, cls) => {
+    const div = document.createElement('div');
+    div.className = 'pm-card' + (cls ? ' ' + cls : '');
+    div.innerHTML = `<div class="k">${k}</div><div class="v${cls ? ' ' + cls : ''}">${v}</div>`;
+    grid.appendChild(div);
+  };
+  add('Age', m.age === null ? '—' : fmtNum(m.age));
+  add('Savings', fmtUSD(m.savings), 'jade');
+  add('Goal Amount', fmtUSD(m.goal), 'gold');
+  add('Retirement Age', fmtNum(m.retireAge));
+  add('Annual Return Rate', fmtNum(m.r * 100) + '%', 'target');
+  add('Progress', fmtNum(Math.max(0, m.progressPct)) + '%', 'jade');
+}
+
+function renderLive(){
+  const profile = window.FNProfile.get();
+  const complete = profileComplete(profile);
+  $('pmEmptyState').style.display = complete ? 'none' : '';
+  $('pmLive').style.display = complete ? '' : 'none';
+  if (!complete) return;
+  renderLiveGrid(deriveMetrics(profile));
+}
+
+// pop + color-cycle glow on the profile icon and panel so the jump from
+// this page over to the nav actually catches the eye, instead of a dropdown
+// silently appearing somewhere the user wasn't looking
+function pulseAttention(el){
+  if (!el) return;
+  el.classList.remove('fn-attn');
+  void el.offsetWidth; // force reflow so the animation restarts on repeat clicks
+  el.classList.add('fn-attn');
+  var cleared = false;
+  var clear = function(){
+    if (cleared) return;
+    cleared = true;
+    el.classList.remove('fn-attn');
+  };
+  el.addEventListener('animationend', clear, { once: true });
+  setTimeout(clear, 1400);
+}
+function openProfilePanelWithAttention(){
+  const toggle = document.querySelector('.fn-profile-toggle');
+  if (toggle) toggle.click();
+  pulseAttention(document.querySelector('.fn-profile-toggle'));
+  pulseAttention(document.querySelector('.fn-profile-panel'));
+}
+
+// stopPropagation matters here: these buttons live outside #fn-site-nav, so
+// once the nested .click() below opens the profile panel, letting this
+// original click event keep bubbling to document would hit nav.js's own
+// "click outside the nav closes every panel" listener — which sees this
+// button (outside the nav) as the click target and immediately closes the
+// panel that was just opened.
+$('pmOpenProfileBtn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  openProfilePanelWithAttention();
+});
+$('pmEditProfileBtn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  openProfilePanelWithAttention();
+});
+
+document.addEventListener('fn-profile-change', renderLive);
+
+// ---------- scenarios ----------
+const SCENARIO_KEY = 'fn-scenarios';
+function loadScenarios(){
+  try {
+    const raw = localStorage.getItem(SCENARIO_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch(e) { return []; }
+}
+function saveScenarios(list){
+  try { localStorage.setItem(SCENARIO_KEY, JSON.stringify(list)); } catch(e) {}
+}
+
+function fmtWhen(ts){
+  const d = new Date(ts);
+  return d.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) + ' ' +
+    d.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'});
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function renderScenarios(){
+  const list = loadScenarios();
+  const host = $('pmScenarioList');
+  host.innerHTML = '';
+  if (!list.length){
+    host.innerHTML = '<div class="pm-scenario-empty">No saved snapshots yet. Name one above and save it to start comparing.</div>';
+    return;
+  }
+  list.slice().reverse().forEach(scenario => {
+    const m = deriveMetrics(scenario.profile);
+    const card = document.createElement('div');
+    card.className = 'pm-scenario-card';
+    const coastLabel = m.coastFI === null ? '—' : (m.coastFI ? 'Coast-FI ✓' : 'Not yet');
+    card.innerHTML = `
+      <div class="pm-scenario-head">
+        <h4>${escapeHtml(scenario.name)}</h4>
+        <span class="when">Saved ${fmtWhen(scenario.savedAt)}</span>
+      </div>
+      <div class="pm-scenario-stats">
+        <div><div class="k">Age</div><div class="v">${m.age === null ? '—' : fmtNum(m.age)}</div></div>
+        <div><div class="k">Savings</div><div class="v">${fmtUSD(m.savings)}</div></div>
+        <div><div class="k">Goal</div><div class="v">${fmtUSD(m.goal)}</div></div>
+        <div><div class="k">Retire age</div><div class="v">${fmtNum(m.retireAge)}</div></div>
+        <div><div class="k">Return</div><div class="v">${fmtNum(m.r * 100)}%</div></div>
+        <div><div class="k">Progress</div><div class="v">${fmtNum(Math.max(0, m.progressPct))}%</div></div>
+        <div><div class="k">Coast-FI</div><div class="v">${coastLabel}</div></div>
+      </div>
+      <div class="pm-scenario-actions">
+        <button type="button" class="pm-btn pm-btn-ghost" data-load="${scenario.id}">Load into my profile</button>
+        <button type="button" class="pm-btn pm-btn-danger" data-delete="${scenario.id}">Delete</button>
+      </div>
+    `;
+    host.appendChild(card);
+  });
+
+  host.querySelectorAll('[data-load]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-load');
+      const scenario = loadScenarios().find(s => s.id === id);
+      if (!scenario) return;
+      window.FNProfile.set(scenario.profile);
+      renderLive();
+    });
+  });
+  host.querySelectorAll('[data-delete]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-delete');
+      const ok = window.confirm('Delete this saved snapshot? This can\'t be undone.');
+      if (!ok) return;
+      const next = loadScenarios().filter(s => s.id !== id);
+      saveScenarios(next);
+      renderScenarios();
+    });
+  });
+}
+
+$('pmSaveScenarioBtn').addEventListener('click', () => {
+  const nameInput = $('pmScenarioName');
+  const name = nameInput.value.trim() || `Snapshot ${new Date().toLocaleDateString('en-US', {month:'short', day:'numeric'})}`;
+  const profile = window.FNProfile.get();
+  const list = loadScenarios();
+  list.push({
+    id: 'sc_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+    name,
+    savedAt: Date.now(),
+    profile: {
+      birthday: profile.birthday || '',
+      currentIncome: profile.currentIncome || '',
+      currentSavings: profile.currentSavings || '',
+      goalAmount: profile.goalAmount || '',
+      retireAge: profile.retireAge || '',
+      expectedReturn: profile.expectedReturn || ''
+    }
+  });
+  saveScenarios(list);
+  nameInput.value = '';
+  renderScenarios();
+});
+
+function init(){
+  renderLive();
+  renderScenarios();
+}
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", init);
+} else {
+  init();
+}
+</script>
+</body>
+</html>

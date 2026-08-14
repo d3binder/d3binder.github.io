@@ -109,36 +109,6 @@ window.FN_BASE = "../"; window.FN_PAGE = "fi-snapshot";
     transition:border-color .15s, color .15s, transform .15s;
   }
   .fs-link-pill:hover{ border-color:var(--gold); color:var(--gold); transform:translateY(-1px); }
-
-  /* ---------- SCENARIOS ---------- */
-  .fs-save-ledger{
-    margin-top:4px; background:var(--surface); border:1px solid var(--line); border-top:4px solid var(--plum);
-    border-radius:var(--radius); padding:22px 24px; display:flex; align-items:flex-end; gap:16px; flex-wrap:wrap;
-  }
-  .fs-save-ledger .fs-field{ display:flex; flex-direction:column; gap:6px; flex:1 1 220px; }
-  .fs-save-ledger label{ font-size:12px; color:var(--ink-dim); margin:0; }
-  .fs-save-ledger input{
-    background:var(--surface-2); border:1px solid var(--line); border-radius:8px; color:var(--ink);
-    font-family:var(--sans); font-size:14px; padding:10px 12px; outline:none;
-  }
-  .fs-save-ledger input:focus{ border-color:var(--plum); }
-
-  .fs-scenario-empty{
-    margin-top:16px; padding:28px; text-align:center; color:var(--ink-faint); font-size:13.5px;
-    background:var(--surface-2); border:1px dashed var(--line); border-radius:var(--radius);
-  }
-
-  .fs-scenario-card{
-    background:var(--surface); border:1px solid var(--line); border-top:4px solid var(--target);
-    border-radius:var(--radius); padding:20px 22px; margin-top:14px;
-  }
-  .fs-scenario-head{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
-  .fs-scenario-head h4{ font-family:var(--serif); font-size:19px; font-weight:600; margin:0; }
-  .fs-scenario-head .when{ font-family:var(--mono); font-size:11px; color:var(--ink-faint); }
-  .fs-scenario-stats{ display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:14px; margin-bottom:14px; }
-  .fs-scenario-stats .k{ font-family:var(--mono); font-size:10px; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:4px; }
-  .fs-scenario-stats .v{ font-family:var(--mono); font-size:15px; color:var(--ink); font-weight:600; }
-  .fs-scenario-actions{ display:flex; gap:10px; flex-wrap:wrap; }
 </style>
 </head>
 <body>
@@ -189,17 +159,8 @@ window.FN_BASE = "../"; window.FN_PAGE = "fi-snapshot";
     </div>
 
     <h2 class="ledger-title" style="margin-top:48px; margin-bottom:4px;">Saved scenarios</h2>
-    <p class="lede" style="margin-bottom:16px;">Duplicate your current profile into a labeled snapshot — try a different return rate, retirement age, or savings goal, then compare them side by side.</p>
-
-    <div class="fs-save-ledger">
-      <div class="fs-field">
-        <label for="fsScenarioName">Snapshot name</label>
-        <input type="text" id="fsScenarioName" placeholder="e.g. Conservative 6% return">
-      </div>
-      <button type="button" class="fs-btn" id="fsSaveScenarioBtn">Save current profile as snapshot</button>
-    </div>
-
-    <div id="fsScenarioList"></div>
+    <p class="lede" style="margin-bottom:16px;">Duplicate your current profile into a labeled snapshot, then compare them side by side — or try a different return rate, retirement age, or savings goal.</p>
+    <a class="fs-btn" href="../ProfileManager/index.html">Manage saved profiles &rarr;</a>
   </div>
 </div>
 
@@ -342,108 +303,8 @@ $('fsEditProfileBtn').addEventListener('click', (e) => {
 
 document.addEventListener('fn-profile-change', renderDashboard);
 
-// ---------- scenarios ----------
-const SCENARIO_KEY = 'fn-scenarios';
-function loadScenarios(){
-  try {
-    const raw = localStorage.getItem(SCENARIO_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch(e) { return []; }
-}
-function saveScenarios(list){
-  try { localStorage.setItem(SCENARIO_KEY, JSON.stringify(list)); } catch(e) {}
-}
-
-function fmtWhen(ts){
-  const d = new Date(ts);
-  return d.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) + ' ' +
-    d.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'});
-}
-
-function renderScenarios(){
-  const list = loadScenarios();
-  const host = $('fsScenarioList');
-  host.innerHTML = '';
-  if (!list.length){
-    host.innerHTML = '<div class="fs-scenario-empty">No saved scenarios yet. Name one above and save it to start comparing.</div>';
-    return;
-  }
-  list.slice().reverse().forEach(scenario => {
-    const m = deriveMetrics(scenario.profile);
-    const card = document.createElement('div');
-    card.className = 'fs-scenario-card';
-    const coastLabel = m.coastFI === null ? '—' : (m.coastFI ? 'Coast-FI ✓' : 'Not yet');
-    card.innerHTML = `
-      <div class="fs-scenario-head">
-        <h4>${escapeHtml(scenario.name)}</h4>
-        <span class="when">Saved ${fmtWhen(scenario.savedAt)}</span>
-      </div>
-      <div class="fs-scenario-stats">
-        <div><div class="k">Age</div><div class="v">${m.age === null ? '—' : fmtNum(m.age)}</div></div>
-        <div><div class="k">Savings</div><div class="v">${fmtUSD(m.savings)}</div></div>
-        <div><div class="k">Goal</div><div class="v">${fmtUSD(m.goal)}</div></div>
-        <div><div class="k">Retire age</div><div class="v">${fmtNum(m.retireAge)}</div></div>
-        <div><div class="k">Return</div><div class="v">${fmtNum(m.r * 100)}%</div></div>
-        <div><div class="k">Progress</div><div class="v">${fmtNum(Math.max(0, m.progressPct))}%</div></div>
-        <div><div class="k">Coast-FI</div><div class="v">${coastLabel}</div></div>
-      </div>
-      <div class="fs-scenario-actions">
-        <button type="button" class="fs-btn fs-btn-ghost" data-load="${scenario.id}">Load into my profile</button>
-        <button type="button" class="fs-btn fs-btn-danger" data-delete="${scenario.id}">Delete</button>
-      </div>
-    `;
-    host.appendChild(card);
-  });
-
-  host.querySelectorAll('[data-load]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const id = btn.getAttribute('data-load');
-      const scenario = loadScenarios().find(s => s.id === id);
-      if (!scenario) return;
-      window.FNProfile.set(scenario.profile);
-      renderDashboard();
-    });
-  });
-  host.querySelectorAll('[data-delete]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const id = btn.getAttribute('data-delete');
-      const next = loadScenarios().filter(s => s.id !== id);
-      saveScenarios(next);
-      renderScenarios();
-    });
-  });
-}
-
-function escapeHtml(s){
-  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-}
-
-$('fsSaveScenarioBtn').addEventListener('click', () => {
-  const nameInput = $('fsScenarioName');
-  const name = nameInput.value.trim() || `Snapshot ${new Date().toLocaleDateString('en-US', {month:'short', day:'numeric'})}`;
-  const profile = window.FNProfile.get();
-  const list = loadScenarios();
-  list.push({
-    id: 'sc_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
-    name,
-    savedAt: Date.now(),
-    profile: {
-      birthday: profile.birthday || '',
-      currentIncome: profile.currentIncome || '',
-      currentSavings: profile.currentSavings || '',
-      goalAmount: profile.goalAmount || '',
-      retireAge: profile.retireAge || '',
-      expectedReturn: profile.expectedReturn || ''
-    }
-  });
-  saveScenarios(list);
-  nameInput.value = '';
-  renderScenarios();
-});
-
 function init(){
   renderDashboard();
-  renderScenarios();
 }
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", init);
