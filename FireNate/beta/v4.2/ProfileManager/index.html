@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script src="../assets/js/theme-init.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FireNate - Profile Manager</title>
+<meta name="description" content="Manage your saved profile and named what-if scenarios — save, load, and delete snapshots of your age, savings, goal, and return assumptions.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/site.css">
+<link rel="stylesheet" href="../assets/css/timeToFI.css">
+<script src="../assets/js/theme.js" defer></script>
+<script src="../assets/js/user-profile.js" defer></script>
+<script src="../assets/js/nav.js" defer></script>
+<script>
+window.FN_BASE = "../"; window.FN_PAGE = "profile-manager";
+</script>
+<style>
+  .pm-empty{
+    margin-top:24px; text-align:center; padding:56px 28px;
+    background:var(--surface); border:1px solid var(--line); border-top:4px solid var(--plum);
+    border-radius:var(--radius);
+  }
+  .pm-empty h2{ font-family:var(--serif); font-size:26px; margin:0 0 10px; }
+  .pm-empty p{ color:var(--ink-dim); font-size:15px; max-width:48ch; margin:0 auto 22px; }
+  .pm-btn{
+    display:inline-flex; align-items:center; gap:8px;
+    background:linear-gradient(135deg, var(--gold), var(--gold-dim));
+    color:#201205; font-weight:700; font-size:13.5px;
+    padding:11px 22px; border-radius:999px; border:none; cursor:pointer;
+    font-family:var(--sans); transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .pm-btn:hover{ transform:translateY(-1px); box-shadow:0 8px 20px -6px rgba(217,132,15,0.45); }
+  .pm-btn:active{ transform:translateY(0); }
+  .pm-btn.pm-btn-ghost{
+    background:none; border:1px solid var(--line); color:var(--ink-dim); font-weight:600;
+  }
+  .pm-btn.pm-btn-ghost:hover{ border-color:var(--gold-dim); color:var(--gold); box-shadow:none; }
+  .pm-btn.pm-btn-danger{
+    background:none; border:1px solid var(--danger); color:var(--danger); font-weight:600; padding:7px 14px; font-size:12px;
+  }
+  .pm-btn.pm-btn-danger:hover{ background:var(--danger); color:#fff; }
+
+  .pm-editnote{
+    display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+    margin-top:4px; padding:14px 22px; background:var(--surface-2); border:1px solid var(--line);
+    border-radius:var(--radius); color:var(--ink-dim); font-size:13.5px;
+  }
+
+  /* ---------- LIVE PROFILE STAT GRID ---------- */
+  .pm-grid{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:14px;
+    margin-top:20px;
+  }
+  .pm-card{
+    background:var(--surface); border:1px solid var(--line); border-top:4px solid var(--gold);
+    border-radius:var(--radius); padding:16px 18px;
+  }
+  .pm-card.jade{ border-top-color:var(--jade); }
+  .pm-card.target{ border-top-color:var(--target); }
+  .pm-card .k{ font-family:var(--mono); font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:6px; }
+  .pm-card .v{ font-family:var(--serif); font-size:22px; color:var(--ink); font-weight:500; line-height:1.15; }
+  .pm-card .v.gold{ color:var(--gold); }
+  .pm-card .v.jade{ color:var(--jade); }
+  .pm-card .v.target{ color:var(--target); }
+
+  .pm-live-pagedata{ margin-top:18px; }
+  .pm-live-pagedata .label{
+    font-family:var(--mono); font-size:10px; letter-spacing:0.1em; text-transform:uppercase;
+    color:var(--ink-faint); margin-bottom:8px;
+  }
+  .pm-live-pagedata-tags{ display:flex; flex-wrap:wrap; gap:8px; }
+  .pm-live-pagedata-tag{
+    font-size:12.5px; font-weight:600; color:var(--ink);
+    background:var(--surface-2); border:1px solid var(--line);
+    padding:6px 12px; border-radius:999px;
+  }
+  .pm-live-pagedata-empty{ font-size:13px; color:var(--ink-faint); }
+
+  /* ---------- SAVE FORM ---------- */
+  .pm-save-ledger{
+    margin-top:4px; background:var(--surface); border:1px solid var(--line); border-top:4px solid var(--plum);
+    border-radius:var(--radius); padding:22px 24px; display:flex; align-items:flex-end; gap:16px; flex-wrap:wrap;
+  }
+  .pm-save-ledger .pm-field{ display:flex; flex-direction:column; gap:6px; flex:1 1 220px; }
+  .pm-save-ledger label{ font-size:12px; color:var(--ink-dim); margin:0; }
+  .pm-save-ledger input{
+    background:var(--surface-2); border:1px solid var(--line); border-radius:8px; color:var(--ink);
+    font-family:var(--sans); font-size:14px; padding:10px 12px; outline:none;
+  }
+  .pm-save-ledger input:focus{ border-color:var(--plum); }
+
+  .pm-scenario-empty{
+    margin-top:16px; padding:28px; text-align:center; color:var(--ink-faint); font-size:13.5px;
+    background:var(--surface-2); border:1px dashed var(--line); border-radius:var(--radius);
+  }
+
+  .pm-scenario-card{
+    background:var(--surface); border:1px solid var(--line); border-top:4px solid var(--target);
+    border-radius:var(--radius); padding:20px 22px; margin-top:14px;
+  }
+  .pm-scenario-card.is-live{ border-top-color:var(--jade); }
+  .pm-scenario-head{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+  .pm-scenario-head h4{ font-family:var(--serif); font-size:19px; font-weight:600; margin:0; }
+  .pm-scenario-head .when{ font-family:var(--mono); font-size:11px; color:var(--ink-faint); }
+  .pm-scenario-pagedata{ font-size:12px; color:var(--ink-faint); margin:-8px 0 14px; }
+  .pm-live-badge{
+    font-family:var(--mono); font-size:10.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase;
+    color:var(--jade); background:rgba(79,219,143,0.15); padding:3px 10px; border-radius:999px;
+  }
+  .pm-scenario-stats{ display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:14px; margin-bottom:14px; }
+  .pm-scenario-stats .k{ font-family:var(--mono); font-size:10px; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:4px; }
+  .pm-scenario-stats .v{ font-family:var(--mono); font-size:15px; color:var(--ink); font-weight:600; }
+  .pm-scenario-actions{ display:flex; gap:10px; flex-wrap:wrap; }
+
+  /* ---------- EXPORT / IMPORT ---------- */
+  .pm-io-row{
+    display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+    margin-top:40px; margin-bottom:4px;
+  }
+  .pm-io-actions{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+
+  /* ---------- "LOAD INTO MY PROFILE" CONFIRMATION FX ---------- */
+  .pm-load-fx{
+    position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:14px; pointer-events:none; z-index:9999; opacity:0;
+  }
+  .pm-load-fx.show{ animation:pm-load-fx-fade .95s ease forwards; }
+  @keyframes pm-load-fx-fade{
+    0%{ opacity:0; } 10%{ opacity:1; } 72%{ opacity:1; } 100%{ opacity:0; }
+  }
+  .pm-load-fx-badge{
+    width:64px; height:64px; border-radius:50%;
+    background:var(--jade); color:#fff;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 10px 30px -6px rgba(79,219,143,0.55);
+    transform:scale(0.3);
+  }
+  .pm-load-fx.show .pm-load-fx-badge{ animation:pm-load-fx-pop .5s cubic-bezier(.34,1.56,.64,1) .05s forwards; }
+  @keyframes pm-load-fx-pop{
+    0%{ transform:scale(0.3) rotate(-10deg); }
+    60%{ transform:scale(1.15) rotate(4deg); }
+    100%{ transform:scale(1) rotate(0deg); }
+  }
+  .pm-load-fx-label{
+    font-family:var(--sans); font-size:13px; font-weight:700; letter-spacing:.03em;
+    color:var(--ink); background:var(--surface); border:1px solid var(--line);
+    padding:7px 16px; border-radius:999px; opacity:0;
+  }
+  .pm-load-fx.show .pm-load-fx-label{ animation:pm-load-fx-label-in .4s ease .32s forwards; }
+  @keyframes pm-load-fx-label-in{
+    from{ opacity:0; transform:translateY(4px); }
+    to{ opacity:1; transform:translateY(0); }
+  }
+  .pm-load-fx-confetti{ position:absolute; top:50%; left:50%; width:0; height:0; }
+  .pm-load-fx-confetti span{
+    position:absolute; top:0; left:0; width:7px; height:7px; border-radius:2px;
+    background:var(--c); opacity:0;
+  }
+  .pm-load-fx.show .pm-load-fx-confetti span{ animation:pm-load-fx-confetti .8s ease-out .05s forwards; }
+  @keyframes pm-load-fx-confetti{
+    0%{ opacity:0; transform:translate(-50%,-50%) rotate(var(--angle)) translateY(0) scale(1); }
+    14%{ opacity:1; }
+    100%{ opacity:0; transform:translate(-50%,-50%) rotate(var(--angle)) translateY(-95px) scale(0.4); }
+  }
+  .pm-scenario-actions [data-load].just-loaded{ animation:pm-load-btn-pulse .5s ease-out; }
+  @keyframes pm-load-btn-pulse{
+    0%{ box-shadow:0 0 0 0 rgba(79,219,143,0.6); }
+    100%{ box-shadow:0 0 0 10px rgba(79,219,143,0); }
+  }
+  .pm-io-status{
+    font-size:12.5px; color:var(--ink-dim); opacity:0; transition:opacity .25s ease;
+  }
+  .pm-io-status.show{ opacity:1; }
+  .pm-io-status.is-error{ color:var(--danger); }
+</style>
+</head>
+<body>
+<div id="fn-site-nav"></div>
+
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">FIRE Nate - Profile Manager</p>
+    <h1 id="pageTitleHeader">Every version of your plan, <em>in one place</em>.</h1>
+    <p class="lede">Your live profile powers every calculator on the site. Save it as a named snapshot before trying a different return rate, retirement age, or goal — then load any snapshot back whenever you want.</p>
+  </header>
+
+  <div id="pmEmptyState" class="pm-empty" style="display:none;">
+    <h2>Let's set up your profile first</h2>
+    <p>Add your age, savings, goal, and target retirement age once, and every calculator on the site — plus this manager — will use them.</p>
+    <button type="button" class="pm-btn" id="pmOpenProfileBtn">Set up my profile</button>
+  </div>
+
+  <div id="pmLive" style="display:none;">
+    <h2 class="ledger-title" style="margin-top:40px; margin-bottom:4px;">Your live profile</h2>
+    <div class="pm-editnote">
+      <span>This is what every calculator on the site currently reads.</span>
+      <button type="button" class="pm-btn pm-btn-ghost" id="pmEditProfileBtn">Edit my profile &rarr;</button>
+    </div>
+    <div class="pm-grid" id="pmLiveGrid"></div>
+    <div class="pm-live-pagedata" id="pmLivePageData"></div>
+  </div>
+
+  <h2 class="ledger-title" style="margin-top:48px; margin-bottom:4px;">Save a snapshot</h2>
+  <p class="lede" style="margin-bottom:16px;">Duplicate your current profile into a labeled snapshot — try a different return rate, retirement age, or savings goal, then compare them side by side.</p>
+
+  <div class="pm-save-ledger">
+    <div class="pm-field">
+      <label for="pmScenarioName">Snapshot name</label>
+      <input type="text" id="pmScenarioName" placeholder="e.g. Conservative 6% return">
+    </div>
+    <button type="button" class="pm-btn" id="pmSaveScenarioBtn">Save current profile as snapshot</button>
+  </div>
+
+  <div class="pm-io-row">
+    <h2 class="ledger-title" style="margin:0;">Saved profiles</h2>
+    <div class="pm-io-actions">
+      <span class="pm-io-status" id="pmImportExportStatus"></span>
+      <button type="button" class="pm-btn pm-btn-ghost" id="pmExportBtn">Export profiles</button>
+      <button type="button" class="pm-btn pm-btn-ghost" id="pmImportBtn">Import profiles</button>
+      <input type="file" id="pmImportFile" accept="application/json,.json" style="display:none;">
+    </div>
+  </div>
+  <div id="pmScenarioList"></div>
+</div>
+
+<footer id="site-footer"></footer>
+
+<script>
+const $ = id => document.getElementById(id);
+const fmtUSD = n => n.toLocaleString('en-US', {style:'currency', currency:'USD', maximumFractionDigits:0});
+const fmtNum = n => n.toLocaleString('en-US', {maximumFractionDigits:1});
+
+function crossoverAmount(goal, r, yearsRemaining){
+  const yrs = Math.max(0, yearsRemaining);
+  const base = 1 + r;
+  if (base <= 0) return goal;
+  return goal / Math.pow(base, yrs);
+}
+
+function deriveMetrics(profile){
+  const age = window.FNProfile.getAge(profile);
+  const savings = parseFloat(profile.currentSavings) || 0;
+  const goal = parseFloat(profile.goalAmount) || 0;
+  const retireAge = parseFloat(profile.retireAge) || 0;
+  const r = (parseFloat(profile.expectedReturn) || 0) / 100;
+  const yearsToRetire = age !== null ? Math.max(0, retireAge - age) : null;
+  const progressPct = goal > 0 ? (savings / goal) * 100 : 0;
+  const requiredNow = (age !== null && yearsToRetire !== null) ? crossoverAmount(goal, r, yearsToRetire) : null;
+  const coastFI = requiredNow !== null ? savings >= requiredNow : null;
+  return { age, savings, goal, retireAge, r, progressPct, coastFI };
+}
+
+function profileComplete(profile){
+  return !!(profile && profile.birthday && profile.goalAmount && profile.retireAge && profile.currentSavings !== undefined && profile.currentSavings !== '');
+}
+
+function renderLiveGrid(m){
+  const grid = $('pmLiveGrid');
+  grid.innerHTML = '';
+  const add = (k, v, cls) => {
+    const div = document.createElement('div');
+    div.className = 'pm-card' + (cls ? ' ' + cls : '');
+    div.innerHTML = `<div class="k">${k}</div><div class="v${cls ? ' ' + cls : ''}">${v}</div>`;
+    grid.appendChild(div);
+  };
+  add('Age', m.age === null ? '—' : fmtNum(m.age));
+  add('Savings', fmtUSD(m.savings), 'jade');
+  add('Goal Amount', fmtUSD(m.goal), 'gold');
+  add('Retirement Age', fmtNum(m.retireAge));
+  add('Annual Return Rate', fmtNum(m.r * 100) + '%', 'target');
+  add('Progress', fmtNum(Math.max(0, m.progressPct)) + '%', 'jade');
+}
+
+// lists which calculator pages currently have their own saved inputs, so
+// "Your live profile" reflects the whole site's state — not just the 6
+// shared fields shown in the stat grid above it
+function renderLivePageData(){
+  const host = $('pmLivePageData');
+  if (!host) return;
+  const names = pageDataLabels(collectPageData());
+  host.innerHTML = names.length
+    ? `<div class="label">Calculators with saved inputs</div>
+       <div class="pm-live-pagedata-tags">${names.map(n => `<span class="pm-live-pagedata-tag">${escapeHtml(n)}</span>`).join('')}</div>`
+    : `<div class="pm-live-pagedata-empty">No calculator-specific inputs saved yet — visit a calculator and its inputs will show up here.</div>`;
+}
+
+function renderLive(){
+  const profile = window.FNProfile.get();
+  const complete = profileComplete(profile);
+  $('pmEmptyState').style.display = complete ? 'none' : '';
+  $('pmLive').style.display = complete ? '' : 'none';
+  if (!complete) return;
+  renderLiveGrid(deriveMetrics(profile));
+  renderLivePageData();
+}
+
+// pop + color-cycle glow on the profile icon and panel so the jump from
+// this page over to the nav actually catches the eye, instead of a dropdown
+// silently appearing somewhere the user wasn't looking
+function pulseAttention(el){
+  if (!el) return;
+  el.classList.remove('fn-attn');
+  void el.offsetWidth; // force reflow so the animation restarts on repeat clicks
+  el.classList.add('fn-attn');
+  var cleared = false;
+  var clear = function(){
+    if (cleared) return;
+    cleared = true;
+    el.classList.remove('fn-attn');
+  };
+  el.addEventListener('animationend', clear, { once: true });
+  setTimeout(clear, 1400);
+}
+// full-screen checkmark + confetti burst so clicking "Load into my profile"
+// has an unmistakable, fun payoff — same reflow-restart + animationend/
+// timeout cleanup pattern used for the camera-flash and clear-all effects
+// in nav.js, kept as a lazily-created child of <body> so it always covers
+// the real viewport regardless of this page's own layout
+function triggerLoadFx(){
+  let fx = document.getElementById('pmLoadFx');
+  if (!fx){
+    const colors = ['var(--gold)', 'var(--jade)', 'var(--plum)', 'var(--target)'];
+    const count = 12;
+    let confettiHtml = '';
+    for (let i = 0; i < count; i++){
+      const angle = Math.round((360 / count) * i);
+      confettiHtml += `<span style="--angle:${angle}deg;--c:${colors[i % colors.length]}"></span>`;
+    }
+    fx = document.createElement('div');
+    fx.id = 'pmLoadFx';
+    fx.className = 'pm-load-fx';
+    fx.setAttribute('aria-hidden', 'true');
+    fx.innerHTML = `
+      <div class="pm-load-fx-confetti">${confettiHtml}</div>
+      <div class="pm-load-fx-badge">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+      </div>
+      <div class="pm-load-fx-label">Loaded into your profile</div>
+    `;
+    document.body.appendChild(fx);
+  }
+  fx.classList.remove('show');
+  void fx.offsetWidth;
+  fx.classList.add('show');
+  let cleared = false;
+  const clear = () => {
+    if (cleared) return;
+    cleared = true;
+    fx.classList.remove('show');
+  };
+  fx.addEventListener('animationend', clear, { once: true });
+  setTimeout(clear, 1200);
+}
+
+function openProfilePanelWithAttention(){
+  const toggle = document.querySelector('.fn-profile-toggle');
+  if (toggle) toggle.click();
+  pulseAttention(document.querySelector('.fn-profile-toggle'));
+  pulseAttention(document.querySelector('.fn-profile-panel'));
+}
+
+// stopPropagation matters here: these buttons live outside #fn-site-nav, so
+// once the nested .click() below opens the profile panel, letting this
+// original click event keep bubbling to document would hit nav.js's own
+// "click outside the nav closes every panel" listener — which sees this
+// button (outside the nav) as the click target and immediately closes the
+// panel that was just opened.
+$('pmOpenProfileBtn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  openProfilePanelWithAttention();
+});
+$('pmEditProfileBtn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  openProfilePanelWithAttention();
+});
+
+document.addEventListener('fn-profile-change', renderLive);
+
+// ---------- scenarios ----------
+const SCENARIO_KEY = 'fn-scenarios';
+function loadScenarios(){
+  try {
+    const raw = localStorage.getItem(SCENARIO_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch(e) { return []; }
+}
+function saveScenarios(list){
+  try { localStorage.setItem(SCENARIO_KEY, JSON.stringify(list)); } catch(e) {}
+}
+
+// reads every calculator's own saved-inputs key (the shared registry nav.js
+// exposes as window.FN_PAGE_DATA_KEYS) into a plain { key: rawJsonString }
+// bag, so a snapshot captures a user's full site state — not just the 6
+// shared profile fields shown in "Your info"
+function collectPageData(){
+  const data = {};
+  (window.FN_PAGE_DATA_KEYS || []).forEach(key => {
+    let raw = null;
+    try { raw = localStorage.getItem(key); } catch(e) {}
+    if (raw !== null) data[key] = raw;
+  });
+  return data;
+}
+// writes a previously-collected page-data bag straight back into
+// localStorage under each of its original keys — each page's own
+// loadInputs() picks the values up the next time it's visited
+function applyPageData(pageData){
+  if (!pageData) return;
+  Object.keys(pageData).forEach(key => {
+    try { localStorage.setItem(key, pageData[key]); } catch(e) {}
+  });
+}
+// friendly calculator names for whichever page-data keys are present in a
+// { key: rawJsonString } bag (a scenario's own pageData, or the live one
+// from collectPageData()), using the shared registry nav.js exposes as
+// window.FN_PAGE_DATA_LABELS — falls back to the raw key so an
+// unrecognized/future key still shows up rather than silently vanishing
+function pageDataLabels(pageData){
+  if (!pageData) return [];
+  const labels = window.FN_PAGE_DATA_LABELS || {};
+  return Object.keys(pageData).map(key => labels[key] || key);
+}
+
+function fmtWhen(ts){
+  const d = new Date(ts);
+  return d.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) + ' ' +
+    d.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'});
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function renderScenarios(){
+  const list = loadScenarios();
+  const host = $('pmScenarioList');
+  host.innerHTML = '';
+  if (!list.length){
+    host.innerHTML = '<div class="pm-scenario-empty">No saved snapshots yet. Name one above and save it to start comparing.</div>';
+    return;
+  }
+  list.slice().reverse().forEach(scenario => {
+    const m = deriveMetrics(scenario.profile);
+    const card = document.createElement('div');
+    card.className = 'pm-scenario-card';
+    const coastLabel = m.coastFI === null ? '—' : (m.coastFI ? 'Coast-FI ✓' : 'Not yet');
+    const pageDataNames = pageDataLabels(scenario.pageData);
+    card.innerHTML = `
+      <div class="pm-scenario-head">
+        <h4>${escapeHtml(scenario.name)}</h4>
+        <span class="when">Saved ${fmtWhen(scenario.savedAt)}</span>
+      </div>
+      ${pageDataNames.length ? `<div class="pm-scenario-pagedata">Also includes: ${pageDataNames.map(escapeHtml).join(', ')}</div>` : ''}
+      <div class="pm-scenario-stats">
+        <div><div class="k">Age</div><div class="v">${m.age === null ? '—' : fmtNum(m.age)}</div></div>
+        <div><div class="k">Savings</div><div class="v">${fmtUSD(m.savings)}</div></div>
+        <div><div class="k">Goal</div><div class="v">${fmtUSD(m.goal)}</div></div>
+        <div><div class="k">Retire age</div><div class="v">${fmtNum(m.retireAge)}</div></div>
+        <div><div class="k">Return</div><div class="v">${fmtNum(m.r * 100)}%</div></div>
+        <div><div class="k">Progress</div><div class="v">${fmtNum(Math.max(0, m.progressPct))}%</div></div>
+        <div><div class="k">Coast-FI</div><div class="v">${coastLabel}</div></div>
+      </div>
+      <div class="pm-scenario-actions">
+        <button type="button" class="pm-btn pm-btn-ghost" data-load="${scenario.id}">Load into my profile</button>
+        <button type="button" class="pm-btn pm-btn-danger" data-delete="${scenario.id}">Delete</button>
+      </div>
+    `;
+    host.appendChild(card);
+  });
+
+  host.querySelectorAll('[data-load]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-load');
+      const scenario = loadScenarios().find(s => s.id === id);
+      if (!scenario) return;
+      window.FNProfile.set(scenario.profile);
+      applyPageData(scenario.pageData);
+      renderLive();
+      triggerLoadFx();
+      btn.classList.remove('just-loaded');
+      void btn.offsetWidth;
+      btn.classList.add('just-loaded');
+      setTimeout(() => btn.classList.remove('just-loaded'), 500);
+    });
+  });
+  host.querySelectorAll('[data-delete]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-delete');
+      const ok = window.confirm('Delete this saved snapshot? This can\'t be undone.');
+      if (!ok) return;
+      const next = loadScenarios().filter(s => s.id !== id);
+      saveScenarios(next);
+      renderScenarios();
+    });
+  });
+}
+
+$('pmSaveScenarioBtn').addEventListener('click', () => {
+  const nameInput = $('pmScenarioName');
+  const name = nameInput.value.trim() || `Snapshot ${new Date().toLocaleDateString('en-US', {month:'short', day:'numeric'})}`;
+  const profile = window.FNProfile.get();
+  const list = loadScenarios();
+  list.push({
+    id: 'sc_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+    name,
+    savedAt: Date.now(),
+    profile: {
+      birthday: profile.birthday || '',
+      currentIncome: profile.currentIncome || '',
+      currentSavings: profile.currentSavings || '',
+      goalAmount: profile.goalAmount || '',
+      retireAge: profile.retireAge || '',
+      expectedReturn: profile.expectedReturn || ''
+    },
+    pageData: collectPageData()
+  });
+  saveScenarios(list);
+  nameInput.value = '';
+  renderScenarios();
+});
+
+// ---------- export / import ----------
+function showPmStatus(msg, isError){
+  const el = $('pmImportExportStatus');
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.toggle('is-error', !!isError);
+  el.classList.add('show');
+  clearTimeout(showPmStatus._t);
+  showPmStatus._t = setTimeout(() => el.classList.remove('show'), 5000);
+}
+
+$('pmExportBtn').addEventListener('click', () => {
+  const scenarios = loadScenarios();
+  const profile = window.FNProfile.get();
+  const pageData = collectPageData();
+  const payload = {
+    app: 'FireNate',
+    kind: 'profile-export',
+    version: 2,
+    exportedAt: new Date().toISOString(),
+    profile,
+    pageData,
+    scenarios
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const now = new Date();
+  const pad2 = n => String(n).padStart(2, '0');
+  const stamp = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}-` +
+    `${pad2(now.getHours())}-${pad2(now.getMinutes())}-${pad2(now.getSeconds())}`;
+  a.download = `FireNate-Profiles-${stamp}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  const hasLiveState = profileComplete(profile) || Object.keys(pageData).length > 0;
+  showPmStatus(`Exported ${scenarios.length} saved profile${scenarios.length === 1 ? '' : 's'}${hasLiveState ? ' + your live profile and calculator inputs' : ''}.`);
+});
+
+// mirrors nav.js's own "Backup " safety net ahead of "Clear my info" —
+// reused here so starting an import never risks silently losing whatever
+// was in the live profile (and every calculator page's own saved inputs)
+// beforehand. Skips saving a blank backup if there's nothing anywhere on
+// the site yet. Returns true if it actually saved one.
+function backupCurrentProfileIfNeeded(){
+  const current = window.FNProfile.get();
+  const profileKeys = ['birthday', 'currentIncome', 'currentSavings', 'goalAmount', 'retireAge', 'expectedReturn'];
+  const hasProfileData = profileKeys.some(k => current[k] !== undefined && current[k] !== null && current[k] !== '');
+  const pageData = collectPageData();
+  const hasPageData = Object.keys(pageData).length > 0;
+  if (!hasProfileData && !hasPageData) return false;
+  const now = new Date();
+  const name = 'Backup ' +
+    now.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) +
+    ' ' + now.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'});
+  const list = loadScenarios();
+  list.push({
+    id: 'sc_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+    name,
+    savedAt: Date.now(),
+    profile: {
+      birthday: current.birthday || '',
+      currentIncome: current.currentIncome || '',
+      currentSavings: current.currentSavings || '',
+      goalAmount: current.goalAmount || '',
+      retireAge: current.retireAge || '',
+      expectedReturn: current.expectedReturn || ''
+    },
+    pageData
+  });
+  saveScenarios(list);
+  return true;
+}
+
+$('pmImportBtn').addEventListener('click', () => {
+  $('pmImportFile').click();
+});
+
+$('pmImportFile').addEventListener('change', (e) => {
+  const file = e.target.files && e.target.files[0];
+  e.target.value = ''; // clear so re-selecting the same file later still fires "change"
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    let data;
+    try { data = JSON.parse(reader.result); }
+    catch (err) { showPmStatus("That file isn't valid JSON.", true); return; }
+
+    const incoming = Array.isArray(data && data.scenarios) ? data.scenarios : Array.isArray(data) ? data : [];
+    const valid = incoming.filter(s => s && typeof s === 'object' && s.profile && typeof s.profile === 'object');
+    const hasLiveProfileFields = !!(data && data.profile && typeof data.profile === 'object' && profileComplete(data.profile));
+    const importPageData = (data && data.pageData && typeof data.pageData === 'object') ? data.pageData : null;
+    const hasLivePageData = !!(importPageData && Object.keys(importPageData).length);
+    const hasLiveState = hasLiveProfileFields || hasLivePageData;
+
+    if (!valid.length && !hasLiveState) {
+      showPmStatus('No profiles found in that file.', true);
+      return;
+    }
+
+    const backedUp = backupCurrentProfileIfNeeded();
+    if (backedUp) renderScenarios();
+
+    if (valid.length) {
+      // fresh ids on import so re-importing the same file (or one from
+      // another device) never collides with — or silently overwrites —
+      // anything already saved on this one
+      const imported = valid.map(s => ({
+        id: 'sc_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+        name: s.name ? String(s.name) : 'Imported profile',
+        savedAt: s.savedAt || Date.now(),
+        profile: {
+          birthday: s.profile.birthday || '',
+          currentIncome: s.profile.currentIncome || '',
+          currentSavings: s.profile.currentSavings || '',
+          goalAmount: s.profile.goalAmount || '',
+          retireAge: s.profile.retireAge || '',
+          expectedReturn: s.profile.expectedReturn || ''
+        },
+        pageData: (s.pageData && typeof s.pageData === 'object') ? s.pageData : {}
+      }));
+      saveScenarios(loadScenarios().concat(imported));
+      renderScenarios();
+    }
+
+    let loadedLive = false;
+    if (hasLiveState) {
+      const ok = window.confirm(
+        "This file also has a live profile in it (your age/savings/goal fields, plus your saved calculator inputs). Load it as your current data too?\n\n" +
+        (backedUp
+          ? "Your current profile and calculator inputs were just backed up as a snapshot, so you can get them back anytime. This will still replace what's currently there."
+          : "This replaces what's currently there.")
+      );
+      if (ok) {
+        if (hasLiveProfileFields) window.FNProfile.set(data.profile);
+        if (hasLivePageData) applyPageData(importPageData);
+        renderLive();
+        loadedLive = true;
+      }
+    }
+
+    showPmStatus(`Imported ${valid.length} saved profile${valid.length === 1 ? '' : 's'}${backedUp ? ' (backed up your previous live profile)' : ''}${loadedLive ? ' + set as your live profile' : ''}.`);
+  };
+  reader.onerror = () => showPmStatus('Could not read that file.', true);
+  reader.readAsText(file);
+});
+
+function init(){
+  renderLive();
+  renderScenarios();
+}
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", init);
+} else {
+  init();
+}
+</script>
+</body>
+</html>

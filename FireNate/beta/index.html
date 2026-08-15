@@ -19,7 +19,9 @@
     --red: #ff5c5c;
     --green: #3ddc84;
     --green-bright: #5cffa3;
-
+    --blue: #3d84dc;
+    --blue-bright: #5ca3ff;
+    
     /* default "live" accent for .is-active cards — overridden per-card by
        .is-live-green / .is-live-orange / .is-live-red so the same pulse,
        glow, and pill rules can be reused with a different color per version */
@@ -129,7 +131,9 @@
   }
 
   /* per-card accent overrides — same .is-active structure/animation, different color */
+  .version-card.is-live-blue { --live-rgb: 61, 132, 220; --live: var(--blue); --live-bright: var(--blue-bright); }
   .version-card.is-live-green { --live-rgb: 61, 220, 132; --live: var(--green); --live-bright: var(--green-bright); }
+  
   .version-card.is-live-orange { --live-rgb: 255, 179, 71; --live: var(--accent-2); --live-bright: #ffcf85; }
   .version-card.is-live-red { --live-rgb: 255, 92, 92; --live: var(--red); --live-bright: #ff8a8a; }
 
@@ -406,20 +410,27 @@
 
     <div class="versions">
 
-      <a class="version-card is-disabled" href="v4.2/index.html" aria-disabled="true" tabindex="-1" onclick="return false;">
+      <a class="version-card is-active is-live-blue" href="v4.2/index.html">
         <div class="version-icon">B.4.2</div>
         <div class="version-info">
-          <p class="name">Version 4.2</p>
+          <p class="name">Beta 4.2 — Current</p>
           <p class="path">/beta/v4.2</p>
-          <p class="notes">T.B.D.</p>
+          <p class="notes"><ul>
+            <li>Bug Fixes</li>
+            <li>New pages</li>
+            <li>Home Page changes</li>
+         </ul></p>
+          <p class="cta-hint">Click to open the current build</p>
         </div>
-        <span class="status-pill disabled">⛔ Disabled</span>
+        <span class="status-pill active">✔ Current</span>
       </a>
+
+
 
       <a class="version-card is-active is-live-green" href="v4.1/index.html">
         <div class="version-icon">B.4.1</div>
         <div class="version-info">
-          <p class="name">Version 4.1 — Current</p>
+          <p class="name">Beta 4.1 </p>
           <p class="path">/beta/v4.1</p>
           <p class="notes"><ul>
             <li>Full "Your info" profile panel — quick snapshot via camera icon, an automatic safety backup before "Clear my info", and a hover/tap quick-load menu for saved profiles</li>
@@ -429,15 +440,15 @@
             <li>Fun, unmistakable confirmation animations for taking a snapshot, loading a profile, and clearing your data</li>
             <li>Hamburger menu and quick-load flyout both cap their height with scroll fades and hover-to-auto-scroll</li>
           </ul></p>
-          <p class="cta-hint">Click to open the current build</p>
+          <p class="cta-hint">Click to open </p>
         </div>
-        <span class="status-pill active">✔ Current</span>
+        <span class="status-pill active">View</span>
       </a>
 
       <a class="version-card is-active is-live-orange" href="v4.0/index.html">
         <div class="version-icon">B.4.0</div>
         <div class="version-info">
-          <p class="name">Version 4.0 — Preview</p>
+          <p class="name">Version 4.0</p>
           <p class="path">/beta/v4.0</p>
           <p class="notes"><ul>
             <li>FI Snapshot dashboard — age, savings, and goal progress pulled straight from your saved profile</li>
@@ -446,9 +457,9 @@
             <li>Emergency Fund calculator — coverage targets, funded progress, and payoff projection</li>
             <li>"New!" ribbons on the homepage, reordered to lead with the FI Snapshot dashboard</li>
           </ul></p>
-          <p class="cta-hint">Click to open the preview</p>
+          <p class="cta-hint">Click to open </p>
         </div>
-        <span class="status-pill active">✔ Preview</span>
+        <span class="status-pill active">View</span>
       </a>
 
       <a class="version-card is-active is-live-orange" href="v3.1/index.html">
@@ -466,9 +477,9 @@
                   <li>code clean up - external JS & CSS files</li>
                    <li>Additional Pages (Net Worth, General Info, Files, Crossover)</li>
           </ul></p>
-          <p class="cta-hint">Click to open the preview</p>
+          <p class="cta-hint">Click to open </p>
         </div>
-        <span class="status-pill active">✔ Preview</span>
+        <span class="status-pill active">View</span>
       </a>
 
 
@@ -479,9 +490,9 @@
           <p class="name">Beta 3.0</p>
           <p class="path">/beta/v3</p>
           <p class="notes">Unify pages into a cohesive site</p>
-          <p class="cta-hint">Click to open the preview</p>
+          <p class="cta-hint">Click to open </p>
         </div>
-        <span class="status-pill active">✔ Preview</span>
+        <span class="status-pill active">View</span>
       </a>
 
       <a class="version-card is-disabled" href="v2/index.html" aria-disabled="true" tabindex="-1" onclick="return false;">
