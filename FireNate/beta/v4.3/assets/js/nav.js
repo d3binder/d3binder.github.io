@@ -84,6 +84,7 @@
     { id: "glossary", label: "Glossary", href: BASE + "Glossary/index.html", group: "Resources" },
     { id: "about", label: "About", href: BASE + "About/index.html", group: "Resources" },
     { id: "terms", label: "Terms, Conditions & Copyright", href: BASE + "Terms/index.html", group: "Resources" },
+    { id: "contact", label: "Contact", href: BASE + "Contact/index.html", group: "Resources" },
     { id: "profile-manager", label: "Profile Manager", href: BASE + "ProfileManager/index.html", group: "Resources" }
   ];
 
