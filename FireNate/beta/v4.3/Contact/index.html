@@ -83,10 +83,23 @@ function SndEmlMsg() {
   var dom = decode([70, 105, 114, 101, 78, 97, 116, 101]);//decode([101, 120, 97, 109, 112, 108, 101]);
   var typ = decode([99, 111, 109]);
   var iDo = decode([109, 97, 105, 108, 116, 111]);
+  var iGo = `${iDo}:${act}@${dom}.${typ}`;
 
-  // Use backticks (`) for variable interpolation inside template literals
-  window.open(`${iDo}:${act}@${dom}.${typ}`, '_self');
-}
+  // Detect iOS (iPhone/iPad/iPod)
+   const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+   // Detect Safari (not Chrome, not Firefox, not Edge)
+   const isSafari = /^((?!chrome|crios|fxios|edgios).)*safari/i.test(navigator.userAgent);
+
+   if (isIOS && isSafari) {
+       // iOS Safari cannot handle window.open("mailto:")
+       window.location.href = iGo;
+   } else {
+       // All other browsers handle window.open fine
+       window.open(iGo);
+   }
+
+  }
 </script>
 
 
