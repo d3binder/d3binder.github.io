@@ -82,8 +82,9 @@ function SndEmlMsg() {
   var act = decode([115, 117, 112, 112, 111, 114, 116]);
   var dom = decode([70, 105, 114, 101, 78, 97, 116, 101]);//decode([101, 120, 97, 109, 112, 108, 101]);
   var typ = decode([99, 111, 109]);
-  var iDo = decode([109, 97, 105, 108, 116, 111]);
-  var iGo = `${iDo}:${act}@${dom}.${typ}`;
+  var iDo = decode([109, 97, 105, 108, 116, 111]) + ":";
+  var iBe = `${act}@${dom}.${typ}`;
+  var iGo = `${iDo}${iBe}`;
 
   // Detect iOS (iPhone/iPad/iPod)
    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
@@ -92,11 +93,12 @@ function SndEmlMsg() {
    const isSafari = /^((?!chrome|crios|fxios|edgios).)*safari/i.test(navigator.userAgent);
 
    if (isIOS && isSafari) {
-       // iOS Safari cannot handle window.open("mailto:")
+       // iOS Safari cannot handle sending messages via window.open
+       alert("We've detected a security setting in Safari for iOS that may block an email. If so, you can manually send an email to us at: ["+iBe+"] ");
        window.location.href = iGo;
    } else {
        // All other browsers handle window.open fine
-       window.open(iGo);
+       window.open(iGo,"_self");
    }
 
   }
