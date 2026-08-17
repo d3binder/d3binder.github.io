@@ -1251,7 +1251,7 @@
           // actually sits in the panel's own layout, not a fixed guess
           var shareToast = document.getElementById("fnShareToast");
           var shareToastTimer = null;
-          function showShareToast(success) {
+          function showShareToast(success, message) {
             if (!shareToast) return;
             var panel = shareBtn.closest(".fn-profile-panel");
             if (panel) {
@@ -1260,7 +1260,7 @@
               shareToast.style.left = (btnRect.left - panelRect.left + btnRect.width / 2) + "px";
               shareToast.style.top = (btnRect.bottom - panelRect.top + 8) + "px";
             }
-            shareToast.textContent = success ? "Link copied!" : "Couldn't copy — try again";
+            shareToast.textContent = message || (success ? "Link copied!" : "Couldn't copy — try again");
             shareToast.classList.toggle("is-error", !success);
             shareToast.classList.remove("show");
             void shareToast.offsetWidth;
@@ -1278,6 +1278,12 @@
               window.prompt("Copy this link:", url);
             });
           } else {
+            // no Clipboard API at all — most commonly because the page is
+            // loaded over plain HTTP (an insecure context), where the API
+            // doesn't exist regardless of permissions. Without this toast
+            // the click looked like it silently did nothing; the dialog
+            // that follows is where the link actually gets copied.
+            showShareToast(true, "Link ready — copy it from the dialog");
             window.prompt("Copy this link:", url);
           }
         });
