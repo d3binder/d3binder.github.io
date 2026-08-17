@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script src="../assets/js/theme-init.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FireNate - Social Security &amp; Pension Bridge</title>
+<meta name="description" content="Your true FIRE number, once you account for Social Security or a pension kicking in later — split into the years you self-fund and the years you're supplemented.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/site.css">
+<link rel="stylesheet" href="../assets/css/timeToFI.css">
+<script src="../assets/js/theme.js" defer></script>
+<script src="../assets/js/user-profile.js" defer></script>
+<script src="../assets/js/nav.js" defer></script>
+<script src="../assets/js/profile-autofill.js" defer></script>
+<script>
+window.FN_BASE = "../"; window.FN_PAGE = "ss-bridge";
+window.FN_PROFILE_FIELDS = {
+  currentAge: "#currentAge",
+  currentSavings: "#currentSavings",
+  retireAge: "#retireAge",
+  expectedReturn: "#returnPct"
+};
+window.FN_PROFILE_LEGACY_KEY = "ssBridgeInputs";
+</script>
+<style>
+  /* ---------- STICKY COLLAPSIBLE INPUT TOOLBAR ---------- */
+  :root{
+    --toolbar-bg:
+      radial-gradient(1200px 260px at 10% -40%, rgba(217,132,15,0.30), transparent 60%),
+      radial-gradient(900px 300px at 90% 140%, rgba(219,59,35,0.22), transparent 60%),
+      linear-gradient(115deg, #3B1B4A 0%, #1B3A52 38%, #123B33 68%, #2E2117 100%);
+    --toolbar-bg-solid:#221A30;
+    --toolbar-line: rgba(243,238,221,0.18);
+    --toolbar-text:#F8F3E8;
+    --toolbar-muted:#C9BFDA;
+    --toolbar-muted-2:#9C8FAE;
+    --gold-bright:#F3B23A;
+    --sage-bright:#4FDB8F;
+    --teal-bright:#4FD8E8;
+    --rust-bright:#FF7A5C;
+    --plum-bright:#D98CE8;
+  }
+  .ssb-inputs{
+    position:sticky; top:60px; z-index:38;
+    background:var(--toolbar-bg);
+    color:var(--toolbar-text);
+    border-bottom:1px solid var(--toolbar-line);
+    box-shadow:0 12px 28px rgba(0,0,0,0.22);
+  }
+  .ssb-summary-row{ display:flex; justify-content:center; padding:11px 24px 0; }
+  .ssb-summary{
+    max-width:100%;
+    font-family:var(--mono); font-weight:600; font-size:12px;
+    background:linear-gradient(90deg, var(--gold-bright), var(--rust-bright) 35%, var(--plum-bright) 65%, var(--teal-bright));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:center;
+  }
+  .ssb-toggle-row{ display:flex; justify-content:center; padding:8px 24px 12px; }
+  .ssb-toggle{
+    display:inline-flex; align-items:center; gap:7px; flex-shrink:0;
+    background:rgba(217,140,232,0.16); border:1px solid var(--plum-bright); color:var(--plum-bright);
+    font-family:var(--mono); font-size:11px; font-weight:600; letter-spacing:.05em; text-transform:uppercase;
+    padding:6px 14px; border-radius:20px; cursor:pointer;
+    transition:background-color .15s, border-color .15s, color .15s; white-space:nowrap;
+  }
+  .ssb-toggle:hover{ background:linear-gradient(90deg, var(--plum-bright), var(--teal-bright)); border-color:var(--plum-bright); color:var(--toolbar-bg-solid); }
+  .ssb-toggle:active{ transform:translateY(1px); }
+  .ssb-toggle:focus-visible{ outline:2px solid var(--plum-bright); outline-offset:2px; }
+  .ssb-chevron{ transition:transform .2s ease; flex-shrink:0; }
+  .ssb-inputs.collapsed .ssb-chevron{ transform:rotate(180deg); }
+  .ssb-content{
+    max-height:600px; overflow:hidden; opacity:1;
+    transition:max-height .25s ease, opacity .2s ease;
+  }
+  .ssb-inputs.collapsed .ssb-content{ max-height:0; opacity:0; pointer-events:none; }
+  .ssb-inner{
+    padding:4px 24px 16px;
+    display:flex; align-items:flex-end; flex-wrap:wrap; gap:18px 30px;
+  }
+  .ssb-fields{ display:flex; align-items:flex-end; flex-wrap:wrap; gap:16px; flex:1 1 auto; }
+  .ssb-field{ display:flex; flex-direction:column; gap:6px; }
+  .ssb-field label{
+    font-family:var(--mono); font-size:10.5px; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--toolbar-muted); white-space:nowrap;
+  }
+  .ssb-input-row{ display:flex; align-items:center; gap:4px; }
+  .ssb-prefix, .ssb-suffix{ font-family:var(--mono); font-size:14px; color:var(--gold-bright); font-weight:500; }
+  .ssb-field input{
+    background:rgba(0,0,0,0.22); border:1px solid transparent; border-radius:7px; color:var(--toolbar-text);
+    font-family:var(--mono); font-size:14.5px; font-weight:500; padding:8px 10px; outline:none;
+    transition:border-color .15s, box-shadow .15s; box-shadow:0 1px 2px rgba(0,0,0,0.2);
+    width:104px; font-variant-numeric:tabular-nums;
+  }
+  .ssb-field input.ssb-narrow{ width:64px; }
+  .ssb-field input:focus{ border-color:var(--gold-bright); box-shadow:0 0 0 3px rgba(243,178,58,0.28); }
+  .ssb-save{ display:flex; flex-direction:column; align-items:flex-end; gap:8px; margin-left:auto; }
+  .ssb-save .save-status{ font-family:var(--mono); font-size:11.5px; letter-spacing:.04em; color:var(--toolbar-muted-2); white-space:nowrap; }
+  .ssb-save .reset-btn{
+    background:rgba(255,122,92,0.08); border:1px solid var(--rust-bright); color:var(--rust-bright);
+    font-family:var(--mono); font-size:11.5px; letter-spacing:.05em; text-transform:uppercase;
+    padding:7px 16px; border-radius:20px; cursor:pointer; transition:background-color .15s, color .15s; white-space:nowrap;
+  }
+  .ssb-save .reset-btn:hover{ background:var(--rust-bright); color:var(--toolbar-bg-solid); }
+  .ssb-save .reset-btn:active{ transform:translateY(1px); }
+  @media (max-width:820px){
+    .ssb-save{ margin-left:0; align-items:flex-start; flex-direction:row; justify-content:space-between; width:100%; }
+  }
+
+  /* ---------- EXPLAINER ---------- */
+  .ssb-explainer{
+    background:var(--surface); border:1px solid var(--line); border-top:4px solid var(--target);
+    border-radius:var(--radius); padding:22px 24px; margin-top:4px;
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:20px;
+  }
+  .ssb-explainer-phase .tag{
+    font-family:var(--mono); font-size:10.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+    margin-bottom:6px; display:block;
+  }
+  .ssb-explainer-phase.p1 .tag{ color:var(--gold); }
+  .ssb-explainer-phase.p2 .tag{ color:var(--jade); }
+  .ssb-explainer-phase p{ margin:0; font-size:13.5px; color:var(--ink-dim); line-height:1.6; }
+  .ssb-explainer-phase strong{ color:var(--ink); }
+
+  /* ---------- CLAIMING-AGE CARDS ---------- */
+  .ssb-scenarios{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:14px;
+  }
+  .ssb-scenario-card{
+    background:var(--surface); border:1px solid var(--line); border-top:4px solid var(--gold);
+    border-radius:var(--radius); padding:22px 22px 20px;
+  }
+  .ssb-scenario-card.jade{ border-top-color:var(--jade); }
+  .ssb-scenario-card.plum{ border-top-color:var(--plum); }
+  .ssb-scenario-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:10px; }
+  .ssb-scenario-tag{ font-family:var(--serif); font-size:17px; font-weight:600; color:var(--ink); }
+  .ssb-scenario-badge{
+    font-family:var(--mono); font-size:11px; font-weight:700;
+    padding:3px 9px; border-radius:999px; white-space:nowrap;
+  }
+  .ssb-scenario-badge.good{ color:var(--jade); background:rgba(31,146,84,0.12); }
+  .ssb-scenario-badge.flat{ color:var(--ink-dim); background:var(--surface-2); }
+  .ssb-scenario-amt{ font-family:var(--serif); font-size:26px; font-weight:600; color:var(--ink); line-height:1.15; margin-bottom:8px; }
+  .ssb-scenario-split{ display:flex; gap:14px; font-size:12px; color:var(--ink-faint); margin-bottom:10px; font-family:var(--mono); }
+  .ssb-scenario-split b{ color:var(--ink-dim); font-weight:600; }
+  .ssb-scenario-desc{ font-size:12.5px; color:var(--ink-faint); line-height:1.5; }
+
+  /* ---------- inline SVG stacked-bar chart (no external chart library) ---------- */
+  #ssbChart{ width:100%; height:auto; display:block; overflow:visible; }
+  .ssb-bar-bridge{ fill:var(--gold); transition:opacity .15s ease; cursor:pointer; }
+  .ssb-bar-ongoing{ fill:var(--jade); transition:opacity .15s ease; cursor:pointer; }
+  .ssb-bar-group:hover rect{ opacity:0.75; }
+  .ssb-grid-line{ stroke:var(--line); stroke-width:1; }
+  .ssb-ref-line{ stroke:var(--ink-faint); stroke-width:1.5; stroke-dasharray:5 4; }
+  .ssb-grid-label, .ssb-axis-label{ font-family:var(--mono); font-size:10px; fill:var(--ink-faint); }
+  .ssb-ref-label{ font-family:var(--mono); font-size:10.5px; fill:var(--ink-faint); font-weight:600; }
+  #ssbTooltip{
+    position:fixed; pointer-events:none; background:var(--surface); border:1px solid var(--line);
+    border-radius:10px; padding:9px 13px; font-family:var(--mono); font-size:12px; color:var(--ink);
+    opacity:0; transform:translate(-50%,-115%); transition:opacity .12s; z-index:50;
+    white-space:nowrap; box-shadow:0 8px 24px -10px rgba(0,0,0,0.45);
+  }
+  #ssbTooltip .yr{ color:var(--ink-faint); margin-bottom:3px; }
+  #ssbTooltip .row{ display:flex; justify-content:space-between; gap:14px; }
+</style>
+</head>
+<body>
+<div id="fn-site-nav"></div>
+
+<div class="ssb-inputs" id="ssbInputs">
+  <div class="wrap ssb-summary-row">
+    <div class="ssb-summary" id="ssbSummary">&mdash;</div>
+  </div>
+  <div class="ssb-content" id="ssbContent">
+    <div class="wrap ssb-inner">
+      <div class="ssb-fields">
+        <div class="ssb-field">
+          <label for="currentAge">Current Age</label>
+          <div class="ssb-input-row"><input class="ssb-narrow" type="number" id="currentAge" value="45" min="0" max="100" step="0.5"></div>
+        </div>
+        <div class="ssb-field">
+          <label for="retireAge">Retirement Age</label>
+          <div class="ssb-input-row"><input class="ssb-narrow" type="number" id="retireAge" value="55" min="0" max="120" step="0.5"></div>
+        </div>
+        <div class="ssb-field">
+          <label for="currentSavings">Current Savings</label>
+          <div class="ssb-input-row"><span class="ssb-prefix">$</span><input type="text" inputmode="decimal" pattern="[0-9,.]*" id="currentSavings" value="400,000.00"></div>
+        </div>
+        <div class="ssb-field">
+          <label for="annualExpenses">Annual Expenses in Retirement</label>
+          <div class="ssb-input-row"><span class="ssb-prefix">$</span><input type="text" inputmode="decimal" pattern="[0-9,.]*" id="annualExpenses" value="60,000.00"></div>
+        </div>
+        <div class="ssb-field">
+          <label for="returnPct">Annual Return Rate</label>
+          <div class="ssb-input-row"><input class="ssb-narrow" type="number" id="returnPct" value="6" min="-20" max="30" step="0.1"><span class="ssb-suffix">%</span></div>
+        </div>
+        <div class="ssb-field">
+          <label for="swrPct">Safe Withdrawal Rate</label>
+          <div class="ssb-input-row"><input class="ssb-narrow" type="number" id="swrPct" value="4" min="1" max="10" step="0.1"><span class="ssb-suffix">%</span></div>
+        </div>
+        <div class="ssb-field">
+          <label for="ssAt62">Social Security at 62</label>
+          <div class="ssb-input-row"><span class="ssb-prefix">$</span><input type="text" inputmode="decimal" pattern="[0-9,.]*" id="ssAt62" value="18,000.00"></div>
+        </div>
+        <div class="ssb-field">
+          <label for="ssAt67">Social Security at 67</label>
+          <div class="ssb-input-row"><span class="ssb-prefix">$</span><input type="text" inputmode="decimal" pattern="[0-9,.]*" id="ssAt67" value="26,000.00"></div>
+        </div>
+        <div class="ssb-field">
+          <label for="ssAt70">Social Security at 70</label>
+          <div class="ssb-input-row"><span class="ssb-prefix">$</span><input type="text" inputmode="decimal" pattern="[0-9,.]*" id="ssAt70" value="32,000.00"></div>
+        </div>
+      </div>
+      <div class="ssb-save">
+        <span class="save-status" id="ssbSaveStatus">Not saved yet</span>
+        <button type="button" id="resetBtn" class="reset-btn">Reset to defaults</button>
+      </div>
+    </div>
+  </div>
+  <div class="wrap ssb-toggle-row">
+    <button id="ssbToggle" type="button" class="ssb-toggle" aria-expanded="true" aria-controls="ssbContent">
+      <svg class="ssb-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+      <span id="ssbToggleLabel">Hide inputs</span>
+    </button>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">FIRE Nate - Social Security &amp; Pension Bridge</p>
+    <h1 id="pageTitleHeader">You don't have to fund <em>every</em> retirement year yourself.</h1>
+    <p class="lede">The standard "25x expenses" rule assumes your portfolio covers 100% of your spending forever. But almost every early retiree gets Social Security or a pension eventually — which means your real number is usually smaller, once it's split into the years you self-fund and the years you're supplemented.</p>
+  </header>
+
+  <div class="ssb-explainer">
+    <div class="ssb-explainer-phase p1">
+      <span class="tag">Phase 1 &middot; Self-funded gap</span>
+      <p>From the day you retire until Social Security (or a pension) starts, <strong>your portfolio covers 100% of expenses</strong> on its own — a fixed number of years, not forever.</p>
+    </div>
+    <div class="ssb-explainer-phase p2">
+      <span class="tag">Phase 2 &middot; Supplemented</span>
+      <p>Once benefits kick in, your portfolio only needs to cover <strong>the gap between your expenses and your benefit</strong> — and that ongoing amount is what actually needs to last indefinitely.</p>
+    </div>
+  </div>
+
+  <h2 class="ledger-title" style="margin-top: 40px; margin-bottom: 4px;">Summary</h2>
+  <div class="status" id="statusStrip"></div>
+
+  <h2 class="ledger-title" style="margin-top:40px; margin-bottom:4px;">Your true number, by claiming age</h2>
+  <p class="lede" style="margin-bottom:16px;">Claiming earlier shortens the bridge but locks in a smaller check; claiming later means a longer bridge but a bigger one. Compare all three.</p>
+  <div class="ssb-scenarios" id="ssbScenarios"></div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h2>Your real number, by claiming age</h2>
+      <span class="sub">BRIDGE + ONGOING FUND, VS. THE STANDARD 25X TARGET</span>
+    </div>
+    <div class="chart-card">
+      <svg id="ssbChart" viewBox="0 0 700 340"></svg>
+      <div id="ssbTooltip"></div>
+      <div class="legend-row">
+        <span class="legend-dot gold"></span> Bridge fund (self-funded years)
+        <span class="legend-dot jade"></span> Ongoing fund (supplemented, forever)
+        <span class="legend-dot grey"></span> Standard 25x target (reference)
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h2>Full breakdown</h2>
+      <span class="sub">BRIDGE (PHASE 1) + ONGOING (PHASE 2), VS. THE STANDARD 25X RULE</span>
+    </div>
+    <div class="table-card">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th style="text-align:left;">Claim Age</th>
+              <th>Benefit / Year</th>
+              <th>Self-Funded Years</th>
+              <th>Bridge Fund</th>
+              <th>Ongoing Fund</th>
+              <th>True Target</th>
+              <th>vs. Standard 25x</th>
+              <th>Still Needed</th>
+            </tr>
+          </thead>
+          <tbody id="scenarioTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+<footer id="site-footer"></footer>
+
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const fmtUSD = n => n.toLocaleString('en-US', {style:'currency', currency:'USD', maximumFractionDigits:0});
+const fmtNum = n => n.toLocaleString('en-US', {maximumFractionDigits:1});
+const parseCurrency = id => parseFloat(String($(id).value).replace(/,/g, '')) || 0;
+const formatCurrencyField = id => {
+  const raw = parseCurrency(id);
+  $(id).value = raw.toLocaleString('en-US', {maximumFractionDigits:2});
+};
+function sanitizeCurrencyInput(id){
+  const el = $(id);
+  const before = el.value;
+  const cursorFromEnd = before.length - (el.selectionStart ?? before.length);
+  let cleaned = before.replace(/[^0-9.,]/g, '');
+  const parts = cleaned.split('.');
+  if (parts.length > 2){
+    cleaned = parts[0] + '.' + parts.slice(1).join('');
+  }
+  if (cleaned !== before){
+    el.value = cleaned;
+    const newPos = Math.max(0, cleaned.length - cursorFromEnd);
+    el.setSelectionRange(newPos, newPos);
+  }
+}
+
+// ---------- sticky, collapsible input toolbar ----------
+const COLLAPSE_KEY = 'ss-bridge-inputs-collapsed';
+const ssbInputsEl = $('ssbInputs');
+const ssbToggle = $('ssbToggle');
+const ssbToggleLabel = $('ssbToggleLabel');
+const ssbSummary = $('ssbSummary');
+const ssbSaveStatus = $('ssbSaveStatus');
+
+let inputsCollapsed = false;
+function setInputsCollapsed(collapsed){
+  inputsCollapsed = collapsed;
+  if (ssbInputsEl) ssbInputsEl.classList.toggle('collapsed', collapsed);
+  if (ssbToggle) ssbToggle.setAttribute('aria-expanded', String(!collapsed));
+  if (ssbToggleLabel) ssbToggleLabel.textContent = collapsed ? 'Show inputs' : 'Hide inputs';
+  try { localStorage.setItem(COLLAPSE_KEY, collapsed ? '1' : '0'); } catch(e) {}
+}
+if (ssbToggle){
+  ssbToggle.addEventListener('click', () => setInputsCollapsed(!inputsCollapsed));
+}
+
+function pad2(n){ return String(n).padStart(2, '0'); }
+function updateSaveStatus(){
+  if (!ssbSaveStatus) return;
+  const d = new Date();
+  ssbSaveStatus.textContent = `Last saved: ${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
+}
+function updateSsbSummary(m){
+  if (!ssbSummary) return;
+  const at67 = m.scenarios.find(s => s.claimAge === 67);
+  ssbSummary.textContent = `Standard 25x: ${fmtUSD(m.standardTarget)}  |  True (claim 67): ${fmtUSD(at67.trueTarget)}  |  Saved: ${fmtUSD(Math.max(0,at67.reductionAmt))} (${fmtNum(Math.max(0,at67.reductionPct))}%)`;
+}
+
+// ---------- bridge math ----------
+// Present value of a level, N-year annuity: how much you need today,
+// invested at rate r, to withdraw `annual` at the end of each year for
+// exactly N years and land at $0 — i.e. the self-funded bridge, sized to
+// run out right as Social Security/pension takes over.
+function bridgeFundFor(annual, years, r){
+  if (years <= 0 || annual <= 0) return 0;
+  if (Math.abs(r) < 1e-9) return annual * years;
+  return annual * (1 - Math.pow(1 + r, -years)) / r;
+}
+
+function compute(){
+  const currentAge = parseFloat($('currentAge').value) || 0;
+  const retireAge = parseFloat($('retireAge').value) || 0;
+  const currentSavings = parseCurrency('currentSavings');
+  const annualExpenses = parseCurrency('annualExpenses');
+  const returnPct = parseFloat($('returnPct').value) || 0;
+  const swrPct = parseFloat($('swrPct').value) || 0.01;
+  const ssAt62 = parseCurrency('ssAt62');
+  const ssAt67 = parseCurrency('ssAt67');
+  const ssAt70 = parseCurrency('ssAt70');
+
+  const r = returnPct / 100;
+  const swr = swrPct / 100;
+  const standardTarget = annualExpenses / swr;
+  const benefitByAge = { 62: ssAt62, 67: ssAt67, 70: ssAt70 };
+
+  const scenarios = [62, 67, 70].map(claimAge => {
+    const ssIncome = benefitByAge[claimAge];
+    const gapYears = Math.max(0, claimAge - retireAge);
+    const bridgeFund = bridgeFundFor(annualExpenses, gapYears, r);
+    const ongoingGap = Math.max(0, annualExpenses - ssIncome);
+    const ongoingFund = ongoingGap / swr;
+    const trueTarget = bridgeFund + ongoingFund;
+    const reductionAmt = standardTarget - trueTarget;
+    const reductionPct = standardTarget > 0 ? (reductionAmt / standardTarget) * 100 : 0;
+    const stillNeeded = Math.max(0, trueTarget - currentSavings);
+    const progressPct = trueTarget > 0 ? Math.min(100, (currentSavings / trueTarget) * 100) : 100;
+    return { claimAge, ssIncome, gapYears, bridgeFund, ongoingFund, trueTarget, reductionAmt, reductionPct, stillNeeded, progressPct };
+  });
+
+  return { currentAge, retireAge, currentSavings, annualExpenses, r, swr, standardTarget, scenarios };
+}
+
+// ---------- render ----------
+const CARD_CLS = { 62: 'gold', 67: 'jade', 70: 'plum' };
+
+function render(){
+  const m = compute();
+
+  // status strip
+  const strip = $('statusStrip');
+  strip.innerHTML = '';
+  const add = (k, v, cls) => {
+    const div = document.createElement('div');
+    div.className = 'stat';
+    div.innerHTML = `<div class="k">${k}</div><div class="v ${cls||''}">${v}</div>`;
+    strip.appendChild(div);
+  };
+  add('Standard 25x target', fmtUSD(m.standardTarget));
+  add('Current savings', fmtUSD(m.currentSavings), 'jade');
+  add('Years to retirement', fmtNum(Math.max(0, m.retireAge - m.currentAge)));
+  const at67 = m.scenarios.find(s => s.claimAge === 67);
+  add('True target (claim at 67)', fmtUSD(at67.trueTarget), 'target');
+  add('Still needed (claim at 67)', fmtUSD(at67.stillNeeded), at67.stillNeeded > 0 ? '' : 'jade');
+
+  // scenario cards
+  const host = $('ssbScenarios');
+  host.innerHTML = '';
+  m.scenarios.forEach(s => {
+    const card = document.createElement('div');
+    card.className = 'ssb-scenario-card ' + CARD_CLS[s.claimAge];
+    const badgeCls = s.reductionPct > 0.5 ? 'good' : 'flat';
+    const badgeText = s.reductionPct > 0.5
+      ? `−${fmtNum(s.reductionPct)}% vs 25x`
+      : (s.reductionPct < -0.5 ? `+${fmtNum(Math.abs(s.reductionPct))}% vs 25x` : 'Matches 25x');
+    card.innerHTML = `
+      <div class="ssb-scenario-head">
+        <span class="ssb-scenario-tag">Claim at ${s.claimAge}</span>
+        <span class="ssb-scenario-badge ${badgeCls}">${badgeText}</span>
+      </div>
+      <div class="ssb-scenario-amt">${fmtUSD(s.trueTarget)}</div>
+      <div class="ssb-scenario-split">
+        <span>Bridge <b>${fmtUSD(s.bridgeFund)}</b></span>
+        <span>Ongoing <b>${fmtUSD(s.ongoingFund)}</b></span>
+      </div>
+      <div class="ssb-scenario-desc">${s.gapYears > 0 ? `${fmtNum(s.gapYears)} self-funded years, then ${fmtUSD(s.ssIncome)}/yr from Social Security covers the rest.` : `Social Security starts at or before retirement — no bridge needed.`}</div>
+    `;
+    host.appendChild(card);
+  });
+
+  // detail table
+  const tbody = $('scenarioTableBody');
+  tbody.innerHTML = '';
+  m.scenarios.forEach(s => {
+    const tr = document.createElement('tr');
+    const vsStandard = s.reductionAmt >= 0
+      ? `<span style="color:var(--jade);">−${fmtUSD(s.reductionAmt)}</span>`
+      : `<span style="color:var(--danger);">+${fmtUSD(Math.abs(s.reductionAmt))}</span>`;
+    tr.innerHTML = `
+      <td style="text-align:left;">${s.claimAge}</td>
+      <td>${fmtUSD(s.ssIncome)}</td>
+      <td>${fmtNum(s.gapYears)}</td>
+      <td>${fmtUSD(s.bridgeFund)}</td>
+      <td>${fmtUSD(s.ongoingFund)}</td>
+      <td>${fmtUSD(s.trueTarget)}</td>
+      <td>${vsStandard}</td>
+      <td>${fmtUSD(s.stillNeeded)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  updateSsbSummary(m);
+  renderChart(m);
+}
+
+// ---------- inline SVG stacked-bar chart (no external chart library) ----------
+const ssbSvgNS = 'http://www.w3.org/2000/svg';
+const ssbChartSvg = $('ssbChart');
+const ssbTooltip = $('ssbTooltip');
+
+function ssbNiceCeil(v){
+  if (v <= 0) return 1;
+  const mag = Math.pow(10, Math.floor(Math.log10(v)));
+  const norm = v / mag;
+  let step;
+  if (norm <= 1) step = 1; else if (norm <= 2) step = 2; else if (norm <= 5) step = 5; else step = 10;
+  return step * mag;
+}
+
+function renderChart(m){
+  const W = 700, H = 340;
+  const padL = 70, padR = 20, padT = 20, padB = 40;
+  const plotW = W - padL - padR;
+  const plotH = H - padT - padB;
+
+  const niceMax = ssbNiceCeil(Math.max(m.standardTarget, ...m.scenarios.map(s => s.trueTarget), 1) * 1.08);
+
+  ssbChartSvg.innerHTML = '';
+
+  // gridlines + y-axis labels
+  const steps = 5;
+  for (let i = 0; i <= steps; i++){
+    const val = niceMax * i / steps;
+    const y = padT + plotH - (val / niceMax) * plotH;
+    const line = document.createElementNS(ssbSvgNS, 'line');
+    line.setAttribute('x1', padL); line.setAttribute('x2', W - padR);
+    line.setAttribute('y1', y); line.setAttribute('y2', y);
+    line.setAttribute('class', 'ssb-grid-line');
+    ssbChartSvg.appendChild(line);
+
+    const label = document.createElementNS(ssbSvgNS, 'text');
+    label.setAttribute('x', padL - 8);
+    label.setAttribute('y', y + 4);
+    label.setAttribute('text-anchor', 'end');
+    label.setAttribute('class', 'ssb-grid-label');
+    label.textContent = fmtUSD(val);
+    ssbChartSvg.appendChild(label);
+  }
+
+  const n = m.scenarios.length;
+  const barGap = 50;
+  const barW = Math.min(90, (plotW / n) - barGap);
+  const slotW = plotW / n;
+  const baseY = padT + plotH;
+
+  m.scenarios.forEach((s, i) => {
+    const x = padL + i * slotW + (slotW - barW) / 2;
+    const group = document.createElementNS(ssbSvgNS, 'g');
+    group.setAttribute('class', 'ssb-bar-group');
+
+    const bridgeH = Math.max((s.bridgeFund / niceMax) * plotH, s.bridgeFund > 0 ? 1 : 0);
+    const ongoingH = Math.max((s.ongoingFund / niceMax) * plotH, s.ongoingFund > 0 ? 1 : 0);
+
+    const rBridge = document.createElementNS(ssbSvgNS, 'rect');
+    rBridge.setAttribute('class', 'ssb-bar-bridge');
+    rBridge.setAttribute('x', x); rBridge.setAttribute('y', baseY - bridgeH);
+    rBridge.setAttribute('width', barW); rBridge.setAttribute('height', bridgeH);
+    group.appendChild(rBridge);
+
+    const rOngoing = document.createElementNS(ssbSvgNS, 'rect');
+    rOngoing.setAttribute('class', 'ssb-bar-ongoing');
+    rOngoing.setAttribute('x', x); rOngoing.setAttribute('y', baseY - bridgeH - ongoingH);
+    rOngoing.setAttribute('width', barW); rOngoing.setAttribute('height', ongoingH);
+    group.appendChild(rOngoing);
+
+    const label = document.createElementNS(ssbSvgNS, 'text');
+    label.setAttribute('x', x + barW / 2);
+    label.setAttribute('y', baseY + 20);
+    label.setAttribute('text-anchor', 'middle');
+    label.setAttribute('class', 'ssb-axis-label');
+    label.textContent = 'Claim ' + s.claimAge;
+    ssbChartSvg.appendChild(label);
+
+    group.addEventListener('mousemove', (e) => {
+      ssbTooltip.style.opacity = 1;
+      ssbTooltip.style.left = e.clientX + 'px';
+      ssbTooltip.style.top = e.clientY + 'px';
+      ssbTooltip.innerHTML = `<div class="yr">Claim at ${s.claimAge}</div>` +
+        `<div class="row">Bridge <b>${fmtUSD(s.bridgeFund)}</b></div>` +
+        `<div class="row">Ongoing <b>${fmtUSD(s.ongoingFund)}</b></div>` +
+        `<div class="row">True target <b>${fmtUSD(s.trueTarget)}</b></div>`;
+    });
+    group.addEventListener('mouseleave', () => { ssbTooltip.style.opacity = 0; });
+
+    ssbChartSvg.appendChild(group);
+  });
+
+  // dashed reference line + label for the standard 25x target
+  const refY = padT + plotH - (m.standardTarget / niceMax) * plotH;
+  const refLine = document.createElementNS(ssbSvgNS, 'line');
+  refLine.setAttribute('x1', padL); refLine.setAttribute('x2', W - padR);
+  refLine.setAttribute('y1', refY); refLine.setAttribute('y2', refY);
+  refLine.setAttribute('class', 'ssb-ref-line');
+  ssbChartSvg.appendChild(refLine);
+
+  const refLabel = document.createElementNS(ssbSvgNS, 'text');
+  refLabel.setAttribute('x', W - padR);
+  refLabel.setAttribute('y', refY - 6);
+  refLabel.setAttribute('text-anchor', 'end');
+  refLabel.setAttribute('class', 'ssb-ref-label');
+  refLabel.textContent = 'Standard 25x: ' + fmtUSD(m.standardTarget);
+  ssbChartSvg.appendChild(refLabel);
+}
+
+// ---------- persistence ----------
+const STORAGE_KEY = 'ssBridgeInputs';
+const DEFAULTS = {
+  currentAge: '45', retireAge: '55', currentSavings: '400000', annualExpenses: '60000',
+  returnPct: '6', swrPct: '4', ssAt62: '18000', ssAt67: '26000', ssAt70: '32000'
+};
+const CURRENCY_FIELDS = ['currentSavings', 'annualExpenses', 'ssAt62', 'ssAt67', 'ssAt70'];
+const ALL_FIELDS = ['currentAge', 'retireAge', 'currentSavings', 'annualExpenses', 'returnPct', 'swrPct', 'ssAt62', 'ssAt67', 'ssAt70'];
+
+function saveInputs(){
+  const vals = {};
+  ALL_FIELDS.forEach(id => { vals[id] = $(id).value; });
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(vals)); } catch(e) { /* storage unavailable, ignore */ }
+  updateSaveStatus();
+}
+function loadInputs(){
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const vals = JSON.parse(raw);
+    Object.keys(vals).forEach(id => { if ($(id)) $(id).value = vals[id]; });
+  } catch(e) { /* storage unavailable or corrupt, ignore */ }
+}
+
+ALL_FIELDS.forEach(id => {
+  if (CURRENCY_FIELDS.includes(id)) return; // wired separately below with sanitization
+  $(id).addEventListener('input', () => { saveInputs(); render(); });
+});
+CURRENCY_FIELDS.forEach(id => {
+  $(id).addEventListener('input', () => { sanitizeCurrencyInput(id); saveInputs(); render(); });
+  $(id).addEventListener('blur', () => { formatCurrencyField(id); saveInputs(); });
+});
+
+$('resetBtn').addEventListener('click', () => {
+  Object.keys(DEFAULTS).forEach(id => { $(id).value = DEFAULTS[id]; });
+  if (window.FNProfileAutofill) window.FNProfileAutofill.apply(true);
+  CURRENCY_FIELDS.forEach(formatCurrencyField);
+  saveInputs();
+  render();
+});
+
+loadInputs();
+CURRENCY_FIELDS.forEach(formatCurrencyField);
+try { setInputsCollapsed(localStorage.getItem(COLLAPSE_KEY) === '1'); } catch(e) { setInputsCollapsed(false); }
+render();
+</script>
+</body>
+</html>

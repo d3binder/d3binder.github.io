@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FireNate — Regression Tests</title>
+<meta name="robots" content="noindex, nofollow">
+<style>
+  :root{
+    --bg:#15111A; --panel:#1E1826; --line:rgba(255,255,255,0.13);
+    --text:#F3EEE4; --text-dim:#B8A8C0; --text-faint:#8A7A94;
+    --pass:#4FDB8F; --fail:#FF7A5C;
+    --mono:'IBM Plex Mono','Courier New',monospace;
+  }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--mono); font-size:13px; padding:24px; }
+  h1{ font-size:18px; margin:0 0 4px; }
+  p.sub{ color:var(--text-faint); margin:0 0 20px; font-size:12px; }
+  #summary{ padding:12px 16px; border-radius:10px; border:1px solid var(--line); background:var(--panel); margin-bottom:16px; font-size:14px; }
+  #summary.pass{ border-color:var(--pass); color:var(--pass); }
+  #summary.fail{ border-color:var(--fail); color:var(--fail); }
+  table{ width:100%; border-collapse:collapse; background:var(--panel); border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+  th, td{ text-align:left; padding:9px 12px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th{ color:var(--text-faint); text-transform:uppercase; font-size:11px; letter-spacing:.05em; }
+  tr:last-child td{ border-bottom:none; }
+  .status-pass{ color:var(--pass); font-weight:600; }
+  .status-fail{ color:var(--fail); font-weight:600; }
+  .detail{ color:var(--text-dim); }
+  button{
+    font-family:var(--mono); font-size:13px; background:var(--panel); color:var(--text);
+    border:1px solid var(--line); border-radius:8px; padding:8px 16px; cursor:pointer; margin-bottom:16px;
+  }
+  button:hover{ border-color:var(--pass); color:var(--pass); }
+  iframe{ position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; left:-9999px; }
+</style>
+</head>
+<body>
+<h1>FireNate — regression tests</h1>
+<p class="sub">Loads each calculator page in a hidden iframe and calls its own exposed pure functions directly with known inputs — not linked from the site nav, this is a developer tool. Not styled for or intended for end users.</p>
+<button id="runBtn" type="button">Run tests</button>
+<div id="summary">Not run yet.</div>
+<table id="resultsTable">
+  <thead><tr><th style="width:70px;">Status</th><th style="width:260px;">Test</th><th>Detail</th></tr></thead>
+  <tbody id="resultsBody"></tbody>
+</table>
+
+<script>
+// ---------- tiny assertion helpers ----------
+const results = [];
+function record(name, pass, detail){
+  results.push({ name, pass, detail });
+}
+function fmt(v){ return v === Infinity ? 'Infinity' : v === -Infinity ? '-Infinity' : JSON.stringify(v); }
+function assertEqual(name, actual, expected, detail){
+  const pass = actual === expected;
+  record(name, pass, (detail || '') + ` (expected ${fmt(expected)}, got ${fmt(actual)})`);
+}
+function assertClose(name, actual, expected, tolerance, detail){
+  const pass = Math.abs(actual - expected) <= tolerance;
+  record(name, pass, (detail || '') + ` (expected ${expected.toFixed(2)} ± ${tolerance}, got ${actual.toFixed(2)})`);
+}
+function assertTrue(name, condition, detail){
+  record(name, !!condition, detail || '');
+}
+
+// loads a page in a hidden iframe and resolves with its contentWindow once ready
+function loadPage(path){
+  return new Promise((resolve, reject) => {
+    const frame = document.createElement('iframe');
+    frame.src = path;
+    frame.onload = () => resolve(frame.contentWindow);
+    frame.onerror = () => reject(new Error('failed to load ' + path));
+    document.body.appendChild(frame);
+  });
+}
+
+async function runTests(){
+  results.length = 0;
+  document.getElementById('summary').textContent = 'Running…';
+  document.getElementById('summary').className = '';
+
+  // ---------- DebtSnowball: snowball pool must permanently roll forward ----------
+  // regression guard for a real bug found in this project: a paid-off debt's
+  // freed-up minimum payment must keep feeding the extra-payment pool every
+  // month after payoff, not just the one month it happens in — that rollover
+  // is the entire point of the "snowball" method. 0% APR keeps the expected
+  // numbers exact integers so this doesn't need a floating-point tolerance.
+  try {
+    const win = await loadPage('../DebtSnowball/index.html');
+    const debts = [
+      { id: 'A', name: 'Debt A', balance: 1000, apr: 0, minPayment: 100 },
+      { id: 'B', name: 'Debt B', balance: 5000, apr: 0, minPayment: 50 }
+    ];
+    const result = win.simulatePayoff(debts, 0, 'snowball');
+    const a = result.working.find(d => d.id === 'A');
+    const b = result.working.find(d => d.id === 'B');
+    assertEqual('DebtSnowball: smaller debt paid off on schedule', a.paidOffMonth, 10,
+      'Debt A ($1000 @ $100/mo, 0% APR) should clear in exactly 10 months');
+    assertEqual('DebtSnowball: freed payment rolls forward permanently', b.paidOffMonth, 40,
+      'Debt B should absorb Debt A\'s freed $100/mo from month 11 onward ($150/mo total) and clear at month 40 — 100 would mean the rollover bug is back');
+    const month11 = result.monthlySnapshots.find(s => s.month === 11);
+    assertEqual('DebtSnowball: month 11 payment reflects the rollover', month11 ? month11.payments['B'] : null, 150,
+      'the month right after Debt A pays off, Debt B should receive its own $50 min + Debt A\'s freed $100');
+  } catch (e) {
+    record('DebtSnowball tests', false, 'threw: ' + e.message);
+  }
+
+  // ---------- SafeWithdrawalRate vs VariableWithdrawalRate cross-validation ----------
+  // regression guard for a real bug found in this project: VariableWithdrawalRate
+  // originally withdrew before applying growth, the reverse of SafeWithdrawalRate's
+  // "grow, then withdraw" convention. With strategy "fixed" and no cash buffer,
+  // VariableWithdrawalRate is defined to reproduce SafeWithdrawalRate's numbers
+  // exactly for identical inputs — that's what makes their "vs. plain fixed
+  // rate" comparison stat meaningful.
+  try {
+    const swrWin = await loadPage('../SafeWithdrawalRate/index.html');
+    const vwrWin = await loadPage('../VariableWithdrawalRate/index.html');
+    const startIdx = 30, years = 20, portfolio = 1000000, rate = 4, fee = 0.5;
+    const swr = swrWin.simulateCycle(startIdx, years, portfolio, rate, fee);
+    const vwr = vwrWin.simulateCycle(startIdx, years, portfolio, rate, fee, 'fixed', 0, 0, 0, 0);
+    assertClose('SWR vs VWR: ending balance matches for fixed/no-buffer', vwr.endingBalance, swr.endingBalance, 0.01,
+      'a "fixed" strategy with 0 buffer years should be numerically identical to the plain Safe Withdrawal Rate model');
+    assertEqual('SWR vs VWR: survived flag matches', vwr.survived, swr.survived, '');
+    assertEqual('SWR vs VWR: min balance matches', Math.round(vwr.minBalance), Math.round(swr.minBalance), '');
+
+    // ---------- SafeWithdrawalRate profile autofill mapping ----------
+    // regression guard for a real bug: FN_PROFILE_FIELDS previously mapped the
+    // nonexistent profile key "startPortfolio" instead of the real one,
+    // "currentSavings" — a no-op that silently broke autofill entirely.
+    const fields = swrWin.FN_PROFILE_FIELDS;
+    assertTrue('SafeWithdrawalRate: FN_PROFILE_FIELDS is defined', !!fields, '');
+    if (fields) {
+      assertEqual('SafeWithdrawalRate: currentSavings maps to #startPortfolio', fields.currentSavings, '#startPortfolio', '');
+      assertTrue('SafeWithdrawalRate: #startPortfolio actually exists in the DOM',
+        !!swrWin.document.querySelector('#startPortfolio'), 'the mapped selector must resolve to a real element or autofill silently does nothing');
+    }
+  } catch (e) {
+    record('SafeWithdrawalRate / VariableWithdrawalRate tests', false, 'threw: ' + e.message);
+  }
+
+  // ---------- TimeToFI: yearsToGoal sanity checks ----------
+  // independent check: plug the returned "years" back into the standard
+  // future-value-of-(principal + fixed annual contribution) formula and
+  // confirm it lands back on the goal — verifies the inverse-solve is
+  // correct without re-deriving (and risking copying) the same algebra
+  try {
+    const win = await loadPage('../TimeToFI/index.html');
+    function futureValue(P, C, r, t){
+      if (Math.abs(r) < 1e-9) return P + C * t;
+      return P * Math.pow(1 + r, t) + C * ((Math.pow(1 + r, t) - 1) / r);
+    }
+    assertEqual('TimeToFI: zero-growth case is exact', win.yearsToGoal(0, 10000, 100000, 0), 10, 'P=0, C=10000/yr, G=100000, r=0');
+
+    const cases = [
+      { P: 50000, C: 0, G: 100000, r: 0.07 },
+      { P: 10000, C: 5000, G: 100000, r: 0.06 },
+      { P: 200000, C: 20000, G: 1000000, r: 0.08 }
+    ];
+    cases.forEach(({ P, C, G, r }) => {
+      const t = win.yearsToGoal(P, C, G, r);
+      const fv = futureValue(P, C, r, t);
+      assertClose(`TimeToFI: yearsToGoal(${P},${C},${G},${r}) inverts correctly`, fv, G, 1,
+        `plugging the returned ${t.toFixed(3)} years back into the forward formula should reproduce the goal`);
+    });
+
+    assertEqual('TimeToFI: already at goal returns 0', win.yearsToGoal(150000, 5000, 100000, 0.07), 0, '');
+    assertEqual('TimeToFI: no contribution + no growth is unreachable', win.yearsToGoal(1000, 0, 100000, 0), Infinity, '');
+  } catch (e) {
+    record('TimeToFI tests', false, 'threw: ' + e.message);
+  }
+
+  // ---------- render results ----------
+  const tbody = document.getElementById('resultsBody');
+  tbody.innerHTML = results.map(r => `
+    <tr>
+      <td class="${r.pass ? 'status-pass' : 'status-fail'}">${r.pass ? 'PASS' : 'FAIL'}</td>
+      <td>${r.name}</td>
+      <td class="detail">${r.detail}</td>
+    </tr>
+  `).join('');
+
+  const failCount = results.filter(r => !r.pass).length;
+  const summary = document.getElementById('summary');
+  summary.textContent = failCount === 0
+    ? `All ${results.length} checks passed.`
+    : `${failCount} of ${results.length} checks failed.`;
+  summary.className = failCount === 0 ? 'pass' : 'fail';
+}
+
+document.getElementById('runBtn').addEventListener('click', runTests);
+runTests();
+</script>
+</body>
+</html>

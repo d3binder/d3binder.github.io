@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script src="../assets/js/theme-init.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FireNate - Crossover Point</title>
+<meta name="description" content="The amount you need saved at each age where compounding alone — with no more contributions — carries you to your retirement goal.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/site.css">
+<link rel="stylesheet" href="../assets/css/timeToFI.css">
+<script src="../assets/js/theme.js" defer></script>
+<script src="../assets/js/user-profile.js" defer></script>
+<script src="../assets/js/nav.js" defer></script>
+<script src="../assets/js/profile-autofill.js" defer></script>
+<script>
+window.FN_BASE = "../"; window.FN_PAGE = "crossover-point";
+window.FN_PROFILE_FIELDS = {
+  currentAge: "#age",
+  currentSavings: "#currentSavings",
+  goalAmount: "#goal",
+  retireAge: "#targetAge",
+  expectedReturn: "#returnPct"
+};
+window.FN_PROFILE_LEGACY_KEY = "crossoverPointInputs";
+</script>
+<style>
+  /* ---------- STICKY COLLAPSIBLE INPUT TOOLBAR ---------- */
+  :root{
+    --toolbar-bg:
+      radial-gradient(1200px 260px at 10% -40%, rgba(217,132,15,0.30), transparent 60%),
+      radial-gradient(900px 300px at 90% 140%, rgba(219,59,35,0.22), transparent 60%),
+      linear-gradient(115deg, #3B1B4A 0%, #1B3A52 38%, #123B33 68%, #2E2117 100%);
+    --toolbar-bg-solid:#221A30;
+    --toolbar-line: rgba(243,238,221,0.18);
+    --toolbar-text:#F8F3E8;
+    --toolbar-muted:#C9BFDA;
+    --toolbar-muted-2:#9C8FAE;
+    --gold-bright:#F3B23A;
+    --sage-bright:#4FDB8F;
+    --teal-bright:#4FD8E8;
+    --rust-bright:#FF7A5C;
+    --plum-bright:#D98CE8;
+  }
+  .cx-inputs{
+    position:sticky; top:60px; z-index:38;
+    background:var(--toolbar-bg);
+    color:var(--toolbar-text);
+    border-bottom:1px solid var(--toolbar-line);
+    box-shadow:0 12px 28px rgba(0,0,0,0.22);
+  }
+  .cx-summary-row{ display:flex; justify-content:center; padding:11px 24px 0; }
+  .cx-summary{
+    max-width:100%;
+    font-family:var(--mono); font-weight:600; font-size:12px;
+    background:linear-gradient(90deg, var(--gold-bright), var(--rust-bright) 35%, var(--plum-bright) 65%, var(--teal-bright));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:center;
+  }
+  .cx-toggle-row{ display:flex; justify-content:center; padding:8px 24px 12px; }
+  .cx-toggle{
+    display:inline-flex; align-items:center; gap:7px; flex-shrink:0;
+    background:rgba(217,140,232,0.16); border:1px solid var(--plum-bright); color:var(--plum-bright);
+    font-family:var(--mono); font-size:11px; font-weight:600; letter-spacing:.05em; text-transform:uppercase;
+    padding:6px 14px; border-radius:20px; cursor:pointer;
+    transition:background-color .15s, border-color .15s, color .15s; white-space:nowrap;
+  }
+  .cx-toggle:hover{ background:linear-gradient(90deg, var(--plum-bright), var(--teal-bright)); border-color:var(--plum-bright); color:var(--toolbar-bg-solid); }
+  .cx-toggle:active{ transform:translateY(1px); }
+  .cx-toggle:focus-visible{ outline:2px solid var(--plum-bright); outline-offset:2px; }
+  .cx-chevron{ transition:transform .2s ease; flex-shrink:0; }
+  .cx-inputs.collapsed .cx-chevron{ transform:rotate(180deg); }
+  .cx-content{
+    max-height:600px; overflow:hidden; opacity:1;
+    transition:max-height .25s ease, opacity .2s ease;
+  }
+  .cx-inputs.collapsed .cx-content{ max-height:0; opacity:0; pointer-events:none; }
+  .cx-inner{
+    padding:4px 24px 16px;
+    display:flex; align-items:flex-end; flex-wrap:wrap; gap:18px 30px;
+  }
+  .cx-fields{ display:flex; align-items:flex-end; flex-wrap:wrap; gap:16px; flex:1 1 auto; }
+  .cx-field{ display:flex; flex-direction:column; gap:6px; }
+  .cx-field label{
+    font-family:var(--mono); font-size:10.5px; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--toolbar-muted); white-space:nowrap;
+  }
+  .cx-input-row{ display:flex; align-items:center; gap:4px; }
+  .cx-prefix, .cx-suffix{ font-family:var(--mono); font-size:14px; color:var(--gold-bright); font-weight:500; }
+  .cx-field input{
+    background:rgba(0,0,0,0.22); border:1px solid transparent; border-radius:7px; color:var(--toolbar-text);
+    font-family:var(--mono); font-size:14.5px; font-weight:500; padding:8px 10px; outline:none;
+    transition:border-color .15s, box-shadow .15s; box-shadow:0 1px 2px rgba(0,0,0,0.2);
+    width:112px; font-variant-numeric:tabular-nums;
+  }
+  .cx-field input.cx-narrow{ width:66px; }
+  .cx-field input:focus{ border-color:var(--gold-bright); box-shadow:0 0 0 3px rgba(243,178,58,0.28); }
+  .cx-save{ display:flex; flex-direction:column; align-items:flex-end; gap:8px; margin-left:auto; }
+  .cx-save .save-status{ font-family:var(--mono); font-size:11.5px; letter-spacing:.04em; color:var(--toolbar-muted-2); white-space:nowrap; }
+  .cx-save .reset-btn{
+    background:rgba(255,122,92,0.08); border:1px solid var(--rust-bright); color:var(--rust-bright);
+    font-family:var(--mono); font-size:11.5px; letter-spacing:.05em; text-transform:uppercase;
+    padding:7px 16px; border-radius:20px; cursor:pointer; transition:background-color .15s, color .15s; white-space:nowrap;
+  }
+  .cx-save .reset-btn:hover{ background:var(--rust-bright); color:var(--toolbar-bg-solid); }
+  .cx-save .reset-btn:active{ transform:translateY(1px); }
+  @media (max-width:820px){
+    .cx-save{ margin-left:0; align-items:flex-start; flex-direction:row; justify-content:space-between; width:100%; }
+  }
+
+  .crossover-summary{
+    margin-top:4px; position:relative; overflow:hidden;
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    padding:28px 28px 24px;
+  }
+  .crossover-summary::before{
+    content:''; position:absolute; top:0; left:0; right:0; height:4px;
+    background:linear-gradient(90deg, var(--gold), var(--jade), var(--target), var(--plum));
+  }
+  .crossover-summary .cs-eyebrow{
+    font-family:var(--serif); font-size:clamp(18px,2.6vw,26px); font-weight:600;
+    color:var(--target); margin:0 0 6px;
+  }
+  .crossover-summary .cs-amount-row{
+    display:flex; align-items:baseline; flex-wrap:wrap; gap:12px 14px; margin:0 0 8px;
+  }
+  .crossover-summary .cs-amount{
+    font-family:var(--serif); font-size:clamp(32px,6vw,52px); font-weight:600; color:var(--gold);
+    margin:0; line-height:1;
+  }
+  .crossover-summary .cs-diff{
+    font-family:var(--mono); font-size:14px; font-weight:600;
+    padding:5px 12px; border-radius:999px; white-space:nowrap;
+  }
+  .crossover-summary .cs-diff.cp-diff-pos{ background:rgba(79,219,143,0.15); color:var(--jade); }
+  .crossover-summary .cs-diff.cp-diff-neg{ background:rgba(255,122,92,0.15); color:var(--danger); }
+  .crossover-summary .cs-sub{ color:var(--ink-dim); font-size:14.5px; line-height:1.55; max-width:64ch; margin:0; }
+  .crossover-summary .cs-sub b{ color:var(--ink); }
+  .crossover-summary .cs-note{ color:var(--ink-faint); font-size:13px; line-height:1.55; max-width:64ch; margin:10px 0 0; }
+  .crossover-summary .cs-note b{ color:var(--ink-dim); }
+  @media (max-width:640px){ .crossover-summary{ padding:22px 18px 20px; } }
+
+  /* ---------- inline SVG bar chart (no external chart library) ---------- */
+  #crossoverChart{ width:100%; height:auto; display:block; overflow:visible; }
+  .cp-bar{ fill:url(#crossoverGradient); transition:opacity .15s ease; cursor:pointer; }
+  .cp-bar:hover{ opacity:0.75; }
+  .cp-bar.is-current{ fill:var(--target); }
+  .cp-bar.is-target{ fill:var(--gold); }
+  .cp-grid-line{ stroke:var(--line); stroke-width:1; }
+  .cp-grid-label, .cp-axis-label{
+    font-family:var(--mono); font-size:10px; fill:var(--ink-faint);
+  }
+  #cpTooltip{
+    position:fixed; pointer-events:none; background:var(--surface); border:1px solid var(--line);
+    border-radius:10px; padding:9px 13px; font-family:var(--mono); font-size:12px; color:var(--ink);
+    opacity:0; transform:translate(-50%,-115%); transition:opacity .12s; z-index:50;
+    white-space:nowrap; box-shadow:0 8px 24px -10px rgba(0,0,0,0.45);
+  }
+  #cpTooltip .yr{ color:var(--ink-faint); margin-bottom:3px; }
+  #cpTooltip b{ color:var(--gold); }
+  .cp-savings-line{ fill:none; stroke:var(--jade); stroke-width:2.5; }
+  .cp-savings-dot{ fill:var(--jade); }
+  .cp-diff-pos{ color:var(--jade); font-weight:600; }
+  .cp-diff-neg{ color:var(--danger); }
+</style>
+</head>
+<body>
+<div id="fn-site-nav"></div>
+
+<div class="cx-inputs" id="cxInputs">
+  <div class="wrap cx-summary-row">
+    <div class="cx-summary" id="cxSummary">&mdash;</div>
+  </div>
+  <div class="cx-content" id="cxContent">
+    <div class="wrap cx-inner">
+      <div class="cx-fields">
+        <div class="cx-field">
+          <label for="goal">Goal Amount</label>
+          <div class="cx-input-row"><span class="cx-prefix">$</span><input type="text" step="1000" inputmode="decimal" pattern="[0-9,.]*" id="goal" value="3,000,000.00"></div>
+        </div>
+        <div class="cx-field">
+          <label for="currentSavings">Savings</label>
+          <div class="cx-input-row"><span class="cx-prefix">$</span><input type="text" step="1000" inputmode="decimal" pattern="[0-9,.]*" id="currentSavings" value="0.00"></div>
+        </div>
+        <div class="cx-field">
+          <label for="age">Age</label>
+          <div class="cx-input-row"><input class="cx-narrow" type="number" id="age" value="24" min="0" max="120" step="1"></div>
+        </div>
+        <div class="cx-field">
+          <label for="targetAge">Retirement Age</label>
+          <div class="cx-input-row"><input class="cx-narrow" type="number" id="targetAge" value="60" min="0" max="120" step="1"></div>
+        </div>
+        <div class="cx-field">
+          <label for="returnPct">Annual Return Rate</label>
+          <div class="cx-input-row"><input class="cx-narrow" type="number" step="0.1" inputmode="decimal" id="returnPct" value="11" min="-20" max="30"><span class="cx-suffix">%</span></div>
+        </div>
+      </div>
+      <div class="cx-save">
+        <span class="save-status" id="cxSaveStatus">Not saved yet</span>
+        <button type="button" id="resetBtn" class="reset-btn">Reset to defaults</button>
+      </div>
+    </div>
+  </div>
+  <div class="wrap cx-toggle-row">
+    <button id="cxToggle" type="button" class="cx-toggle" aria-expanded="true" aria-controls="cxContent">
+      <svg class="cx-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+      <span id="cxToggleLabel">Hide inputs</span>
+    </button>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">FIRE Nate - Crossover Point</p>
+    <h1 id="pageTitleHeader">The age you can <em>stop saving</em> and let compounding finish the job.</h1>
+    <p class="lede">The amount you need to have saved at each age where you could theoretically stop contributing toward your savings goal and just let compounding interest get you there.</p>
+  </header>
+
+  <h2 class="ledger-title" style="margin-top: 40px; margin-bottom: 4px;">Summary</h2>
+  <div class="crossover-summary">
+    <p class="cs-eyebrow" id="csEyebrow">At age &mdash;</p>
+    <div class="cs-amount-row">
+      <p class="cs-amount" id="csAmount">$0</p>
+      <span class="cs-diff" id="csDiff"></span>
+    </div>
+    <p class="cs-sub" id="csSub">&mdash;</p>
+    <p class="cs-note" id="csNote">&mdash;</p>
+  </div>
+  <div class="status" id="statusStrip" style="margin-top:16px;"></div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h2>Crossover amount by age</h2>
+      <span class="sub">WHAT YOU NEED SAVED, BY AGE, FOR COMPOUNDING ALONE TO FINISH THE JOB</span>
+    </div>
+    <div class="chart-card">
+      <svg id="crossoverChart" viewBox="0 0 1120 340"></svg>
+      <div id="cpTooltip"></div>
+      <div class="legend-row">
+        <span class="legend-dot gold"></span> Amount needed at this age
+        <span class="legend-dot" style="background:var(--target);"></span> Your current age
+        <span class="legend-dot jade"></span> Your savings, growing at this rate
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h2>Full ledger</h2>
+      <span class="sub" id="fullLedgerSub">BY AGE</span>
+    </div>
+    <div class="table-card">
+      <div class="table-scroll">
+        <table id="crossoverTable">
+          <thead>
+            <tr>
+              <th>Age</th>
+              <th>Years to Target</th>
+              <th>Amount Needed</th>
+              <th>% of Goal</th>
+              <th>Your Savings</th>
+              <th>Difference</th>
+              <th>% of Goal (w/ Savings)</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer id="site-footer"></footer>
+
+<script>
+const $ = id => document.getElementById(id);
+const fmtUSD = n => n.toLocaleString('en-US', {style:'currency', currency:'USD', maximumFractionDigits:0});
+const fmtNum = n => n.toLocaleString('en-US', {maximumFractionDigits:1});
+const parseCurrency = id => parseFloat(String($(id).value).replace(/,/g, '')) || 0;
+const formatCurrencyField = id => {
+  const raw = parseCurrency(id);
+  $(id).value = raw.toLocaleString('en-US', {maximumFractionDigits:2});
+};
+function sanitizeCurrencyInput(id){
+  const el = $(id);
+  const before = el.value;
+  const cursorFromEnd = before.length - (el.selectionStart ?? before.length);
+
+  // keep only digits, commas, and a single decimal point
+  let cleaned = before.replace(/[^0-9.,]/g, '');
+  const parts = cleaned.split('.');
+  if (parts.length > 2){
+    cleaned = parts[0] + '.' + parts.slice(1).join('');
+  }
+
+  if (cleaned !== before){
+    el.value = cleaned;
+    const newPos = Math.max(0, cleaned.length - cursorFromEnd);
+    el.setSelectionRange(newPos, newPos);
+  }
+}
+
+function fmtUSDShort(n){
+  const abs = Math.abs(n);
+  if (abs >= 1e6) return '$' + (n / 1e6).toFixed(1) + 'M';
+  if (abs >= 1e3) return '$' + Math.round(n / 1e3) + 'K';
+  return '$' + Math.round(n);
+}
+
+// ---------- sticky, collapsible input toolbar ----------
+const CX_COLLAPSE_KEY = 'crossoverPointInputsCollapsed';
+const cxInputsEl = $('cxInputs');
+const cxToggle = $('cxToggle');
+const cxToggleLabel = $('cxToggleLabel');
+const cxSummary = $('cxSummary');
+const cxSaveStatus = $('cxSaveStatus');
+
+let cxInputsCollapsed = false;
+function setCxInputsCollapsed(collapsed){
+  cxInputsCollapsed = collapsed;
+  if (cxInputsEl) cxInputsEl.classList.toggle('collapsed', collapsed);
+  if (cxToggle) cxToggle.setAttribute('aria-expanded', String(!collapsed));
+  if (cxToggleLabel) cxToggleLabel.textContent = collapsed ? 'Show inputs' : 'Hide inputs';
+  try { localStorage.setItem(CX_COLLAPSE_KEY, collapsed ? '1' : '0'); } catch(e) {}
+}
+
+function updateCxSummary(){
+  if (!cxSummary) return;
+  const goal = parseCurrency('goal');
+  const currentSavings = parseCurrency('currentSavings');
+  const age = parseFloat($('age').value) || 0;
+  const targetAge = parseFloat($('targetAge').value);
+  const returnPct = parseFloat($('returnPct').value) || 0;
+  cxSummary.textContent = `Goal: ${fmtUSD(goal)} by age ${isFinite(targetAge) ? fmtNum(targetAge) : '—'}  |  Current age: ${fmtNum(age)}  |  Savings: ${fmtUSD(currentSavings)}  |  Return: ${fmtNum(returnPct)}%/yr`;
+}
+
+function cxPad2(n){ return String(n).padStart(2, '0'); }
+function updateCxSaveStatus(){
+  if (!cxSaveStatus) return;
+  const d = new Date();
+  cxSaveStatus.textContent = `Last saved: ${cxPad2(d.getHours())}:${cxPad2(d.getMinutes())}:${cxPad2(d.getSeconds())}`;
+}
+
+if (cxToggle){
+  cxToggle.addEventListener('click', () => setCxInputsCollapsed(!cxInputsCollapsed));
+}
+
+function crossoverAmount(goal, r, yearsRemaining){
+  const yrs = Math.max(0, yearsRemaining);
+  const base = 1 + r;
+  if (base <= 0) return goal;
+  return goal / Math.pow(base, yrs);
+}
+
+function savingsGrowth(currentSavings, r, yearsElapsed){
+  const yrs = Math.max(0, yearsElapsed);
+  const base = 1 + r;
+  if (base <= 0) return currentSavings;
+  return currentSavings * Math.pow(base, yrs);
+}
+
+function compute(){
+  const goal = parseCurrency('goal');
+  const currentSavings = parseCurrency('currentSavings');
+  const age = parseFloat($('age').value) || 0;
+  const targetAge = parseFloat($('targetAge').value) || 0;
+  const r = (parseFloat($('returnPct').value) || 0) / 100;
+
+  const startAge = Math.floor(age);
+  const endAge = Math.max(startAge, Math.floor(targetAge));
+  const rows = [];
+  for (let a = startAge; a <= endAge; a++){
+    const yearsRemaining = targetAge - a;
+    const amount = crossoverAmount(goal, r, yearsRemaining);
+    const savings = savingsGrowth(currentSavings, r, a - startAge);
+    rows.push({
+      age: a,
+      yearsRemaining: Math.max(0, yearsRemaining),
+      amount,
+      pct: goal > 0 ? (amount / goal) * 100 : 0,
+      savings,
+      diff: savings - amount,
+      pctWithSavings: goal > 0 ? (savings / goal) * 100 : 0
+    });
+  }
+
+  const currentAmount = crossoverAmount(goal, r, targetAge - age);
+  const yearsToTarget = Math.max(0, targetAge - age);
+  return {goal, currentSavings, age, targetAge, r, rows, currentAmount, yearsToTarget, startAge, endAge};
+}
+
+function renderSummary(state){
+  const {goal, currentSavings, age, targetAge, r, currentAmount} = state;
+  $('csEyebrow').textContent = `At age ${fmtNum(age)}`;
+  $('csAmount').textContent = fmtUSD(currentAmount);
+
+  // same figure as the "Difference" column for this age: savings minus amount needed
+  const diff = currentSavings - currentAmount;
+  const csDiff = $('csDiff');
+  if (csDiff){
+    csDiff.classList.remove('cp-diff-pos', 'cp-diff-neg');
+    csDiff.classList.add(diff >= 0 ? 'cp-diff-pos' : 'cp-diff-neg');
+    const sign = diff > 0 ? '+' : (diff < 0 ? '−' : '');
+    csDiff.textContent = `${sign}${fmtUSD(Math.abs(diff))} ${diff >= 0 ? 'ahead' : 'short'}`;
+  }
+
+  if (age >= targetAge){
+    $('csSub').innerHTML = `You're already at or past your target retirement age of <b>${fmtNum(targetAge)}</b> &mdash; you'd need the full <b>${fmtUSD(goal)}</b> saved now.`;
+  } else {
+    $('csSub').innerHTML = `If you have this saved and keep earning <b>${fmtNum(r * 100)}%</b> annually, compounding alone can carry you to <b>${fmtUSD(goal)}</b> by age <b>${fmtNum(targetAge)}</b> &mdash; you won't need to save anymore to hit your goal.`;
+  }
+
+  const csNote = $('csNote');
+  if (csNote){
+    if (diff >= 0){
+      csNote.innerHTML = `That badge compares this to your current savings of <b>${fmtUSD(currentSavings)}</b> &mdash; you're already <b>${fmtUSD(diff)} ahead</b> of what's needed at this age.`;
+    } else {
+      csNote.innerHTML = `That badge compares this to your current savings of <b>${fmtUSD(currentSavings)}</b> &mdash; you're currently <b>${fmtUSD(Math.abs(diff))} short</b> of what's needed at this age.`;
+    }
+  }
+}
+
+function renderStatusStrip(state){
+  const {goal, targetAge, r, yearsToTarget} = state;
+  const strip = $('statusStrip');
+  strip.innerHTML = '';
+  const add = (k, v, cls) => {
+    const div = document.createElement('div');
+    div.className = 'stat';
+    div.innerHTML = `<div class="k">${k}</div><div class="v ${cls || ''}">${v}</div>`;
+    strip.appendChild(div);
+  };
+  add('Goal amount', fmtUSD(goal), 'gold');
+  add('Target retirement age', fmtNum(targetAge));
+  add('Anticipated return', fmtNum(r * 100) + '%', 'jade');
+  add('Years remaining', fmtNum(yearsToTarget), 'target');
+}
+
+function renderTable(state){
+  const {rows, startAge, endAge} = state;
+  $('fullLedgerSub').textContent = `AGE ${startAge} — ${endAge}`;
+  const tbody = $('tableBody');
+  tbody.innerHTML = '';
+  rows.forEach(row => {
+    const tr = document.createElement('tr');
+    if (row.age === startAge) tr.classList.add('target-row');
+    if (row.age >= endAge) tr.classList.add('milestone');
+    const diffCls = row.diff >= 0 ? 'cp-diff-pos' : 'cp-diff-neg';
+    const diffSign = row.diff > 0 ? '+' : (row.diff < 0 ? '−' : '');
+    tr.innerHTML = `
+      <td>${row.age}</td>
+      <td>${row.yearsRemaining <= 0 ? 'Reached' : fmtNum(row.yearsRemaining)}</td>
+      <td>${fmtUSD(row.amount)}</td>
+      <td>${fmtNum(row.pct)}%</td>
+      <td>${fmtUSD(row.savings)}</td>
+      <td class="${diffCls}">${diffSign}${fmtUSD(Math.abs(row.diff))}</td>
+      <td>${fmtNum(row.pctWithSavings)}%</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// ---------- inline SVG bar chart (no external chart library) ----------
+const svgNS = 'http://www.w3.org/2000/svg';
+const cpSvg = $('crossoverChart');
+const cpTooltip = $('cpTooltip');
+
+function niceCeil(v){
+  if (v <= 0) return 1;
+  const mag = Math.pow(10, Math.floor(Math.log10(v)));
+  const norm = v / mag;
+  let step;
+  if (norm <= 1) step = 1; else if (norm <= 2) step = 2; else if (norm <= 5) step = 5; else step = 10;
+  return step * mag;
+}
+
+function renderChart(state){
+  const {rows, startAge, endAge} = state;
+  const W = 1120, H = 340;
+  const padL = 74, padR = 10, padT = 16, padB = 34;
+  const plotW = W - padL - padR;
+  const plotH = H - padT - padB;
+
+  const maxAmount = Math.max(...rows.map(r => r.amount), ...rows.map(r => r.savings), 1);
+  const niceMax = niceCeil(maxAmount);
+
+  cpSvg.innerHTML = '';
+  const defs = document.createElementNS(svgNS, 'defs');
+  defs.innerHTML =
+    '<linearGradient id="crossoverGradient" x1="0" y1="1" x2="0" y2="0">' +
+      '<stop offset="0%" stop-color="#A66A0C"/>' +
+      '<stop offset="100%" stop-color="#F3B23A"/>' +
+    '</linearGradient>';
+  cpSvg.appendChild(defs);
+
+  // gridlines
+  const steps = 5;
+  for (let i = 0; i <= steps; i++){
+    const val = niceMax * i / steps;
+    const y = padT + plotH - (val / niceMax) * plotH;
+    const line = document.createElementNS(svgNS, 'line');
+    line.setAttribute('x1', padL); line.setAttribute('x2', W - padR);
+    line.setAttribute('y1', y); line.setAttribute('y2', y);
+    line.setAttribute('class', 'cp-grid-line');
+    cpSvg.appendChild(line);
+
+    const label = document.createElementNS(svgNS, 'text');
+    label.setAttribute('x', padL - 10);
+    label.setAttribute('y', y + 4);
+    label.setAttribute('text-anchor', 'end');
+    label.setAttribute('class', 'cp-grid-label');
+    label.textContent = fmtUSDShort(val);
+    cpSvg.appendChild(label);
+  }
+
+  const n = rows.length;
+  const barGap = n > 40 ? 3 : n > 20 ? 5 : 8;
+  const barW = Math.max((plotW / n) - barGap, 1);
+  const labelStep = n <= 20 ? 1 : n <= 40 ? 2 : 5;
+
+  const savingsPoints = [];
+
+  rows.forEach((row, i) => {
+    const x = padL + i * (barW + barGap);
+    const barH = Math.max((row.amount / niceMax) * plotH, 1);
+    const y = padT + plotH - barH;
+    const cx = x + barW / 2;
+    const savingsY = padT + plotH - (row.savings / niceMax) * plotH;
+    savingsPoints.push([cx, savingsY]);
+
+    const group = document.createElementNS(svgNS, 'g');
+
+    const rect = document.createElementNS(svgNS, 'rect');
+    rect.setAttribute('class', 'cp-bar' + (row.age === startAge ? ' is-current' : row.age >= endAge ? ' is-target' : ''));
+    rect.setAttribute('x', x);
+    rect.setAttribute('y', y);
+    rect.setAttribute('width', barW);
+    rect.setAttribute('height', barH);
+    rect.setAttribute('rx', 1.5);
+    group.appendChild(rect);
+
+    if (row.age % labelStep === 0 || row.age === startAge || row.age === endAge){
+      const lbl = document.createElementNS(svgNS, 'text');
+      lbl.setAttribute('x', cx);
+      lbl.setAttribute('y', H - padB + 16);
+      lbl.setAttribute('text-anchor', 'middle');
+      lbl.setAttribute('class', 'cp-axis-label');
+      lbl.textContent = row.age;
+      cpSvg.appendChild(lbl);
+    }
+
+    group.addEventListener('mousemove', (e) => {
+      cpTooltip.style.opacity = 1;
+      cpTooltip.style.left = e.clientX + 'px';
+      cpTooltip.style.top = e.clientY + 'px';
+      cpTooltip.innerHTML = `<div class="yr">Age ${row.age}</div>Amount needed <b>${fmtUSD(row.amount)}</b><br>Your savings <b>${fmtUSD(row.savings)}</b>`;
+    });
+    group.addEventListener('mouseleave', () => { cpTooltip.style.opacity = 0; });
+
+    cpSvg.appendChild(group);
+  });
+
+  // ---- savings growth line, overlaid on the bars ----
+  if (savingsPoints.length){
+    const path = document.createElementNS(svgNS, 'path');
+    const d = savingsPoints.map((p, i) => (i === 0 ? 'M' : 'L') + p[0] + ',' + p[1]).join(' ');
+    path.setAttribute('d', d);
+    path.setAttribute('class', 'cp-savings-line');
+    cpSvg.appendChild(path);
+
+    savingsPoints.forEach(([px, py]) => {
+      const dot = document.createElementNS(svgNS, 'circle');
+      dot.setAttribute('class', 'cp-savings-dot');
+      dot.setAttribute('cx', px);
+      dot.setAttribute('cy', py);
+      dot.setAttribute('r', 2.5);
+      cpSvg.appendChild(dot);
+    });
+  }
+}
+
+function render(){
+  const state = compute();
+  renderSummary(state);
+  renderStatusStrip(state);
+  renderTable(state);
+  renderChart(state);
+  updateCxSummary();
+}
+
+const STORAGE_KEY = 'crossoverPointInputs';
+const DEFAULTS = {goal:'3000000', currentSavings:'0', age:'24', targetAge:'60', returnPct:'11'};
+const CURRENCY_FIELDS = ['goal', 'currentSavings'];
+const ALL_FIELDS = ['goal', 'currentSavings', 'age', 'targetAge', 'returnPct'];
+
+function saveInputs(){
+  const vals = {};
+  ALL_FIELDS.forEach(id => { vals[id] = $(id).value; });
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(vals)); } catch(e) { /* storage unavailable, ignore */ }
+  updateCxSaveStatus();
+}
+function loadInputs(){
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const vals = JSON.parse(raw);
+    Object.keys(vals).forEach(id => { if ($(id)) $(id).value = vals[id]; });
+  } catch(e) { /* storage unavailable or corrupt, ignore */ }
+}
+
+ALL_FIELDS.forEach(id => {
+  if (CURRENCY_FIELDS.includes(id)) return; // wired separately below with sanitization
+  $(id).addEventListener('input', () => { saveInputs(); render(); });
+});
+CURRENCY_FIELDS.forEach(id => {
+  $(id).addEventListener('input', () => { sanitizeCurrencyInput(id); saveInputs(); render(); });
+  $(id).addEventListener('blur', () => { formatCurrencyField(id); saveInputs(); });
+});
+
+$('resetBtn').addEventListener('click', () => {
+  Object.keys(DEFAULTS).forEach(id => { $(id).value = DEFAULTS[id]; });
+  if (window.FNProfileAutofill) window.FNProfileAutofill.apply(true);
+  CURRENCY_FIELDS.forEach(formatCurrencyField);
+  saveInputs();
+  render();
+});
+
+loadInputs();
+CURRENCY_FIELDS.forEach(formatCurrencyField);
+try { setCxInputsCollapsed(localStorage.getItem(CX_COLLAPSE_KEY) === '1'); } catch(e) { setCxInputsCollapsed(false); }
+render();
+</script>
+</body>
+</html>

@@ -410,21 +410,50 @@
 
     <div class="versions">
 
-      <a class="version-card is-disabled" href="v2/index.html" aria-disabled="true" tabindex="-1" onclick="return false;">
+      <a class="version-card is-active is-live-blue" href="v4.5/index.html">
+        <div class="version-icon">B.4.5</div>
+        <div class="version-info">
+          <p class="name">Beta 4.5 — Current</p>
+          <p class="path">/beta/v4.5</p>
+          <p class="notes"><ul>
+            <li>Icons, added lots of icons</li>
+            <li>Fixed a real bug: the Net Worth calculator was saving to a cookie instead of localStorage, invisible to Profile Manager, snapshots, and export</li>
+            <li>Net Worth is now a history tracker — log dated snapshots and watch a net-worth trend chart over time</li>
+            <li>Added charts to Roth Conversion Ladder (funding sources by year) and SS &amp; Pension Bridge (bridge vs. ongoing cost by claiming age)</li>
+            <li>Profile Manager: rename a saved snapshot in place, and compare two snapshots side by side</li>
+            <li>Four new calculators: Rent vs. Buy, Coast &amp; Barista FIRE, Required Minimum Distributions (RMD), and a Monte Carlo sequence-of-returns simulator (bootstrap-resampled from real 1928&ndash;2025 market data)</li>
+            <li>All new calculators wired into the nav menu, homepage, and the site's snapshot/export system</li>
+            <li>"Your info" panel: added a Name field, shown as a badge in the nav bar, used to prefix auto-generated snapshot names and export filenames</li>
+            <li>Profile Manager: "Create example data snapshot" button — one click fills a saved profile with realistic example numbers across every calculator, to explore the site without touching your own data</li>
+            <li>Fixed the new profile Name not actually being saved/restored across snapshot save, load, import, and share</li>
+            <li>Rent vs. Buy: grouped inputs into "Owning" and "Renting" sections</li>
+            <li>Moved the "how FireNate got its name" video clip from the Files page to the About page</li>
+            <li>Fixed a mislabeled "Traditional Retirement Age" field on FIRE Milestones</li>
+         </ul></p>
+          <p class="cta-hint">Click to open the current build</p>
+        </div>
+        <span class="status-pill active">✔ Current</span>
+      </a>
+
+     
+        <a class="version-card is-disabled" href="v4.4/index.html" aria-disabled="true" tabindex="-1" onclick="return false;">
         <div class="version-icon">B.4.4</div>
         <div class="version-info">
           <p class="name">Beta 4.4</p>
           <p class="path">/beta/v4.4</p>
-          <p class="notes">In Process</p>
+          <p class="notes"><ul>
+            <li>Profile Manager: share a saved snapshot as a plain text string (and import one someone shares with you) — not just a URL</li>
+            <li>Profile Manager: one-click "Quick snapshot" that captures your live profile and every calculator's inputs with an auto-generated name, no typing required</li>
+         </ul></p>
+          <p class="cta-hint">Click to open </p>
         </div>
-        <span class="status-pill disabled">⛔ Disabled - Coming Soon</span>
+        <span class="status-pill disabled">⛔ Disabled</span>
       </a>
 
-
-      <a class="version-card is-active is-live-blue" href="v4.3/index.html">
+      <a class="version-card is-active is-live-green" href="v4.3/index.html">
         <div class="version-icon">B.4.3</div>
         <div class="version-info">
-          <p class="name">Beta 4.3 — Current</p>
+          <p class="name">Beta 4.3</p>
           <p class="path">/beta/v4.3</p>
           <p class="notes"><ul>
             <li>New calculators: Debt Snowball, Social Security &amp; Pension Bridge, Roth Conversion Ladder, Variable Withdrawal Rate (Guyton-Klinger guardrails + cash buffer), and Healthcare &amp; ACA Bridge (with a subsidy-cliff visualizer)</li>
@@ -438,12 +467,12 @@
             <li>Fixed path handling so the site works correctly when hosted in a subfolder</li>
             <li>Contact Us Page</li>
          </ul></p>
-          <p class="cta-hint">Click to open the current build</p>
+          <p class="cta-hint">Click to open </p>
         </div>
-        <span class="status-pill active">✔ Current</span>
+        <span class="status-pill active">View</span>
       </a>
 
-      <a class="version-card is-active is-live-green" href="v4.2/index.html">
+      <a class="version-card is-active is-live-orange" href="v4.2/index.html">
         <div class="version-icon">B.4.2</div>
         <div class="version-info">
           <p class="name">Beta 4.2</p>
@@ -600,7 +629,7 @@
           <li style="color:var(--accent)">No promises are made or implied.</li>
           <li style="color:var(--text-dim)">Always consult a licensed professional before making any changes, decisions, or actions.</li>
           <li style="color:goldenrod;">This site uses cookies, but no information is used for tracking purposes, and all information stays on your local device.</li>
-          <li style="color:var(--green-bright);">Page Last Updated: 2026-08-15</li>
+          <li style="color:var(--green-bright);">Page Last Updated: 2026-08-16</li>
       </ul>
       </footer>
   </div>

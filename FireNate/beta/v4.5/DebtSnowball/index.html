@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script src="../assets/js/theme-init.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FireNate - Debt Snowball Calculator</title>
+<meta name="description" content="Pay off your debts with the snowball method — see exactly when each one gets wiped out, month by month, plus how much faster the avalanche method would be.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/site.css">
+<link rel="stylesheet" href="../assets/css/timeToFI.css">
+<script src="../assets/js/theme.js" defer></script>
+<script src="../assets/js/user-profile.js" defer></script>
+<script src="../assets/js/nav.js" defer></script>
+<script>
+window.FN_BASE = "../"; window.FN_PAGE = "debt-snowball";
+</script>
+<style>
+  /* ---------- EXPLAINER ---------- */
+  .db-explainer{
+    background:var(--surface); border:1px solid var(--line); border-top:4px solid var(--target);
+    border-radius:var(--radius); padding:22px 24px; margin-top:4px;
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:20px;
+  }
+  .db-explainer-step .tag{
+    font-family:var(--mono); font-size:10.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+    margin-bottom:6px; display:block;
+  }
+  .db-explainer-step.s1 .tag{ color:var(--gold); }
+  .db-explainer-step.s2 .tag{ color:var(--target); }
+  .db-explainer-step.s3 .tag{ color:var(--jade); }
+  .db-explainer-step p{ margin:0; font-size:13.5px; color:var(--ink-dim); line-height:1.6; }
+  .db-explainer-step strong{ color:var(--ink); }
+
+  /* ---------- DEBT LIST EDITOR ---------- */
+  .db-debts-card{
+    background:var(--surface); border:1px solid var(--line); border-top:4px solid var(--gold);
+    border-radius:var(--radius); padding:24px 26px;
+  }
+  .db-debts-scroll{ overflow-x:auto; }
+  .db-debts-table{ min-width:640px; }
+  .db-debts-head-row, .db-debt-row{
+    display:grid; grid-template-columns:1.6fr 1fr 0.8fr 1fr 34px; gap:10px; align-items:center;
+  }
+  .db-debts-head-row{
+    padding:0 4px 8px; font-family:var(--mono); font-size:10px; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--ink-faint);
+  }
+  .db-debt-row{ padding:7px 4px; border-top:1px solid var(--line-soft); }
+  .db-debt-row input{
+    width:100%; background:var(--surface-2); border:1px solid var(--line); border-radius:7px;
+    padding:9px 10px; font-family:var(--mono); font-size:13.5px; color:var(--ink); outline:none;
+    box-sizing:border-box; transition:border-color .15s;
+  }
+  .db-debt-row input:focus{ border-color:var(--gold); }
+  .db-inputwrap{
+    display:flex; align-items:center; gap:2px; background:var(--surface-2); border:1px solid var(--line);
+    border-radius:7px; padding:0 8px; transition:border-color .15s;
+  }
+  .db-inputwrap:focus-within{ border-color:var(--gold); }
+  .db-inputwrap input{ border:none !important; background:none !important; padding:9px 2px !important; }
+  .db-inputwrap .affix{ font-family:var(--mono); color:var(--ink-faint); font-size:13px; flex:none; }
+  .db-remove-btn{
+    width:30px; height:30px; border-radius:50%; border:1px solid var(--line); background:none;
+    color:var(--ink-faint); cursor:pointer; font-size:16px; line-height:1;
+    display:flex; align-items:center; justify-content:center; transition:border-color .15s, color .15s;
+  }
+  .db-remove-btn:hover{ border-color:var(--danger); color:var(--danger); }
+  .db-add-btn{
+    display:inline-flex; align-items:center; gap:8px; margin-top:14px;
+    background:none; border:1px dashed var(--line); color:var(--ink-dim); font-weight:600; font-size:13px;
+    padding:9px 18px; border-radius:999px; cursor:pointer; font-family:var(--sans);
+    transition:border-color .15s, color .15s;
+  }
+  .db-add-btn:hover{ border-color:var(--gold-dim); color:var(--gold); }
+
+  .db-controls-row{
+    display:flex; flex-wrap:wrap; align-items:flex-end; gap:20px;
+    margin-top:20px; padding-top:18px; border-top:1px solid var(--line-soft);
+  }
+  .db-control{ display:flex; flex-direction:column; gap:6px; }
+  .db-control label{ font-size:12px; color:var(--ink-dim); }
+  .db-control select{
+    background:var(--surface-2); border:1px solid var(--line); border-radius:7px; color:var(--ink);
+    font-family:var(--sans); font-size:13.5px; padding:9px 10px; outline:none; cursor:pointer; min-width:220px;
+  }
+  .db-control select:focus{ border-color:var(--gold); }
+  .db-save{ margin-left:auto; display:flex; flex-direction:column; align-items:flex-end; gap:8px; }
+  .db-save .save-status{ font-family:var(--mono); font-size:11px; color:var(--ink-faint); white-space:nowrap; }
+  .db-reset-btn{
+    background:none; border:1px solid var(--line); color:var(--ink-faint);
+    font-family:var(--mono); font-size:10.5px; letter-spacing:.06em; text-transform:uppercase;
+    padding:6px 12px; border-radius:6px; cursor:pointer; transition:border-color .18s, color .18s;
+  }
+  .db-reset-btn:hover{ border-color:var(--danger); color:var(--danger); }
+
+  .db-warning{
+    margin-top:16px; padding:14px 18px; border-radius:8px; font-size:13.5px; line-height:1.55;
+    background:rgba(219,59,35,0.1); border:1px solid rgba(219,59,35,0.3); color:var(--danger);
+  }
+
+  /* ---------- MILESTONE CARDS ---------- */
+  .db-milestones{ display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:14px; }
+  .db-milestone-card{
+    background:var(--surface); border:1px solid var(--line); border-top:4px solid var(--gold);
+    border-radius:var(--radius); padding:20px 20px 18px;
+  }
+  .db-milestone-card.jade{ border-top-color:var(--jade); }
+  .db-milestone-card.plum{ border-top-color:var(--plum); }
+  .db-milestone-card.target{ border-top-color:var(--target); }
+  .db-milestone-card.rust{ border-top-color:var(--danger); }
+  .db-milestone-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:10px; }
+  .db-milestone-order{
+    flex:none; width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-family:var(--mono); font-size:12px; font-weight:700; background:var(--surface-2); border:1px solid var(--line); color:var(--ink-dim);
+  }
+  .db-milestone-name{ font-family:var(--serif); font-size:17px; font-weight:600; color:var(--ink); flex:1; }
+  .db-milestone-date{
+    font-family:var(--mono); font-size:11px; font-weight:600; color:var(--jade);
+    background:rgba(31,146,84,0.12); padding:3px 9px; border-radius:999px; white-space:nowrap;
+  }
+  .db-milestone-months{ font-family:var(--serif); font-size:22px; font-weight:600; color:var(--ink); margin-bottom:6px; }
+  .db-milestone-desc{ font-size:12.5px; color:var(--ink-faint); line-height:1.5; }
+
+  /* ---------- TIMELINE (dots + legend, shared pattern) ---------- */
+  .db-timeline-card{
+    background:var(--surface); border:1px solid var(--line); border-top:4px solid var(--plum);
+    border-radius:var(--radius); padding:28px 26px 20px;
+  }
+  .db-timeline-track{ position:relative; height:6px; background:var(--surface-2); border-radius:999px; margin:34px 4px 20px; }
+  .db-timeline-fill{ position:absolute; top:0; left:0; height:100%; border-radius:999px; background:linear-gradient(90deg, var(--gold), var(--jade)); }
+  .db-timeline-dot{ position:absolute; top:50%; width:14px; height:14px; border-radius:50%; border:2.5px solid var(--surface); transform:translate(-50%,-50%); }
+  .db-timeline-dot.gold{ background:var(--gold); }
+  .db-timeline-dot.jade{ background:var(--jade); }
+  .db-timeline-dot.plum{ background:var(--plum); }
+  .db-timeline-dot.target{ background:var(--target); }
+  .db-timeline-dot.rust{ background:var(--danger); }
+  .db-timeline-endpoints{ display:flex; justify-content:space-between; font-family:var(--mono); font-size:11px; color:var(--ink-faint); }
+  .db-timeline-legend{ display:flex; flex-wrap:wrap; gap:14px 22px; margin-top:20px; padding-top:16px; border-top:1px solid var(--line-soft); }
+  .db-timeline-legend-item{ display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--ink-dim); }
+  .db-timeline-legend-item .dot{ width:10px; height:10px; border-radius:50%; flex:none; }
+  .db-timeline-legend-item .dot.gold{ background:var(--gold); }
+  .db-timeline-legend-item .dot.jade{ background:var(--jade); }
+  .db-timeline-legend-item .dot.plum{ background:var(--plum); }
+  .db-timeline-legend-item .dot.target{ background:var(--target); }
+  .db-timeline-legend-item .dot.rust{ background:var(--danger); }
+  .db-timeline-legend-item strong{ color:var(--ink); }
+  .db-timeline-legend-item .when{ color:var(--ink-faint); font-family:var(--mono); }
+
+  .db-paidoff-badge{
+    display:inline-block; font-family:var(--mono); font-size:10.5px; font-weight:700;
+    color:var(--jade); background:rgba(31,146,84,0.12); padding:2px 8px; border-radius:999px; margin:1px 4px 1px 0;
+  }
+
+  /* ---------- BALANCE / PAYMENT CHART ---------- */
+  .db-chart-head-right{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+  .db-chart-toggle{
+    display:inline-flex; background:var(--surface-2); border:1px solid var(--line);
+    border-radius:999px; padding:3px; gap:2px; flex:none;
+  }
+  .db-chart-toggle-btn{
+    border:none; background:none; font-family:var(--sans); font-size:12.5px; font-weight:600;
+    color:var(--ink-dim); padding:6px 14px; border-radius:999px; cursor:pointer;
+    transition:background-color .15s, color .15s;
+  }
+  .db-chart-toggle-btn:hover{ color:var(--gold); }
+  .db-chart-toggle-btn.active{ background:var(--gold); color:#201205; }
+  .db-chart-toggle-btn.active:hover{ color:#201205; }
+  .db-chart-card{
+    background:var(--surface); border:1px solid var(--line); border-top:4px solid var(--target);
+    border-radius:var(--radius); padding:24px 20px 12px; position:relative;
+  }
+  #balanceChart{ width:100%; height:auto; display:block; overflow:visible; }
+  .db-chart-line{ fill:none; stroke-width:2.2; transition:opacity .15s ease; }
+  .db-chart-line.gold{ stroke:var(--gold); }
+  .db-chart-line.jade{ stroke:var(--jade); }
+  .db-chart-line.plum{ stroke:var(--plum); }
+  .db-chart-line.target{ stroke:var(--target); }
+  .db-chart-line.rust{ stroke:var(--danger); }
+  .db-chart-grid-line{ stroke:var(--line); stroke-width:1; }
+  .db-chart-grid-label, .db-chart-axis-label{ font-family:var(--mono); font-size:10px; fill:var(--ink-faint); }
+</style>
+</head>
+<body>
+<div id="fn-site-nav"></div>
+
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">FIRE Nate - Debt Snowball</p>
+    <h1 id="pageTitleHeader">Smallest balance first. <em>Momentum does the rest.</em></h1>
+    <p class="lede">List your debts, add whatever extra you can throw at them each month, and watch the plan play out — every payoff date, every milestone, month by month.</p>
+  </header>
+
+  <div class="db-explainer">
+    <div class="db-explainer-step s1">
+      <span class="tag">1. Minimums first</span>
+      <p>Every debt gets at least its <strong>minimum payment</strong> every month, so nothing falls behind.</p>
+    </div>
+    <div class="db-explainer-step s2">
+      <span class="tag">2. Smallest balance next</span>
+      <p>Every extra dollar goes toward the debt with the <strong>smallest balance</strong> — not the highest rate. Fast wins build momentum.</p>
+    </div>
+    <div class="db-explainer-step s3">
+      <span class="tag">3. Snowball it</span>
+      <p>Once a debt is gone, its <strong>whole payment rolls into the next one</strong> — so the amount you can throw at each debt keeps growing.</p>
+    </div>
+  </div>
+
+  <h2 class="ledger-title" style="margin-top:40px; margin-bottom:4px;">Your debts</h2>
+  <div class="db-debts-card">
+    <div class="db-debts-scroll">
+      <div class="db-debts-table">
+        <div class="db-debts-head-row">
+          <div>Debt</div><div>Balance</div><div>APR</div><div>Min. Payment</div><div></div>
+        </div>
+        <div id="debtRows"></div>
+      </div>
+    </div>
+    <button type="button" class="db-add-btn" id="addDebtBtn">+ Add a debt</button>
+
+    <div class="db-controls-row">
+      <div class="db-control">
+        <label for="extraPayment">Extra Monthly Payment</label>
+        <div class="db-inputwrap"><span class="affix">$</span><input type="text" inputmode="decimal" pattern="[0-9,.]*" id="extraPayment" value="200.00" style="width:120px;"></div>
+      </div>
+      <div class="db-control">
+        <label for="strategy">Payoff Strategy</label>
+        <select id="strategy">
+          <option value="snowball" selected>Snowball (smallest balance first)</option>
+          <option value="avalanche">Avalanche (highest interest first)</option>
+        </select>
+      </div>
+      <div class="db-save">
+        <span class="save-status" id="saveStatus">Not saved yet</span>
+        <button type="button" id="resetBtn" class="db-reset-btn">Reset to example debts</button>
+      </div>
+    </div>
+    <div class="db-warning" id="warningBox" style="display:none;"></div>
+  </div>
+
+  <h2 class="ledger-title" style="margin-top:40px; margin-bottom:4px;">Summary</h2>
+  <div class="status" id="statusStrip"></div>
+
+  <h2 class="ledger-title" style="margin-top:40px; margin-bottom:4px;">Payoff milestones</h2>
+  <p class="lede" style="margin-bottom:16px;">In the order they'll actually get wiped out under your plan.</p>
+  <div class="db-milestones" id="milestoneCards"></div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h2>Your debt-free timeline</h2>
+      <span class="sub" id="timelineSub">MONTH, LEFT TO RIGHT</span>
+    </div>
+    <div class="db-timeline-card">
+      <div class="db-timeline-track" id="timelineTrack"></div>
+      <div class="db-timeline-endpoints" id="timelineEndpoints"></div>
+      <div class="db-timeline-legend" id="timelineLegend"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h2>The snowball effect</h2>
+      <div class="db-chart-head-right">
+        <span class="sub" id="chartSub">EACH DEBT'S BALANCE, MONTH BY MONTH</span>
+        <div class="db-chart-toggle" id="chartToggle">
+          <button type="button" class="db-chart-toggle-btn active" data-mode="balance">Balances</button>
+          <button type="button" class="db-chart-toggle-btn" data-mode="payment">Payments</button>
+        </div>
+      </div>
+    </div>
+    <div class="db-chart-card">
+      <svg id="balanceChart" viewBox="0 0 1120 360"></svg>
+      <div class="db-timeline-legend" id="balanceChartLegend"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h2>Payoff order, in detail</h2>
+      <span class="sub">ONE ROW PER DEBT</span>
+    </div>
+    <div class="table-card">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th style="text-align:left;">Order</th>
+              <th style="text-align:left;">Debt</th>
+              <th>Starting Balance</th>
+              <th>APR</th>
+              <th>Payoff Month</th>
+              <th>Payoff Date</th>
+              <th>Interest Paid</th>
+            </tr>
+          </thead>
+          <tbody id="debtOrderTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h2>Month-by-month progress</h2>
+      <span class="sub" id="monthlyTableSub">TOTAL BALANCE REMAINING</span>
+    </div>
+    <div class="table-card">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr id="monthlyTableHeadRow">
+              <th style="text-align:left;">Month</th>
+              <th style="text-align:left;">Date</th>
+              <th>Total Remaining</th>
+              <th style="text-align:left;">Paid Off This Month</th>
+            </tr>
+          </thead>
+          <tbody id="monthlyTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer id="site-footer"></footer>
+
+<script>
+const $ = id => document.getElementById(id);
+const fmtUSD = n => n.toLocaleString('en-US', {style:'currency', currency:'USD', maximumFractionDigits:0});
+const fmtUSD2 = n => n.toLocaleString('en-US', {style:'currency', currency:'USD', maximumFractionDigits:2});
+const fmtNum = n => n.toLocaleString('en-US', {maximumFractionDigits:1});
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function parseCurrencyVal(v){ return parseFloat(String(v).replace(/,/g, '')) || 0; }
+function formatCurrencyVal(v){ return parseCurrencyVal(v).toLocaleString('en-US', {maximumFractionDigits:2}); }
+function sanitizeCurrencyInputEl(el){
+  const before = el.value;
+  const cursorFromEnd = before.length - (el.selectionStart ?? before.length);
+  let cleaned = before.replace(/[^0-9.,]/g, '');
+  const parts = cleaned.split('.');
+  if (parts.length > 2) cleaned = parts[0] + '.' + parts.slice(1).join('');
+  if (cleaned !== before){
+    el.value = cleaned;
+    const newPos = Math.max(0, cleaned.length - cursorFromEnd);
+    el.setSelectionRange(newPos, newPos);
+  }
+}
+
+function pad2(n){ return String(n).padStart(2, '0'); }
+function updateSaveStatus(){
+  const el = $('saveStatus');
+  if (!el) return;
+  const d = new Date();
+  el.textContent = `Last saved: ${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
+}
+function monthLabel(monthsFromNow){
+  const d = new Date();
+  d.setMonth(d.getMonth() + monthsFromNow);
+  return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+}
+
+const EXAMPLE_DEBTS = [
+  { id: 'd1', name: 'Credit Card A', balance: 4500, apr: 24.99, minPayment: 110 },
+  { id: 'd2', name: 'Credit Card B', balance: 2200, apr: 19.99, minPayment: 65 },
+  { id: 'd3', name: 'Car Loan', balance: 12000, apr: 6.5, minPayment: 310 },
+  { id: 'd4', name: 'Student Loan', balance: 18000, apr: 5.0, minPayment: 190 }
+];
+const CARD_COLORS = ['gold', 'jade', 'plum', 'target', 'rust'];
+
+let debts = [];
+let nextId = 1;
+
+function newDebtId(){ return 'd' + (nextId++); }
+
+function addDebtRow(debt){
+  debts.push(debt);
+  renderDebtRows();
+  saveInputs();
+  render();
+}
+
+function renderDebtRows(){
+  const host = $('debtRows');
+  host.innerHTML = '';
+  debts.forEach(debt => {
+    const row = document.createElement('div');
+    row.className = 'db-debt-row';
+    row.dataset.id = debt.id;
+    row.innerHTML = `
+      <input type="text" class="db-name" value="${escapeHtml(debt.name)}">
+      <div class="db-inputwrap"><span class="affix">$</span><input type="text" inputmode="decimal" pattern="[0-9,.]*" class="db-balance" value="${formatCurrencyVal(debt.balance)}"></div>
+      <div class="db-inputwrap"><input type="number" step="0.01" min="0" max="100" class="db-apr" value="${debt.apr}"><span class="affix">%</span></div>
+      <div class="db-inputwrap"><span class="affix">$</span><input type="text" inputmode="decimal" pattern="[0-9,.]*" class="db-minpay" value="${formatCurrencyVal(debt.minPayment)}"></div>
+      <button type="button" class="db-remove-btn" title="Remove this debt">&times;</button>
+    `;
+    host.appendChild(row);
+
+    const nameInput = row.querySelector('.db-name');
+    const balInput = row.querySelector('.db-balance');
+    const aprInput = row.querySelector('.db-apr');
+    const minInput = row.querySelector('.db-minpay');
+    const removeBtn = row.querySelector('.db-remove-btn');
+
+    function syncFromInputs(){
+      const d = debts.find(x => x.id === debt.id);
+      if (!d) return;
+      d.name = nameInput.value.trim() || 'Unnamed debt';
+      d.balance = parseCurrencyVal(balInput.value);
+      d.apr = parseFloat(aprInput.value) || 0;
+      d.minPayment = parseCurrencyVal(minInput.value);
+      saveInputs();
+      render();
+    }
+
+    nameInput.addEventListener('input', syncFromInputs);
+    aprInput.addEventListener('input', syncFromInputs);
+    [balInput, minInput].forEach(inp => {
+      inp.addEventListener('input', () => { sanitizeCurrencyInputEl(inp); syncFromInputs(); });
+      inp.addEventListener('blur', () => { inp.value = formatCurrencyVal(inp.value); syncFromInputs(); });
+    });
+    removeBtn.addEventListener('click', () => {
+      debts = debts.filter(x => x.id !== debt.id);
+      renderDebtRows();
+      saveInputs();
+      render();
+    });
+  });
+}
+
+$('addDebtBtn').addEventListener('click', () => {
+  addDebtRow({ id: newDebtId(), name: 'New debt', balance: 1000, apr: 15, minPayment: 25 });
+});
+
+// ---------- payoff simulation ----------
+// Simulates minimum payments on every debt plus a cascading "extra" payment
+// each month, re-targeting the current smallest balance (snowball) or
+// highest APR (avalanche) every month as balances change.
+function simulatePayoff(inputDebts, extraPayment, strategy){
+  const working = inputDebts.map(d => ({
+    id: d.id, name: d.name, apr: d.apr, minPayment: d.minPayment,
+    startingBalance: d.balance, remaining: d.balance,
+    paidOffMonth: null, totalInterestPaid: 0
+  }));
+
+  const maxMonths = 600;
+  let month = 0;
+  const monthlySnapshots = [];
+
+  while (working.some(d => d.remaining > 0.005) && month < maxMonths){
+    month++;
+
+    // 1. accrue this month's interest
+    working.forEach(d => {
+      if (d.remaining > 0.005){
+        const monthlyRate = (d.apr / 100) / 12;
+        const interest = d.remaining * monthlyRate;
+        d.totalInterestPaid += interest;
+        d.remaining += interest;
+      }
+    });
+
+    // 2. pay minimums — a debt cleared for less than its full minimum frees
+    // up the difference for this same month, and any debt already paid off
+    // in an earlier month has its whole minimum permanently rolled in from
+    // here on — that ever-growing pool is literally what makes it a "snowball"
+    const payments = {}; // debtId -> total $ paid toward it this month
+    let pool = extraPayment;
+    working.forEach(d => {
+      if (d.remaining > 0.005){
+        const owed = Math.min(d.minPayment, d.remaining);
+        d.remaining -= owed;
+        payments[d.id] = (payments[d.id] || 0) + owed;
+        if (owed < d.minPayment) pool += (d.minPayment - owed);
+      } else if (d.paidOffMonth !== null){
+        pool += d.minPayment;
+      }
+    });
+
+    // 3. cascade the extra pool at whichever unpaid debt is the current target
+    let unpaid = working.filter(d => d.remaining > 0.005);
+    if (strategy === 'avalanche') unpaid.sort((a, b) => b.apr - a.apr);
+    else unpaid.sort((a, b) => a.remaining - b.remaining);
+    for (const d of unpaid){
+      if (pool <= 0) break;
+      const pay = Math.min(pool, d.remaining);
+      d.remaining -= pay;
+      pool -= pay;
+      payments[d.id] = (payments[d.id] || 0) + pay;
+    }
+
+    // 4. record payoffs
+    const paidOffThisMonth = [];
+    working.forEach(d => {
+      if (d.remaining <= 0.005 && d.paidOffMonth === null){
+        d.remaining = 0;
+        d.paidOffMonth = month;
+        paidOffThisMonth.push(d.name);
+      }
+    });
+
+    const balances = {};
+    working.forEach(d => { balances[d.id] = d.remaining; });
+
+    monthlySnapshots.push({
+      month,
+      totalRemaining: working.reduce((s, d) => s + d.remaining, 0),
+      paidOffThisMonth,
+      payments,
+      balances
+    });
+  }
+
+  const allPaidOff = working.every(d => d.paidOffMonth !== null);
+  return { working, monthlySnapshots, totalMonths: month, allPaidOff };
+}
+
+function compute(){
+  const extraPayment = parseCurrencyVal($('extraPayment').value);
+  const strategy = $('strategy').value;
+
+  const primary = simulatePayoff(debts, extraPayment, strategy);
+  const other = strategy === 'snowball'
+    ? simulatePayoff(debts, extraPayment, 'avalanche')
+    : simulatePayoff(debts, extraPayment, 'snowball');
+
+  const totalDebt = debts.reduce((s, d) => s + d.balance, 0);
+  const totalMinPayments = debts.reduce((s, d) => s + d.minPayment, 0);
+  const totalInterestPrimary = primary.working.reduce((s, d) => s + d.totalInterestPaid, 0);
+  const totalInterestOther = other.working.reduce((s, d) => s + d.totalInterestPaid, 0);
+
+  return { extraPayment, strategy, primary, other, totalDebt, totalMinPayments, totalInterestPrimary, totalInterestOther };
+}
+
+// ---------- balance-over-time chart ----------
+function fmtUSDShort(n){
+  const sign = n < 0 ? '-' : '';
+  const abs = Math.abs(n);
+  if (abs >= 1e6) return sign + '$' + (abs / 1e6).toFixed(1) + 'M';
+  if (abs >= 1e3) return sign + '$' + Math.round(abs / 1e3) + 'K';
+  return sign + '$' + Math.round(abs);
+}
+function niceCeil(v){
+  if (v <= 0) return 1;
+  const mag = Math.pow(10, Math.floor(Math.log10(v)));
+  const norm = v / mag;
+  let step;
+  if (norm <= 1) step = 1; else if (norm <= 2) step = 2; else if (norm <= 5) step = 5; else step = 10;
+  return step * mag;
+}
+
+const svgNS = 'http://www.w3.org/2000/svg';
+const balanceChartSvg = $('balanceChart');
+let chartMode = 'balance';
+let lastOrderedDebts = [];
+let lastMonthlySnapshots = [];
+
+const CHART_SUB_LABEL = {
+  balance: "EACH DEBT'S BALANCE, MONTH BY MONTH",
+  payment: "EACH DEBT'S PAYMENT, MONTH BY MONTH"
+};
+
+$('chartToggle').addEventListener('click', (e) => {
+  const btn = e.target.closest('.db-chart-toggle-btn');
+  if (!btn || btn.classList.contains('active')) return;
+  chartMode = btn.dataset.mode;
+  Array.from($('chartToggle').children).forEach(b => b.classList.toggle('active', b === btn));
+  $('chartSub').textContent = CHART_SUB_LABEL[chartMode];
+  renderDebtChart(lastOrderedDebts, lastMonthlySnapshots, chartMode);
+});
+
+// one line per debt — in "balance" mode, tracing the balance from today
+// down to zero at its payoff month (the snowball is visible as each line
+// hits zero and the next one's slope steepens); in "payment" mode, tracing
+// the actual dollar amount paid toward that debt each month (a flat line at
+// its minimum, jumping up once it becomes the snowball's current target)
+function renderDebtChart(orderedDebts, monthlySnapshots, mode){
+  const svg = balanceChartSvg;
+  const legend = $('balanceChartLegend');
+  const W = 1120, H = 360;
+  const padL = 74, padR = 10, padT = 16, padB = 34;
+  const plotW = W - padL - padR;
+  const plotH = H - padT - padB;
+
+  svg.innerHTML = '';
+  legend.innerHTML = '';
+  if (!orderedDebts.length || !monthlySnapshots.length) return;
+
+  const totalMonths = monthlySnapshots.length;
+  const niceMax = mode === 'balance'
+    ? niceCeil(Math.max(...orderedDebts.map(d => d.startingBalance), 1) * 1.05)
+    : niceCeil(Math.max(...monthlySnapshots.flatMap(s => Object.values(s.payments)), 1) * 1.1);
+
+  const steps = 5;
+  for (let i = 0; i <= steps; i++){
+    const val = niceMax * i / steps;
+    const y = padT + plotH - (val / niceMax) * plotH;
+    const line = document.createElementNS(svgNS, 'line');
+    line.setAttribute('x1', padL); line.setAttribute('x2', W - padR);
+    line.setAttribute('y1', y); line.setAttribute('y2', y);
+    line.setAttribute('class', 'db-chart-grid-line');
+    svg.appendChild(line);
+
+    const label = document.createElementNS(svgNS, 'text');
+    label.setAttribute('x', padL - 10);
+    label.setAttribute('y', y + 4);
+    label.setAttribute('text-anchor', 'end');
+    label.setAttribute('class', 'db-chart-grid-label');
+    label.textContent = fmtUSDShort(val);
+    svg.appendChild(label);
+  }
+
+  const labelStep = totalMonths <= 24 ? 2 : totalMonths <= 60 ? 6 : 12;
+  for (let m = 0; m <= totalMonths; m += labelStep){
+    const x = padL + (m / totalMonths) * plotW;
+    const lbl = document.createElementNS(svgNS, 'text');
+    lbl.setAttribute('x', x);
+    lbl.setAttribute('y', H - padB + 16);
+    lbl.setAttribute('text-anchor', 'middle');
+    lbl.setAttribute('class', 'db-chart-axis-label');
+    lbl.textContent = 'Mo ' + m;
+    svg.appendChild(lbl);
+  }
+
+  orderedDebts.forEach((d, i) => {
+    const cls = CARD_COLORS[i % CARD_COLORS.length];
+    let points;
+    if (mode === 'balance'){
+      points = [{ month: 0, val: d.startingBalance }].concat(
+        monthlySnapshots.map(s => ({ month: s.month, val: s.balances[d.id] || 0 }))
+      );
+    } else {
+      // payment mode: the line simply ends once a debt is paid off — there's
+      // nothing left to pay, so no trailing zero segment to draw
+      points = monthlySnapshots
+        .filter(s => s.payments[d.id] !== undefined)
+        .map(s => ({ month: s.month, val: s.payments[d.id] }));
+      if (!points.length) return;
+    }
+    const pts = points.map(p => {
+      const x = padL + (p.month / totalMonths) * plotW;
+      const clamped = Math.min(p.val, niceMax);
+      const y = padT + plotH - (clamped / niceMax) * plotH;
+      return x + ',' + y;
+    });
+    const path = document.createElementNS(svgNS, 'path');
+    path.setAttribute('d', 'M' + pts.join(' L'));
+    path.setAttribute('class', 'db-chart-line ' + cls);
+    const title = document.createElementNS(svgNS, 'title');
+    title.textContent = mode === 'balance'
+      ? (d.paidOffMonth !== null
+          ? `${d.name}: starts at ${fmtUSD(d.startingBalance)}, paid off month ${d.paidOffMonth}`
+          : `${d.name}: starts at ${fmtUSD(d.startingBalance)}, not paid off within this plan`)
+      : `${d.name}: minimum ${fmtUSD(d.minPayment)}/mo, paid off ${d.paidOffMonth !== null ? 'month ' + d.paidOffMonth : 'not within this plan'}`;
+    path.appendChild(title);
+    svg.appendChild(path);
+
+    const item = document.createElement('div');
+    item.className = 'db-timeline-legend-item';
+    const secondary = mode === 'balance' ? fmtUSD(d.startingBalance) : `min ${fmtUSD(d.minPayment)}/mo`;
+    item.innerHTML = `<span class="dot ${cls}"></span><strong>${escapeHtml(d.name)}</strong><span class="when">${secondary}</span>`;
+    legend.appendChild(item);
+  });
+}
+
+// ---------- render ----------
+function render(){
+  if (!debts.length){
+    $('statusStrip').innerHTML = '';
+    $('milestoneCards').innerHTML = '<p style="color:var(--ink-faint); font-size:14px;">Add a debt above to see your payoff plan.</p>';
+    $('timelineTrack').innerHTML = '';
+    $('timelineLegend').innerHTML = '';
+    $('timelineEndpoints').innerHTML = '';
+    balanceChartSvg.innerHTML = '';
+    $('balanceChartLegend').innerHTML = '';
+    lastOrderedDebts = [];
+    lastMonthlySnapshots = [];
+    $('debtOrderTableBody').innerHTML = '';
+    $('monthlyTableBody').innerHTML = '';
+    $('monthlyTableHeadRow').innerHTML = `
+      <th style="text-align:left;">Month</th>
+      <th style="text-align:left;">Date</th>
+      <th>Total Remaining</th>
+      <th style="text-align:left;">Paid Off This Month</th>
+    `;
+    $('warningBox').style.display = 'none';
+    return;
+  }
+
+  const state = compute();
+  const { primary, other, strategy } = state;
+
+  // warning if the plan never pays everything off
+  const warn = $('warningBox');
+  if (!primary.allPaidOff){
+    warn.style.display = 'block';
+    warn.innerHTML = `Your minimum payments plus extra payment don't cover the interest accruing on these balances — at this rate, this plan won't pay off your debt. Try increasing your extra monthly payment.`;
+  } else {
+    warn.style.display = 'none';
+  }
+
+  // status strip
+  const strip = $('statusStrip');
+  strip.innerHTML = '';
+  const add = (k, v, cls) => {
+    const div = document.createElement('div');
+    div.className = 'stat';
+    div.innerHTML = `<div class="k">${k}</div><div class="v ${cls || ''}">${v}</div>`;
+    strip.appendChild(div);
+  };
+  add('Total debt', fmtUSD(state.totalDebt));
+  add('Minimum payments / mo', fmtUSD(state.totalMinPayments));
+  add('Debt-free in', primary.allPaidOff ? `${fmtNum(primary.totalMonths)} mo` : 'Never', primary.allPaidOff ? 'jade' : '');
+  add('Debt-free date', primary.allPaidOff ? monthLabel(primary.totalMonths) : '—', 'target');
+  add('Total interest paid', fmtUSD(state.totalInterestPrimary));
+  if (primary.allPaidOff && other.allPaidOff){
+    const diff = state.totalInterestPrimary - state.totalInterestOther;
+    const otherName = strategy === 'snowball' ? 'avalanche' : 'snowball';
+    add(`vs. ${otherName}`, diff <= 0.5 ? 'About the same' : `+${fmtUSD(diff)} interest`, diff <= 0.5 ? 'jade' : '');
+  }
+
+  // milestone cards, in payoff order
+  const ordered = primary.working.slice().sort((a, b) => (a.paidOffMonth ?? Infinity) - (b.paidOffMonth ?? Infinity));
+  lastOrderedDebts = ordered;
+  lastMonthlySnapshots = primary.monthlySnapshots;
+  renderDebtChart(ordered, primary.monthlySnapshots, chartMode);
+  const host = $('milestoneCards');
+  host.innerHTML = '';
+  ordered.forEach((d, i) => {
+    const cls = CARD_COLORS[i % CARD_COLORS.length];
+    const card = document.createElement('div');
+    card.className = 'db-milestone-card ' + cls;
+    if (d.paidOffMonth === null){
+      card.innerHTML = `
+        <div class="db-milestone-head">
+          <span class="db-milestone-order">${i + 1}</span>
+          <span class="db-milestone-name">${escapeHtml(d.name)}</span>
+          <span class="db-milestone-date" style="color:var(--danger); background:rgba(219,59,35,0.1);">Not paid off</span>
+        </div>
+        <div class="db-milestone-desc">Started at ${fmtUSD(d.startingBalance)} — still growing under this plan.</div>
+      `;
+    } else {
+      card.innerHTML = `
+        <div class="db-milestone-head">
+          <span class="db-milestone-order">${i + 1}</span>
+          <span class="db-milestone-name">${escapeHtml(d.name)}</span>
+          <span class="db-milestone-date">${monthLabel(d.paidOffMonth)}</span>
+        </div>
+        <div class="db-milestone-months">Month ${fmtNum(d.paidOffMonth)}</div>
+        <div class="db-milestone-desc">Started at ${fmtUSD(d.startingBalance)} — ${fmtUSD(d.totalInterestPaid)} in interest paid.</div>
+      `;
+    }
+    host.appendChild(card);
+  });
+
+  // detail table
+  const tbody = $('debtOrderTableBody');
+  tbody.innerHTML = '';
+  ordered.forEach((d, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="text-align:left;">${i + 1}</td>
+      <td style="text-align:left;">${escapeHtml(d.name)}</td>
+      <td>${fmtUSD(d.startingBalance)}</td>
+      <td>${fmtNum(d.apr)}%</td>
+      <td>${d.paidOffMonth === null ? '<span class="never">Never</span>' : fmtNum(d.paidOffMonth)}</td>
+      <td>${d.paidOffMonth === null ? '—' : monthLabel(d.paidOffMonth)}</td>
+      <td>${fmtUSD(d.totalInterestPaid)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // timeline
+  const paidOffDebts = ordered.filter(d => d.paidOffMonth !== null);
+  const track = $('timelineTrack');
+  const legend = $('timelineLegend');
+  const endpoints = $('timelineEndpoints');
+  track.innerHTML = '';
+  legend.innerHTML = '';
+  if (!paidOffDebts.length){
+    endpoints.innerHTML = '';
+    track.innerHTML = '<div style="color:var(--ink-faint); font-size:13px; position:absolute; top:-6px;">No payoffs to show yet.</div>';
+  } else {
+    const maxMonth = Math.max(...paidOffDebts.map(d => d.paidOffMonth), 1);
+    const fill = document.createElement('div');
+    fill.className = 'db-timeline-fill';
+    fill.style.width = '100%';
+    track.appendChild(fill);
+
+    paidOffDebts.forEach((d, i) => {
+      const pct = (d.paidOffMonth / maxMonth) * 100;
+      const cls = CARD_COLORS[i % CARD_COLORS.length];
+      const dot = document.createElement('div');
+      dot.className = 'db-timeline-dot ' + cls;
+      dot.style.left = pct + '%';
+      dot.title = `${d.name}: month ${d.paidOffMonth}`;
+      track.appendChild(dot);
+
+      const item = document.createElement('div');
+      item.className = 'db-timeline-legend-item';
+      item.innerHTML = `<span class="dot ${cls}"></span><strong>${escapeHtml(d.name)}</strong><span class="when">${monthLabel(d.paidOffMonth)}</span>`;
+      legend.appendChild(item);
+    });
+
+    endpoints.innerHTML = `<span>Today</span><span>Month ${fmtNum(maxMonth)} (${monthLabel(maxMonth)})</span>`;
+  }
+
+  // month-by-month table — one column per debt showing that month's actual
+  // payment (minimum + whatever share of the extra it received), in the
+  // same payoff order as the milestone cards above
+  const headRow = $('monthlyTableHeadRow');
+  headRow.innerHTML = `
+    <th style="text-align:left;">Month</th>
+    <th style="text-align:left;">Date</th>
+    <th>Total Remaining</th>
+    ${ordered.map(d => `<th>${escapeHtml(d.name)}</th>`).join('')}
+    <th style="text-align:left;">Paid Off This Month</th>
+  `;
+
+  const monthlyBody = $('monthlyTableBody');
+  monthlyBody.innerHTML = '';
+  primary.monthlySnapshots.forEach(snap => {
+    const tr = document.createElement('tr');
+    const badges = snap.paidOffThisMonth.map(name => `<span class="db-paidoff-badge">${escapeHtml(name)} paid off</span>`).join('');
+    const debtCells = ordered.map(d => {
+      const paid = snap.payments[d.id];
+      return `<td>${paid ? fmtUSD2(paid) : '<span class="never">&mdash;</span>'}</td>`;
+    }).join('');
+    tr.innerHTML = `
+      <td style="text-align:left;">${snap.month}</td>
+      <td style="text-align:left;">${monthLabel(snap.month)}</td>
+      <td>${fmtUSD2(snap.totalRemaining)}</td>
+      ${debtCells}
+      <td style="text-align:left;">${badges || '<span class="never">&mdash;</span>'}</td>
+    `;
+    monthlyBody.appendChild(tr);
+  });
+  $('monthlyTableSub').textContent = `${primary.monthlySnapshots.length} MONTHS SIMULATED`;
+
+  updateSaveStatus();
+}
+
+// ---------- persistence ----------
+const STORAGE_KEY = 'debtSnowballInputs';
+
+function saveInputs(){
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      debts, extraPayment: $('extraPayment').value, strategy: $('strategy').value
+    }));
+  } catch(e) { /* storage unavailable, ignore */ }
+  updateSaveStatus();
+}
+function loadInputs(){
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return false;
+    const vals = JSON.parse(raw);
+    if (!vals || !Array.isArray(vals.debts) || !vals.debts.length) return false;
+    debts = vals.debts;
+    nextId = debts.reduce((max, d) => {
+      const n = parseInt(String(d.id).replace(/\D/g, ''), 10);
+      return isNaN(n) ? max : Math.max(max, n + 1);
+    }, 1);
+    if (vals.extraPayment !== undefined) $('extraPayment').value = vals.extraPayment;
+    if (vals.strategy) $('strategy').value = vals.strategy;
+    return true;
+  } catch(e) { return false; }
+}
+
+$('extraPayment').addEventListener('input', () => { sanitizeCurrencyInputEl($('extraPayment')); saveInputs(); render(); });
+$('extraPayment').addEventListener('blur', () => { $('extraPayment').value = formatCurrencyVal($('extraPayment').value); saveInputs(); render(); });
+$('strategy').addEventListener('input', () => { saveInputs(); render(); });
+
+$('resetBtn').addEventListener('click', () => {
+  debts = EXAMPLE_DEBTS.map(d => ({ ...d }));
+  nextId = debts.length + 1;
+  $('extraPayment').value = '200.00';
+  $('strategy').value = 'snowball';
+  renderDebtRows();
+  saveInputs();
+  render();
+});
+
+if (!loadInputs()){
+  debts = EXAMPLE_DEBTS.map(d => ({ ...d }));
+  nextId = debts.length + 1;
+}
+renderDebtRows();
+render();
+</script>
+</body>
+</html>

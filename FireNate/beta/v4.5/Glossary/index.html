@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script src="../assets/js/theme-init.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FireNate - Glossary</title>
+<meta name="description" content="Plain-English definitions for the FIRE jargon used across this site — Lean/Barista/Coast/Fat FIRE, the 4% rule, MAGI, the ACA subsidy cliff, debt snowball vs. avalanche, and more.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/site.css">
+<link rel="stylesheet" href="../assets/css/timeToFI.css">
+<script src="../assets/js/theme.js" defer></script>
+<script src="../assets/js/user-profile.js" defer></script>
+<script src="../assets/js/nav.js" defer></script>
+<script src="../assets/js/glossary-data.js"></script>
+<script>window.FN_BASE = "../"; window.FN_PAGE = "glossary";</script>
+<style>
+  .gl-search-wrap{ margin:28px 0 4px; }
+  .gl-search{
+    width:100%; box-sizing:border-box; padding:14px 18px; border-radius:12px;
+    border:1px solid var(--line); background:var(--surface); color:var(--ink);
+    font-family:var(--sans); font-size:15px; outline:none; transition:border-color .15s;
+  }
+  .gl-search:focus{ border-color:var(--gold); }
+  .gl-status{ margin:10px 2px 0; font-family:var(--mono); font-size:11.5px; letter-spacing:.04em; color:var(--ink-faint); }
+
+  .gl-category{ margin-top:36px; }
+  .gl-category-title{ font-family:var(--serif); font-size:22px; font-weight:500; margin:0 0 16px; color:var(--ink); }
+  .gl-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:14px; }
+  .gl-card{
+    background:var(--surface); border:1px solid var(--line); border-top:4px solid var(--gold);
+    border-radius:var(--radius); padding:20px 22px; scroll-margin-top:100px;
+    transition:border-color .3s, box-shadow .3s;
+  }
+  .gl-card.flash{ border-color:var(--gold); box-shadow:0 0 0 3px rgba(217,132,15,0.25); }
+  .gl-card h3{ font-family:var(--serif); font-size:18px; font-weight:600; margin:0 0 8px; color:var(--ink); }
+  .gl-card p{ font-size:13.5px; line-height:1.6; color:var(--ink-dim); margin:0 0 12px; }
+  .gl-card a.related{ display:inline-flex; align-items:center; gap:6px; font-family:var(--mono); font-size:11.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--jade); text-decoration:none; }
+  .gl-card a.related:hover{ color:var(--gold); }
+  .gl-card a.related svg{ flex-shrink:0; }
+  .gl-empty{ text-align:center; color:var(--ink-faint); padding:48px 0; display:none; }
+</style>
+</head>
+<body>
+<div id="fn-site-nav"></div>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">FIRE Nate - Glossary</p>
+    <h1>A shared vocabulary for the road to <em>FI</em>.</h1>
+    <p class="lede">Every term used across this site's calculators, defined in one place — click any dotted-underlined term on a calculator page to jump straight to its entry here.</p>
+  </header>
+
+  <div class="gl-search-wrap">
+    <input type="search" id="glSearch" class="gl-search" placeholder="Search terms&hellip;" aria-label="Search glossary">
+    <p class="gl-status" id="glStatus" style="display:none;"></p>
+  </div>
+
+  <div id="glCategories"></div>
+  <p class="gl-empty" id="glEmpty">No terms match your search.</p>
+
+  <footer id="site-footer"></footer>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+function slugify(s){ return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''); }
+
+function render(){
+  const glossary = window.FN_GLOSSARY || [];
+  const host = $('glCategories');
+  host.innerHTML = '';
+
+  const categoryOrder = [];
+  const byCategory = {};
+  glossary.forEach(t => {
+    const cat = t.category || 'Other';
+    if (!byCategory[cat]) { byCategory[cat] = []; categoryOrder.push(cat); }
+    byCategory[cat].push(t);
+  });
+
+  categoryOrder.forEach(cat => {
+    const section = document.createElement('div');
+    section.className = 'gl-category';
+    const title = document.createElement('h2');
+    title.className = 'gl-category-title';
+    title.textContent = cat;
+    section.appendChild(title);
+
+    const grid = document.createElement('div');
+    grid.className = 'gl-grid';
+    byCategory[cat].forEach(t => {
+      const card = document.createElement('div');
+      card.className = 'gl-card';
+      card.id = 'term-' + t.id;
+      card.dataset.searchText = (t.term + ' ' + t.short).toLowerCase();
+      card.innerHTML = `
+        <h3>${t.term}</h3>
+        <p>${t.short}</p>
+        ${t.relatedHref ? `<a class="related" href="..${t.relatedHref}">${t.relatedIcon ? `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${t.relatedIcon}</svg>` : ''}${t.relatedLabel || 'Open calculator'} &rarr;</a>` : ''}
+      `;
+      grid.appendChild(card);
+    });
+    section.appendChild(grid);
+    host.appendChild(section);
+  });
+}
+
+function applyFilter(query){
+  const q = query.trim().toLowerCase();
+  const cards = Array.from(document.querySelectorAll('.gl-card'));
+  let visible = 0;
+  cards.forEach(card => {
+    const match = !q || card.dataset.searchText.indexOf(q) > -1;
+    card.style.display = match ? '' : 'none';
+    if (match) visible++;
+  });
+  document.querySelectorAll('.gl-category').forEach(section => {
+    const anyVisible = Array.from(section.querySelectorAll('.gl-card')).some(c => c.style.display !== 'none');
+    section.style.display = anyVisible ? '' : 'none';
+  });
+  const status = $('glStatus');
+  const empty = $('glEmpty');
+  if (!q){
+    status.style.display = 'none';
+    empty.style.display = 'none';
+  } else if (visible === 0){
+    status.style.display = 'none';
+    empty.style.display = 'block';
+  } else {
+    status.style.display = 'block';
+    status.textContent = `Showing ${visible} of ${cards.length} terms.`;
+    empty.style.display = 'none';
+  }
+}
+
+$('glSearch').addEventListener('input', () => applyFilter($('glSearch').value));
+
+// deep-link support: a tooltip popover elsewhere on the site links to
+// /Glossary/index.html#term-<id> — scroll to it and briefly highlight it
+function focusFromHash(){
+  const id = window.location.hash.slice(1);
+  if (!id) return;
+  const card = document.getElementById(id);
+  if (!card) return;
+  card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  card.classList.add('flash');
+  setTimeout(() => card.classList.remove('flash'), 1600);
+}
+
+render();
+window.addEventListener('hashchange', focusFromHash);
+setTimeout(focusFromHash, 50);
+</script>
+</body>
+</html>
