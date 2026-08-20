@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FireNate — Regression Tests</title>
+<meta name="robots" content="noindex, nofollow">
+<style>
+  :root{
+    --bg:#15111A; --panel:#1E1826; --line:rgba(255,255,255,0.13);
+    --text:#F3EEE4; --text-dim:#B8A8C0; --text-faint:#8A7A94;
+    --pass:#4FDB8F; --fail:#FF7A5C;
+    --mono:'IBM Plex Mono','Courier New',monospace;
+  }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--mono); font-size:13px; padding:24px; }
+  h1{ font-size:18px; margin:0 0 4px; }
+  p.sub{ color:var(--text-faint); margin:0 0 20px; font-size:12px; }
+  #summary{ padding:12px 16px; border-radius:10px; border:1px solid var(--line); background:var(--panel); margin-bottom:16px; font-size:14px; }
+  #summary.pass{ border-color:var(--pass); color:var(--pass); }
+  #summary.fail{ border-color:var(--fail); color:var(--fail); }
+  table{ width:100%; border-collapse:collapse; background:var(--panel); border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+  th, td{ text-align:left; padding:9px 12px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th{ color:var(--text-faint); text-transform:uppercase; font-size:11px; letter-spacing:.05em; }
+  tr:last-child td{ border-bottom:none; }
+  .status-pass{ color:var(--pass); font-weight:600; }
+  .status-fail{ color:var(--fail); font-weight:600; }
+  .detail{ color:var(--text-dim); }
+  button{
+    font-family:var(--mono); font-size:13px; background:var(--panel); color:var(--text);
+    border:1px solid var(--line); border-radius:8px; padding:8px 16px; cursor:pointer; margin-bottom:16px;
+  }
+  button:hover{ border-color:var(--pass); color:var(--pass); }
+  iframe{ position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; left:-9999px; }
+</style>
+</head>
+<body>
+<h1>FireNate — regression tests</h1>
+<p class="sub">Loads each calculator page in a hidden iframe and calls its own exposed pure functions directly with known inputs — not linked from the site nav, this is a developer tool. Not styled for or intended for end users.</p>
+<button id="runBtn" type="button">Run tests</button>
+<div id="summary">Not run yet.</div>
+<table id="resultsTable">
+  <thead><tr><th style="width:70px;">Status</th><th style="width:260px;">Test</th><th>Detail</th></tr></thead>
+  <tbody id="resultsBody"></tbody>
+</table>
+
+<script>
+// ---------- tiny assertion helpers ----------
+const results = [];
+function record(name, pass, detail){
+  results.push({ name, pass, detail });
+}
+function fmt(v){ return v === Infinity ? 'Infinity' : v === -Infinity ? '-Infinity' : JSON.stringify(v); }
+function assertEqual(name, actual, expected, detail){
+  const pass = actual === expected;
+  record(name, pass, (detail || '') + ` (expected ${fmt(expected)}, got ${fmt(actual)})`);
+}
+function assertClose(name, actual, expected, tolerance, detail){
+  const pass = Math.abs(actual - expected) <= tolerance;
+  record(name, pass, (detail || '') + ` (expected ${expected.toFixed(2)} ± ${tolerance}, got ${actual.toFixed(2)})`);
+}
+function assertTrue(name, condition, detail){
+  record(name, !!condition, detail || '');
+}
+
+// loads a page in a hidden iframe and resolves with its contentWindow once ready
+function loadPage(path){
+  return new Promise((resolve, reject) => {
+    const frame = document.createElement('iframe');
+    frame.src = path;
+    frame.onload = () => resolve(frame.contentWindow);
+    frame.onerror = () => reject(new Error('failed to load ' + path));
+    document.body.appendChild(frame);
+  });
+}
+
+async function runTests(){
+  results.length = 0;
+  document.getElementById('summary').textContent = 'Running…';
+  document.getElementById('summary').className = '';
+
+  // ---------- DebtSnowball: snowball pool must permanently roll forward ----------
+  // regression guard for a real bug found in this project: a paid-off debt's
+  // freed-up minimum payment must keep feeding the extra-payment pool every
+  // month after payoff, not just the one month it happens in — that rollover
+  // is the entire point of the "snowball" method. 0% APR keeps the expected
+  // numbers exact integers so this doesn't need a floating-point tolerance.
+  try {
+    const win = await loadPage('../DebtSnowball/index.html');
+    const debts = [
+      { id: 'A', name: 'Debt A', balance: 1000, apr: 0, minPayment: 100 },
+      { id: 'B', name: 'Debt B', balance: 5000, apr: 0, minPayment: 50 }
+    ];
+    const result = win.simulatePayoff(debts, 0, 'snowball');
+    const a = result.working.find(d => d.id === 'A');
+    const b = result.working.find(d => d.id === 'B');
+    assertEqual('DebtSnowball: smaller debt paid off on schedule', a.paidOffMonth, 10,
+      'Debt A ($1000 @ $100/mo, 0% APR) should clear in exactly 10 months');
+    assertEqual('DebtSnowball: freed payment rolls forward permanently', b.paidOffMonth, 40,
+      'Debt B should absorb Debt A\'s freed $100/mo from month 11 onward ($150/mo total) and clear at month 40 — 100 would mean the rollover bug is back');
+    const month11 = result.monthlySnapshots.find(s => s.month === 11);
+    assertEqual('DebtSnowball: month 11 payment reflects the rollover', month11 ? month11.payments['B'] : null, 150,
+      'the month right after Debt A pays off, Debt B should receive its own $50 min + Debt A\'s freed $100');
+  } catch (e) {
+    record('DebtSnowball tests', false, 'threw: ' + e.message);
+  }
+
+  // ---------- SafeWithdrawalRate vs VariableWithdrawalRate cross-validation ----------
+  // regression guard for a real bug found in this project: VariableWithdrawalRate
+  // originally withdrew before applying growth, the reverse of SafeWithdrawalRate's
+  // "grow, then withdraw" convention. With strategy "fixed" and no cash buffer,
+  // VariableWithdrawalRate is defined to reproduce SafeWithdrawalRate's numbers
+  // exactly for identical inputs — that's what makes their "vs. plain fixed
+  // rate" comparison stat meaningful.
+  try {
+    const swrWin = await loadPage('../SafeWithdrawalRate/index.html');
+    const vwrWin = await loadPage('../VariableWithdrawalRate/index.html');
+    const startIdx = 30, years = 20, portfolio = 1000000, rate = 4, fee = 0.5;
+    const swr = swrWin.simulateCycle(startIdx, years, portfolio, rate, fee);
+    const vwr = vwrWin.simulateCycle(startIdx, years, portfolio, rate, fee, 'fixed', 0, 0, 0, 0);
+    assertClose('SWR vs VWR: ending balance matches for fixed/no-buffer', vwr.endingBalance, swr.endingBalance, 0.01,
+      'a "fixed" strategy with 0 buffer years should be numerically identical to the plain Safe Withdrawal Rate model');
+    assertEqual('SWR vs VWR: survived flag matches', vwr.survived, swr.survived, '');
+    assertEqual('SWR vs VWR: min balance matches', Math.round(vwr.minBalance), Math.round(swr.minBalance), '');
+
+    // ---------- SafeWithdrawalRate profile autofill mapping ----------
+    // regression guard for a real bug: FN_PROFILE_FIELDS previously mapped the
+    // nonexistent profile key "startPortfolio" instead of the real one,
+    // "currentSavings" — a no-op that silently broke autofill entirely.
+    const fields = swrWin.FN_PROFILE_FIELDS;
+    assertTrue('SafeWithdrawalRate: FN_PROFILE_FIELDS is defined', !!fields, '');
+    if (fields) {
+      assertEqual('SafeWithdrawalRate: currentSavings maps to #startPortfolio', fields.currentSavings, '#startPortfolio', '');
+      assertTrue('SafeWithdrawalRate: #startPortfolio actually exists in the DOM',
+        !!swrWin.document.querySelector('#startPortfolio'), 'the mapped selector must resolve to a real element or autofill silently does nothing');
+    }
+  } catch (e) {
+    record('SafeWithdrawalRate / VariableWithdrawalRate tests', false, 'threw: ' + e.message);
+  }
+
+  // ---------- TimeToFI: yearsToGoal sanity checks ----------
+  // independent check: plug the returned "years" back into the standard
+  // future-value-of-(principal + fixed annual contribution) formula and
+  // confirm it lands back on the goal — verifies the inverse-solve is
+  // correct without re-deriving (and risking copying) the same algebra
+  try {
+    const win = await loadPage('../TimeToFI/index.html');
+    function futureValue(P, C, r, t){
+      if (Math.abs(r) < 1e-9) return P + C * t;
+      return P * Math.pow(1 + r, t) + C * ((Math.pow(1 + r, t) - 1) / r);
+    }
+    assertEqual('TimeToFI: zero-growth case is exact', win.yearsToGoal(0, 10000, 100000, 0), 10, 'P=0, C=10000/yr, G=100000, r=0');
+
+    const cases = [
+      { P: 50000, C: 0, G: 100000, r: 0.07 },
+      { P: 10000, C: 5000, G: 100000, r: 0.06 },
+      { P: 200000, C: 20000, G: 1000000, r: 0.08 }
+    ];
+    cases.forEach(({ P, C, G, r }) => {
+      const t = win.yearsToGoal(P, C, G, r);
+      const fv = futureValue(P, C, r, t);
+      assertClose(`TimeToFI: yearsToGoal(${P},${C},${G},${r}) inverts correctly`, fv, G, 1,
+        `plugging the returned ${t.toFixed(3)} years back into the forward formula should reproduce the goal`);
+    });
+
+    assertEqual('TimeToFI: already at goal returns 0', win.yearsToGoal(150000, 5000, 100000, 0.07), 0, '');
+    assertEqual('TimeToFI: no contribution + no growth is unreachable', win.yearsToGoal(1000, 0, 100000, 0), Infinity, '');
+  } catch (e) {
+    record('TimeToFI tests', false, 'threw: ' + e.message);
+  }
+
+  // ---------- CashOutOrHold: tax/proceeds math + gains clamping ----------
+  // independent check: the expected numbers below were computed separately
+  // in Python from the same formulas, not copied from the page's own output
+  try {
+    const win = await loadPage('../CashOutOrHold/index.html');
+    function setInputs(win, values){
+      Object.keys(values).forEach(id => {
+        const el = win.document.getElementById(id);
+        if (el) el.value = values[id];
+      });
+    }
+
+    // standard case: partial payoff, cash-out ends up ahead
+    setInputs(win, { debtBalance: 20000, debtRate: 18, withdrawal: 20000, gainsPct: 40, taxRate: 24, investReturn: 10, years: 10 });
+    win.setGainsMode('pct', false);
+    let r = win.recalc();
+    assertEqual('CashOutOrHold: gains = withdrawal × gains%', r.gainsAmount, 8000, '20000 × 40%');
+    assertEqual('CashOutOrHold: tax owed = gains × tax rate', r.taxOwed, 1920, '8000 × 24%');
+    assertEqual('CashOutOrHold: net proceeds = withdrawal − tax', r.netProceeds, 18080, '');
+    assertEqual('CashOutOrHold: applied to debt caps at debt balance', r.appliedToDebt, 18080, 'net proceeds (18080) < debt balance (20000), so all of it applies');
+    assertEqual('CashOutOrHold: shortfall = debt − net proceeds', r.shortfall, 1920, '');
+    assertClose('CashOutOrHold: interest avoided compounds on the applied amount', r.interestAvoided, 76547.75, 0.5,
+      'appliedToDebt × ((1+debtRate)^years − 1)');
+    assertClose('CashOutOrHold: invest growth compounds on the full withdrawal', r.investGrowth, 31874.85, 0.5,
+      'withdrawal × ((1+returnRate)^years − 1), on the full pre-tax amount since nothing was sold in this path');
+
+    // full payoff with money left over, and no gains/no tax
+    setInputs(win, { debtBalance: 10000, debtRate: 18, withdrawal: 20000, gainsPct: 0, taxRate: 24, investReturn: 10, years: 5 });
+    r = win.recalc();
+    assertEqual('CashOutOrHold: zero gains means zero tax', r.taxOwed, 0, '');
+    assertEqual('CashOutOrHold: applied to debt caps at debt balance when proceeds exceed it', r.appliedToDebt, 10000, '');
+    assertEqual('CashOutOrHold: leftover = net proceeds − debt balance', r.leftover, 10000, '20000 net proceeds − 10000 debt');
+    assertEqual('CashOutOrHold: shortfall is 0 when fully paid off', r.shortfall, 0, '');
+
+    // regression guard: gains% over 100 must not let gainsAmount exceed the
+    // withdrawal itself (you can't have more gains than the amount you sold)
+    setInputs(win, { debtBalance: 5000, debtRate: 10, withdrawal: 10000, gainsPct: 150, taxRate: 20, investReturn: 7, years: 5 });
+    r = win.recalc();
+    assertEqual('CashOutOrHold: gains% over 100 clamps to the full withdrawal, not beyond', r.gainsAmount, 10000, 'gainsPct=150% of 10000 would be 15000 without clamping');
+
+    // $ / % toggle: entering the same effective gains as a flat dollar
+    // amount instead of a percent must produce the identical result
+    setInputs(win, { debtBalance: 20000, debtRate: 18, withdrawal: 20000, gainsDollar: 8000, taxRate: 24, investReturn: 10, years: 10 });
+    win.setGainsMode('dollar', false);
+    r = win.recalc();
+    assertEqual('CashOutOrHold: $ mode reads the flat dollar amount directly', r.gainsAmount, 8000, '');
+    assertEqual('CashOutOrHold: $ mode and % mode agree on tax owed for an equivalent input', r.taxOwed, 1920, 'same 8000 gains, same 24% rate, as the pct-mode case above');
+  } catch (e) {
+    record('CashOutOrHold tests', false, 'threw: ' + e.message);
+  }
+
+  // ---------- RMD: required-minimum-distribution schedule ----------
+  // independent check: expected numbers computed separately in Python from
+  // the same IRS Uniform Lifetime Table factors and withdraw-then-grow order
+  try {
+    const win = await loadPage('../RMD/index.html');
+    function setInputs(win, values){
+      Object.keys(values).forEach(id => {
+        const el = win.document.getElementById(id);
+        if (el) el.value = values[id];
+      });
+    }
+
+    // 0% growth keeps the numbers exact — isolates the divisor-table math
+    // from any compounding effects
+    setInputs(win, { currentAge: 73, currentBalance: '100,000', returnPct: 0, rmdStartAge: 73, taxRatePct: 20, horizonAge: 75 });
+    let r = win.compute();
+    assertEqual('RMD: table row count matches the age range', r.rows.length, 3, 'ages 73, 74, 75');
+    assertClose('RMD: first-year RMD = balance ÷ divisor(73)', r.rows[0].rmd, 3773.58, 0.01, '100000 / 26.5');
+    assertClose('RMD: withdrawal reduces next year\'s starting balance', r.rows[1].startBalance, 96226.42, 0.01, '100000 − 3773.58');
+    assertClose('RMD: total RMD across the horizon', r.totalRmd, 11305.41, 0.5, 'sum of all three years\' withdrawals');
+    assertClose('RMD: total tax = total RMD × tax rate applied per year', r.totalTax, 2261.08, 0.5, '');
+    assertEqual('RMD: peak RMD occurs in the first (largest-balance) year', r.peakAge, 73, 'with 0% growth, balance only shrinks, so the divisor-adjusted RMD is largest at the start');
+
+    // before RMD age: no withdrawals forced, balance should just be listed inert
+    setInputs(win, { currentAge: 65, currentBalance: '50,000', returnPct: 0, rmdStartAge: 73, taxRatePct: 20, horizonAge: 66 });
+    r = win.compute();
+    assertTrue('RMD: years before rmdStartAge are marked inactive', r.rows.every(row => row.active === false), '');
+    assertEqual('RMD: no forced withdrawal before rmdStartAge', r.totalRmd, 0, '');
+
+    // regression guard: ages past the published table (>120) must not throw
+    // or return undefined — they clamp to the table's own lowest factor (2.0)
+    assertEqual('RMD: life expectancy factor clamps above the table\'s range', win.lifeExpectancyFactor(125), 2.0, '');
+  } catch (e) {
+    record('RMD tests', false, 'threw: ' + e.message);
+  }
+
+  // ---------- HealthcareBridge: ACA subsidy math ----------
+  // tests the pure helper functions directly (fplForHousehold, applicablePct,
+  // premiumOutcome all take plain arguments, no DOM) — independent numbers
+  // computed separately, not copied from the page's own output
+  try {
+    const win = await loadPage('../HealthcareBridge/index.html');
+
+    assertEqual('HealthcareBridge: FPL for a household of 1', win.fplForHousehold(1, 15060, 5380), 15060, '');
+    assertEqual('HealthcareBridge: FPL adds per-person amount for each additional member', win.fplForHousehold(3, 15060, 5380), 25820, '15060 + 5380×2');
+
+    assertClose('HealthcareBridge: applicable % interpolates between breakpoints (enhanced)', win.applicablePct(225, 'enhanced'), 3, 0.001,
+      'halfway between (200%,2%) and (250%,4%) should be 3%');
+    assertEqual('HealthcareBridge: applicable % lands exactly on a named breakpoint', win.applicablePct(250, 'enhanced'), 4, '');
+    assertEqual('HealthcareBridge: "original" table cliffs to no subsidy above 400% FPL', win.applicablePct(500, 'original'), null,
+      'regression guard for the pre-2021-style hard cutoff — this is the whole point of offering "original" as an option');
+    assertTrue('HealthcareBridge: "enhanced" table has no cliff at the same income', win.applicablePct(500, 'enhanced') !== null,
+      'the ARPA-style table caps the %, it never cuts off entirely');
+
+    // uncapped case: expected contribution comes in under the benchmark premium
+    let p = win.premiumOutcome(37650, 15060, 14000, 'enhanced');
+    assertClose('HealthcareBridge: subsidy = benchmark − expected contribution', p.subsidy, 12494, 0.5, '14000 − (37650 × 4%)');
+    assertClose('HealthcareBridge: net premium = expected contribution when uncapped', p.netAnnual, 1506, 0.5, '');
+    assertEqual('HealthcareBridge: noSubsidy is false when a subsidy applies', p.noSubsidy, false, '');
+
+    // regression guard: a high income relative to a small benchmark premium
+    // must not produce a negative subsidy — it floors at 0 (full price, but
+    // never *more* than full price)
+    p = win.premiumOutcome(60240, 15060, 1000, 'original');
+    assertEqual('HealthcareBridge: subsidy floors at 0, never goes negative', p.subsidy, 0, 'expected contribution (5722.80) exceeds the 1000 benchmark premium entirely');
+    assertEqual('HealthcareBridge: net premium never exceeds the benchmark premium itself', p.netAnnual, 1000, '');
+
+    // cliff case
+    p = win.premiumOutcome(75300, 15060, 14000, 'original');
+    assertEqual('HealthcareBridge: above the cliff, net premium is the full benchmark price', p.netAnnual, 14000, '');
+    assertEqual('HealthcareBridge: above the cliff, noSubsidy is true', p.noSubsidy, true, '');
+
+    // end-to-end DOM wiring: bridge-years aggregation
+    const setInputs = (win, values) => Object.keys(values).forEach(id => { const el = win.document.getElementById(id); if (el) el.value = values[id]; });
+    setInputs(win, { currentAge: 45, retireAge: 55, householdSize: 1, magi: '37,650', benchmarkPremium: '14,000', fplBase: '15,060', fplPerPerson: '5,380' });
+    win.document.getElementById('subsidyRules').value = 'enhanced';
+    const r = win.compute();
+    assertEqual('HealthcareBridge: bridge years = Medicare age (65) − retirement age', r.bridgeYears, 10, '');
+    assertClose('HealthcareBridge: total bridge cost = net annual × bridge years', r.totalBridgeCost, 15060, 1, '1506 × 10');
+    assertClose('HealthcareBridge: total saved vs. paying full price the whole bridge', r.totalSaved, 124940, 1, '(14000 × 10) − 15060');
+  } catch (e) {
+    record('HealthcareBridge tests', false, 'threw: ' + e.message);
+  }
+
+  // ---------- RothLadder: 5-year seasoning + draw-order simulation ----------
+  // independent check: expected numbers computed separately in Python,
+  // hand-tracing the same year-by-year rules — deliberately sized so the
+  // ladder outruns its own funding (converts faster than it can season),
+  // which is exactly the scenario this page exists to help someone avoid
+  try {
+    const win = await loadPage('../RothLadder/index.html');
+    const setInputs = (win, values) => Object.keys(values).forEach(id => { const el = win.document.getElementById(id); if (el) el.value = values[id]; });
+    setInputs(win, {
+      currentAge: 50, retireAge: 50, traditionalBalance: '100,000', taxableBalance: '20,000',
+      rothBasis: '10,000', annualExpenses: '30,000', annualConversion: '20,000',
+      returnPct: 0, taxRatePct: 10, simYears: 6
+    });
+    const r = win.compute();
+
+    assertEqual('RothLadder: year 0 draws taxable first, then Roth basis', r.rows[0].fromTaxable, 20000, 'taxable brokerage (20000) is drained before touching Roth basis');
+    assertEqual('RothLadder: year 0 falls through to Roth basis once taxable is empty', r.rows[0].fromBasis, 10000, '');
+    assertEqual('RothLadder: year 0 has a shortfall once taxable + basis are both exhausted', r.rows[0].shortfall, 2000, '30000 expenses + 2000 tax − 20000 taxable − 10000 basis');
+
+    assertEqual('RothLadder: years 1-4 have no funding source yet (nothing seasoned, taxable/basis both empty)', r.rows[1].shortfall, 32000, '');
+    assertTrue('RothLadder: bridgeOk is false when the first 5 years can\'t be funded',
+      r.bridgeOk === false, 'this is the entire point of the bridge check — converting money you can\'t touch for 5 years doesn\'t help you live for those 5 years');
+    assertEqual('RothLadder: bridgeShortfallYears counts every underfunded year in the first 5', r.bridgeShortfallYears, 5, '');
+
+    assertEqual('RothLadder: conversion caps at whatever remains in the Traditional account', r.rows[4].traditionalEnd, 0, 'the account is fully converted by year 4 (5 × 20000 = 100000)');
+    assertEqual('RothLadder: no conversion — and no new rung — once Traditional is empty', r.rows[5].converted, 0, '');
+
+    assertEqual('RothLadder: year 0\'s conversion becomes available in year 5, right on schedule', r.rows[5].fromMatured, 20000, '5-year seasoning period');
+    assertEqual('RothLadder: matured funds reduce the shortfall once available', r.rows[5].shortfall, 10000, '30000 expenses − 20000 now-available matured rung');
+
+    assertClose('RothLadder: totalShortfall sums every year\'s gap', r.totalShortfall, 140000, 1, '');
+    assertEqual('RothLadder: endingTraditional reflects full conversion', r.endingTraditional, 0, '');
+    assertClose('RothLadder: endingRoth = basis + all conversions − amounts drawn from matured rungs', r.endingRoth, 90000, 1, '');
+  } catch (e) {
+    record('RothLadder tests', false, 'threw: ' + e.message);
+  }
+
+  // ---------- VariableWithdrawalRate: guardrails / cut / buffer branching ----------
+  // the existing SWR-vs-VWR test above already validates the "fixed, no
+  // buffer" baseline against a second independent implementation — this
+  // block tests the three dynamic strategies' own branching logic, which
+  // that cross-check can't reach. SP500_REAL_RETURNS is declared `const`,
+  // but that only locks the variable binding — the array's own entries can
+  // still be overwritten in place, so real historical data at index 0 is
+  // swapped for small, controlled, hand-computable sequences (expected
+  // values computed independently in Python from the same rules)
+  try {
+    const win = await loadPage('../VariableWithdrawalRate/index.html');
+    function setReturns(win, seq){ seq.forEach((v, i) => { win.SP500_REAL_RETURNS[i][1] = v; }); }
+
+    // guardrails: a big down year pushes the withdrawal rate above 120% of
+    // its starting rate, which should trigger a 10% spending cut the
+    // following year — then a strong up year should leave it unchanged
+    // (still within the 80-120% band, so no further adjustment either way)
+    setReturns(win, [-0.30, 0.50, 0.0]);
+    let r = win.simulateCycle(0, 3, 1000000, 5, 0, 'guardrails', 10, 15, 0, 0);
+    assertClose('VariableWithdrawalRate guardrails: year 0 withdraws the un-adjusted base amount', r.balances[1], 650000, 1, '1,000,000 × 0.70 − 50,000');
+    assertClose('VariableWithdrawalRate guardrails: a spike above 120% of the initial rate cuts spending 10%', r.balances[2], 930000, 1,
+      'withdrawal rate hit 50000/650000 ≈ 7.7%, over 120% of the 5% initial rate, so year 2 withdraws 45,000 instead of 50,000');
+    assertClose('VariableWithdrawalRate guardrails: ending balance after both years', r.endingBalance, 885000, 1, '');
+
+    // "cut on drawdown": no cut while under the trigger threshold, a cut
+    // exactly once the trailing peak-to-current drawdown reaches it
+    setReturns(win, [-0.30, 0.0]);
+    r = win.simulateCycle(0, 2, 1000000, 5, 0, 'cut', 10, 15, 0, 0);
+    assertClose('VariableWithdrawalRate cut-on-drawdown: no cut in year 0 (0% drawdown from a fresh peak)', r.balances[1], 650000, 1, '1,000,000 × 0.70 − 50,000 (full withdrawal, no cut yet)');
+    assertClose('VariableWithdrawalRate cut-on-drawdown: 35% drawdown clears the 15% trigger, spending cuts 10%', r.balances[2], 605000, 1,
+      '650,000 − 45,000 (50,000 × 0.9) — the drawdown is measured from the pre-growth balance against the running peak');
+
+    // cash buffer: a down year should draw from cash first (sparing the
+    // portfolio entirely if the buffer can cover it), and an up year should
+    // top the buffer back up out of portfolio gains
+    setReturns(win, [-0.20, 0.30]);
+    r = win.simulateCycle(0, 2, 1000000, 5, 0, 'fixed', 0, 0, 2, 0);
+    assertClose('VariableWithdrawalRate buffer: a down year draws the withdrawal from cash, not the portfolio', r.balances[1], 770000, 1,
+      'portfolio just rides out the −20% (1,000,000 × 0.9 × 0.80 = 720,000); the 50,000 withdrawal comes entirely from the 100,000 cash buffer, leaving 50,000 cash + 720,000 portfolio');
+    assertClose('VariableWithdrawalRate buffer: an up year refills the buffer back to its 2-year target', r.balances[2], 936000, 1,
+      'buffer tops back up from 50,000 to the full 100,000 (2 × 50,000 withdrawal) out of the portfolio\'s gains');
+  } catch (e) {
+    record('VariableWithdrawalRate guardrails/cut/buffer tests', false, 'threw: ' + e.message);
+  }
+
+  // ---------- MonteCarlo: bootstrap resampling ----------
+  // runTrial() picks a random historical year's return each iteration, so
+  // its output can't be hand-computed normally — instead Math.random is
+  // temporarily monkey-patched on the iframe's own window so every "random"
+  // draw is the same known year, making the trajectory fully deterministic
+  // and checkable against an independently-computed expected result
+  try {
+    const win = await loadPage('../MonteCarlo/index.html');
+    const originalRandom = win.Math.random;
+
+    assertEqual('MonteCarlo: percentile(0) returns the minimum', win.percentile([10, 20, 30, 40, 50], 0), 10, '');
+    assertEqual('MonteCarlo: percentile(1) returns the maximum', win.percentile([10, 20, 30, 40, 50], 1), 50, '');
+    assertEqual('MonteCarlo: percentile(0.5) returns the middle value', win.percentile([10, 20, 30, 40, 50], 0.5), 30, '');
+    assertEqual('MonteCarlo: percentile of an empty array is 0, not NaN', win.percentile([], 0.5), 0, '');
+
+    // force every draw to land on 1928's return (+46.3%, index 0)
+    win.Math.random = () => 0;
+    let t = win.runTrial(1000000, 4, 5, 0);
+    assertEqual('MonteCarlo: trial balance history has one entry per year plus the starting balance', t.balances.length, 6, '');
+    assertEqual('MonteCarlo: starting balance is recorded as year 0', t.balances[0], 1000000, '');
+    assertClose('MonteCarlo: a strong-growth trial compounds and survives', t.endingBalance, 6209629.21, 1,
+      '1,000,000 growing at +46.3%/yr for 5 years, net of a 40,000/yr (4%) withdrawal');
+    assertEqual('MonteCarlo: survived flag matches a positive ending balance', t.survived, true, '');
+
+    // force every draw to land on 1931's return (−38.3%, index 3) — hard
+    // enough to deplete the portfolio to exactly 0 within the horizon
+    win.Math.random = () => 0.035;
+    t = win.runTrial(1000000, 4, 5, 0);
+    assertEqual('MonteCarlo: a portfolio that hits 0 stays clamped at 0, not negative', t.endingBalance, 0, '');
+    assertEqual('MonteCarlo: survived is false once the balance is depleted', t.survived, false, '');
+
+    win.Math.random = originalRandom;
+  } catch (e) {
+    record('MonteCarlo tests', false, 'threw: ' + e.message);
+  }
+
+  // ---------- smoke tests: every other page loads and produces sane output ----------
+  // cheap, generic coverage for pages that don't have a dedicated deep test
+  // below — loads the page with its own default inputs, and flags anything
+  // that renders "NaN"/"undefined" into the page (the signature of a
+  // calculation silently breaking) or fails to load at all
+  const SMOKE_PAGES = [
+    ['Home', '../index.html'],
+    ['Getting Started', '../GettingStarted/index.html'],
+    ['FI Snapshot', '../FISnapshot/index.html'],
+    ['Net Worth', '../NetWorth/index.html'],
+    ['Emergency Fund', '../EmergencyFund/index.html'],
+    ['Reverse Time to FI', '../ReverseTimeToFI/index.html'],
+    ['FIRE Milestones', '../FireMilestones/index.html'],
+    ['Coast & Barista FIRE', '../CoastFire/index.html'],
+    ['Crossover Point', '../CrossoverPoint/index.html'],
+    ['Compound Interest', '../CompoundInterest-WealthMultiplier/index.html'],
+    ['SS & Pension Bridge', '../SocialSecurityBridge/index.html'],
+    ['Payoff or Invest', '../Payoff-or-Invest/index.html'],
+    ['Loan Calculator', '../LoanCalculator/index.html'],
+    ['Car Buying', '../CarBuying/index.html'],
+    ['Rent vs. Buy', '../RentVsBuy/index.html'],
+    ['Homes vs. Stocks', '../RealEstateVsStocks/index.html'],
+    ['Files', '../Downloads/index.html'],
+    ['Info', '../GenInfo/index.html'],
+    ['Glossary', '../Glossary/index.html'],
+    ['About', '../About/index.html'],
+    ['Terms', '../Terms/index.html'],
+    ['Contact', '../Contact/index.html'],
+    ['Profile Manager', '../ProfileManager/index.html']
+  ];
+  for (const [name, path] of SMOKE_PAGES) {
+    try {
+      const win = await loadPage(path);
+      await new Promise(r => setTimeout(r, 60)); // let any load-time calc settle
+      const bodyText = win.document.body ? win.document.body.innerText : '';
+      assertTrue(`Smoke: ${name} has a title`, !!(win.document.title && win.document.title.trim()), '');
+      assertTrue(`Smoke: ${name} rendered real content`, bodyText.trim().length > 40,
+        `body text length: ${bodyText.trim().length}`);
+      assertTrue(`Smoke: ${name} shows no NaN`, !/\bNaN\b/.test(bodyText), '');
+      assertTrue(`Smoke: ${name} shows no "undefined"`, !/\bundefined\b/i.test(bodyText), '');
+    } catch (e) {
+      record(`Smoke: ${name}`, false, 'threw or failed to load: ' + e.message);
+    }
+  }
+
+  // ---------- render results ----------
+  const tbody = document.getElementById('resultsBody');
+  tbody.innerHTML = results.map(r => `
+    <tr>
+      <td class="${r.pass ? 'status-pass' : 'status-fail'}">${r.pass ? 'PASS' : 'FAIL'}</td>
+      <td>${r.name}</td>
+      <td class="detail">${r.detail}</td>
+    </tr>
+  `).join('');
+
+  const failCount = results.filter(r => !r.pass).length;
+  const summary = document.getElementById('summary');
+  summary.textContent = failCount === 0
+    ? `All ${results.length} checks passed.`
+    : `${failCount} of ${results.length} checks failed.`;
+  summary.className = failCount === 0 ? 'pass' : 'fail';
+}
+
+document.getElementById('runBtn').addEventListener('click', runTests);
+runTests();
+</script>
+</body>
+</html>

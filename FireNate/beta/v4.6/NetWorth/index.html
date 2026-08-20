@@ -1,0 +1,1185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script src="../assets/js/theme-init.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FireNate - Net Worth Calculator</title>
+<meta name="description" content="Track everything you own and owe, then log dated snapshots to watch your net worth trend over time.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/site.css">
+<!-- <link rel="stylesheet" href="../assets/css/timeToFI.css"> -->
+<script src="../assets/js/theme.js" defer></script>
+<script src="../assets/js/user-profile.js" defer></script>
+<script src="../assets/js/nav.js" defer></script>
+<script src="../assets/js/profile-autofill.js" defer></script>
+<script src="../assets/js/field-help.js" defer></script>
+<script>
+window.FN_BASE = "../"; window.FN_PAGE = "net-worth";
+window.FN_FIELD_HELP = {
+  "title": "About this Tool",
+  "intro": "Add up what you own and subtract what you owe. Leave any row that doesn't apply to you at zero — every field is optional.",
+  "sections": [
+    { "heading": "Current (short-term) assets & liabilities", "items": [
+      { "label": "Assets", "text": "Money you could reasonably access within a year or two — checking, savings, brokerage, and crypto balances." },
+      { "label": "Liabilities", "text": "Debts you'd expect to pay off in the short term — credit cards and other non-mortgage, non-loan debt." }
+    ]},
+    { "heading": "Long-term assets & liabilities", "items": [
+      { "label": "Assets", "text": "Money and property tied up for years, not immediately liquid — retirement accounts (401(k), IRA, HSA), vehicles, and real estate." },
+      { "label": "Liabilities", "text": "Debts paid off over years, not months — student loans, car loans, and mortgages." }
+    ]}
+  ]
+};
+</script>
+<style>
+  :root{
+    /* ---- Palette: tweak these to match the rest of your site exactly ---- */
+    --sage:        #6f9271;
+    --sage-dark:   #4f7052;
+    --sage-tint:   #eaf2ea;
+    --red:         #c1594a;
+    --red-dark:    #a2453a;
+    --red-tint:    #fbeae8;
+    --blue:        #3f6b8a;
+    --blue-dark:   #2c4f68;
+    --blue-tint:   #eaf1f6;
+    --ink:         #2b2f2c;
+    --ink-soft:    #6b6f6c;
+    --paper:       #f7f7f4;
+    --card:        #ffffff;
+    --input-bg:    #fcfcfb;
+    --line:        #e3e2dc;
+    --shadow:      0 2px 10px rgba(30,30,25,0.06);
+    --radius:      14px;
+    --badge-bg:    #2b2f2c;
+    --sticky-bg:   rgba(247,247,244,0.92);
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --nav-offset:  0px; /* set at runtime to the site nav's rendered height, see script at bottom */
+  }
+
+  /* ---------- VIBRANT DARK MODE ---------- */
+  :root[data-theme="dark"]{
+    /* --sage/--red are used as SOLID header-bar fills (white text on top),
+       not just accents — the site's usual bright text-accent greens/corals
+       are too neon/low-contrast for that job, so these are deliberately a
+       shade richer/deeper than --sage-dark/--red-dark, which stay bright
+       since those are used as text color directly on the dark page bg */
+    --sage:        #2FA06B;
+    --sage-dark:   #7DE8AC;
+    --sage-tint:   #17331F;
+    --red:         #C1503F;
+    --red-dark:    #FFA089;
+    --red-tint:    #3D2018;
+    --blue:        #4FD8E8;
+    --blue-dark:   #7DE4EE;
+    --blue-tint:   #17313A;
+    --ink:         #F3EEE4;
+    --ink-soft:    #B8A8C0;
+    --paper:       #15111A;
+    --card:        #1E1826;
+    --input-bg:    #241C30;
+    --line:        rgba(255,255,255,0.14);
+    --badge-bg:    #2A2140;
+    --sticky-bg:   rgba(21,17,26,0.92);
+  }
+
+  /* ---------- MODERN NEON GLASS ---------- */
+  :root[data-theme="neon"]{
+    --sage:        #10b981;
+    --sage-dark:   #34d399;
+    --sage-tint:   rgba(52,211,153,0.14);
+    --red:         #db2777;
+    --red-dark:    #f472b6;
+    --red-tint:    rgba(236,72,153,0.14);
+    --blue:        #a855f7;
+    --blue-dark:   #c084fc;
+    --blue-tint:   rgba(168,85,247,0.14);
+    --ink:         #e5e7eb;
+    --ink-soft:    #9ca3af;
+    --paper:       #020617;
+    --card:        rgba(255,255,255,0.06);
+    --input-bg:    rgba(255,255,255,0.05);
+    --line:        rgba(168,85,247,0.3);
+    --shadow:      0 0 24px rgba(168,85,247,0.16);
+    --badge-bg:    #0b1120;
+    --sticky-bg:   rgba(2,6,23,0.85);
+  }
+
+  /* ---------- MODERN SUNSHINE GLASS ---------- */
+  :root[data-theme="sunshine"]{
+    --sage:        #2C8C5E;
+    --sage-dark:   #2C7A4E;
+    --sage-tint:   rgba(63,166,107,0.14);
+    --red:         #D9503B;
+    --red-dark:    #C1503F;
+    --red-tint:    rgba(255,111,89,0.14);
+    --blue:        #1F8A9E;
+    --blue-dark:   #166B7A;
+    --blue-tint:   rgba(31,138,158,0.14);
+    --ink:         #1F3540;
+    --ink-soft:    #4C6672;
+    --paper:       #eaf5fd;
+    --card:        rgba(255,255,255,0.62);
+    --input-bg:    rgba(255,255,255,0.72);
+    --line:        rgba(31,92,110,0.18);
+    --shadow:      0 0 24px rgba(245,166,35,0.14);
+    --badge-bg:    #1F3540;
+    --sticky-bg:   rgba(234,245,253,0.88);
+  }
+
+  *{ box-sizing: border-box; }
+
+  body{
+    margin:0;
+    font-family: var(--font);
+    background: var(--paper);
+    color: var(--ink);
+    line-height: 1.45;
+  }
+
+  a{ color: var(--blue); }
+
+  .wrap{
+    max-width: 1160px;
+    margin: 0 auto;
+    padding: 0 20px 60px;
+  }
+
+  /* ---------- Header ---------- */
+  .top-nav{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding: 16px 20px;
+    max-width: 1160px;
+    margin: 0 auto;
+  }
+  .brand{
+    font-weight: 800;
+    letter-spacing: .5px;
+    color: var(--sage-dark);
+    text-decoration: none;
+    font-size: 1.05rem;
+  }
+  .back-link{
+    font-size: .9rem;
+    color: var(--ink-soft);
+    text-decoration: none;
+  }
+  .back-link:hover{ color: var(--sage-dark); }
+
+  header.hero{
+    text-align:center;
+    padding: 6px 20px 26px;
+  }
+  header.hero h1{
+    font-size: 2rem;
+    margin: 0 0 8px;
+    color: var(--ink);
+  }
+  header.hero p.sub{
+    max-width: 640px;
+    margin: 0 auto;
+    color: var(--ink-soft);
+    font-size: 1.02rem;
+  }
+
+  .banner{
+    background: var(--blue-tint);
+    border: 1px solid #d7e3ea;
+    color: var(--blue-dark);
+    text-align:center;
+    padding: 12px 18px;
+    border-radius: var(--radius);
+    font-weight: 600;
+    margin: 18px 0 8px;
+  }
+  .banner b{ color: var(--red-dark); }
+
+  /* ---------- Sticky summary ---------- */
+  .sticky-bar{
+    position: sticky;
+    top: var(--nav-offset, 0px);
+    z-index: 50;
+    background: var(--sticky-bg);
+    backdrop-filter: blur(6px);
+    border-bottom: 1px solid var(--line);
+    padding: 10px 0;
+  }
+  .sticky-inner{
+    max-width: 1160px;
+    margin: 0 auto;
+    padding: 0 20px;
+    display:flex;
+    align-items:center;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  .sticky-label{
+    font-size: .78rem;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--ink-soft);
+    font-weight: 700;
+  }
+  .sticky-value{
+    font-size: 1.6rem;
+    font-weight: 800;
+  }
+  .sticky-value.pos{ color: var(--sage-dark); }
+  .sticky-value.neg{ color: var(--red-dark); }
+  .sticky-mini{
+    display:flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    font-size: .85rem;
+    color: var(--ink-soft);
+  }
+  .sticky-totals{
+    display:flex;
+    gap: 22px;
+  }
+  .sticky-mini strong{ color: var(--ink); }
+  .save-indicator{
+    font-size: .72rem;
+    color: #aeb2ab;
+    font-variant-numeric: tabular-nums;
+    transition: color .3s ease;
+  }
+  .save-indicator.flash{ color: var(--sage-dark); font-weight: 700; }
+
+  /* ---------- Sections ---------- */
+  section.block{ margin-top: 40px; }
+  .section-head{
+    display:flex;
+    align-items:center;
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+  .section-num{
+    flex: none;
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: var(--badge-bg);
+    color: #fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight: 800;
+    font-size: .95rem;
+  }
+  .section-head h2{
+    margin: 0;
+    font-size: 1.3rem;
+  }
+  .section-head p{
+    margin: 2px 0 0;
+    color: var(--ink-soft);
+    font-size: .9rem;
+  }
+
+  .grid-2{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 22px;
+  }
+  @media (max-width: 760px){
+    .grid-2{ grid-template-columns: 1fr; }
+  }
+
+  .card{
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  [data-theme="neon"] .card{
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+  [data-theme="sunshine"] .card{
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+  .card-head{
+    padding: 12px 18px;
+    font-weight: 800;
+    color: #fff;
+    font-size: .95rem;
+    letter-spacing: .02em;
+  }
+  .card.assets .card-head{ background: var(--sage); }
+  .card.liabilities .card-head{ background: var(--red); }
+  .card-body{ padding: 6px 18px 14px; }
+
+  .subgroup-title{
+    font-size: .78rem;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--ink-soft);
+    font-weight: 700;
+    margin: 16px 0 6px;
+  }
+  .subgroup-title:first-child{ margin-top: 12px; }
+
+  .row{
+    display:flex;
+    align-items:center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 7px 0;
+    border-bottom: 1px dashed #ececec;
+  }
+  .row:last-child{ border-bottom: none; }
+  .row label{
+    font-size: .92rem;
+    color: var(--ink);
+    flex: 1;
+  }
+
+  .amount-field{
+    position: relative;
+    width: 150px;
+    flex: none;
+  }
+  .amount-field span{
+    position:absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--ink-soft);
+    font-size: .9rem;
+    pointer-events:none;
+  }
+  .amount-field input{
+    width: 100%;
+    padding: 7px 8px 7px 22px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    font-size: .92rem;
+    font-family: inherit;
+    text-align: right;
+    background: var(--input-bg);
+    color: var(--ink);
+  }
+  .card.assets .amount-field input:focus{ outline: 2px solid var(--sage); border-color: var(--sage); }
+  .card.liabilities .amount-field input:focus{ outline: 2px solid var(--red); border-color: var(--red); }
+
+  .subtotal-row{
+    display:flex;
+    align-items:center;
+    justify-content: space-between;
+    padding: 10px 0 4px;
+    margin-top: 6px;
+    border-top: 2px solid var(--line);
+    font-weight: 800;
+    font-size: .95rem;
+  }
+  .subtotal-row .val{ font-variant-numeric: tabular-nums; }
+  .card.assets .subtotal-row .val{ color: var(--sage-dark); }
+  .card.liabilities .subtotal-row .val{ color: var(--red-dark); }
+
+  /* ---------- Snapshot / calculations ---------- */
+  .snapshot{
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 22px;
+  }
+  .stat-grid{
+    display:grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+  @media (max-width: 900px){ .stat-grid{ grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 480px){ .stat-grid{ grid-template-columns: 1fr; } }
+
+  .stat{
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .stat.highlight{
+    background: var(--blue-tint);
+    border-color: #cfe0e9;
+    grid-column: span 2;
+  }
+  @media (max-width: 480px){ .stat.highlight{ grid-column: span 1; } }
+
+  .stat .stat-label{
+    font-size: .78rem;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: var(--ink-soft);
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .stat .stat-value{
+    font-size: 1.4rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
+  .stat.highlight .stat-value{ font-size: 2rem; }
+  .stat .stat-value.pos{ color: var(--sage-dark); }
+  .stat .stat-value.neg{ color: var(--red-dark); }
+  .stat .stat-note{
+    font-size: .78rem;
+    color: var(--ink-soft);
+    margin-top: 6px;
+  }
+  .stat input{
+    width: 100%;
+    padding: 8px 8px 8px 22px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    font-size: 1rem;
+    font-family: inherit;
+    background: var(--input-bg);
+    color: var(--ink);
+    position: relative;
+  }
+  .stat .input-wrap{ position: relative; }
+  .stat .input-wrap span{
+    position:absolute; left:10px; top:50%; transform: translateY(-50%);
+    color: var(--ink-soft); font-size:.9rem;
+  }
+
+  /* ---------- History / trend chart ---------- */
+  .history-card{
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 22px;
+  }
+  .history-log-row{
+    display:flex;
+    align-items:flex-end;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  .history-log-field{ display:flex; flex-direction:column; gap: 6px; }
+  .history-log-field label{
+    font-size: .78rem; text-transform: uppercase; letter-spacing: .05em;
+    color: var(--ink-soft); font-weight: 700;
+  }
+  .history-log-field input{
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    font-size: .92rem;
+    font-family: inherit;
+    background: var(--input-bg);
+    color: var(--ink);
+  }
+  .log-btn{
+    background: var(--sage);
+    color: #fff;
+    border: none;
+    padding: 9px 18px;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: .9rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .15s ease;
+  }
+  .log-btn:hover{ background: var(--sage-dark); }
+  .history-empty{
+    color: var(--ink-soft);
+    font-size: .9rem;
+    padding: 18px 0;
+    text-align: center;
+  }
+  .history-chart-wrap{ width:100%; overflow-x:auto; }
+  #historyChart{ width:100%; height:auto; display:block; min-width: 480px; }
+  .history-table{
+    width:100%;
+    border-collapse: collapse;
+    margin-top: 18px;
+    font-size: .88rem;
+  }
+  .history-table th{
+    text-align: right;
+    font-size: .74rem;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: var(--ink-soft);
+    font-weight: 700;
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--line);
+  }
+  .history-table th:first-child{ text-align:left; }
+  .history-table td{
+    text-align: right;
+    padding: 8px 10px;
+    border-bottom: 1px dashed var(--line);
+    font-variant-numeric: tabular-nums;
+  }
+  .history-table td:first-child{ text-align:left; color: var(--ink-soft); }
+  .history-table td.pos{ color: var(--sage-dark); }
+  .history-table td.neg{ color: var(--red-dark); }
+  .history-row-delete{
+    background:none; border:none; color: var(--ink-soft); cursor:pointer;
+    font-size: .85rem; padding: 2px 6px; border-radius: 6px; line-height:1;
+  }
+  .history-row-delete:hover{ color: var(--red-dark); background: var(--red-tint); }
+
+  /* ---------- Footer ---------- */
+  footer{
+    margin-top: 46px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  footer p{
+    color: var(--ink-soft);
+    font-size: .82rem;
+    max-width: 640px;
+    margin: 0;
+  }
+  .clear-btn{
+    background: var(--card);
+    border: 1px solid var(--red);
+    color: var(--red-dark);
+    padding: 9px 16px;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: .88rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .15s ease;
+    flex: none;
+  }
+  .clear-btn:hover{ background: var(--red-tint); }
+  .clear-btn.confirm{ background: var(--red); color: #fff; }
+</style>
+</head>
+<body>
+<div id="fn-site-nav"></div>
+
+<div class="sticky-bar">
+  <div class="sticky-inner">
+    <div>
+      <div class="sticky-label">Your Net Worth</div>
+      <div class="sticky-value" id="stickyNetWorth">$0</div>
+    </div>
+    <div class="sticky-mini">
+      <span class="save-indicator" id="saveIndicator">Not saved yet</span>
+      <div class="sticky-totals">
+        <div>Total Assets: <strong id="stickyAssets">$0</strong></div>
+        <div>Total Liabilities: <strong id="stickyLiabilities">$0</strong></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+
+  <header class="hero" style="position:relative;">
+    <button type="button" class="fn-help-btn" style="position:absolute; right:0; top:0;" aria-label="What do these inputs mean?">?</button>
+    <h1>Net Worth Calculator</h1>
+    <p class="sub">Add up what you own and subtract what you owe. Fill in only the rows that apply to you — everything else can stay at zero.</p>
+  </header>
+
+  <div class="banner">Net worth is a better measure of financial stability than income alone. Your entries are saved automatically in this browser — <b>nothing is sent anywhere</b>.</div>
+
+  <!-- ===================== SECTION 1: CURRENT ===================== -->
+  <section class="block">
+    <div class="section-head">
+      <div class="section-num">01</div>
+      <div>
+        <h2>Current (Short-Term) Assets &amp; Liabilities</h2>
+        <p>Cash and debts you could realistically convert or pay off within about a year.</p>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <!-- Current Assets -->
+      <div class="card assets">
+        <div class="card-head">Current Assets</div>
+        <div class="card-body">
+          <div class="subgroup-title">Bank Accounts</div>
+          <div class="row"><label for="ca_checking">Checking Account</label><div class="amount-field"><span>$</span><input type="text" inputmode="decimal" id="ca_checking" data-group="currentAssets"></div></div>
+          <div class="row"><label for="ca_savings">Savings Account</label><div class="amount-field"><span>$</span><input type="text" inputmode="decimal" id="ca_savings" data-group="currentAssets"></div></div>
+          <div class="row"><label for="ca_otherBank">Other Bank Accounts</label><div class="amount-field"><span>$</span><input type="text" inputmode="decimal" id="ca_otherBank" data-group="currentAssets"></div></div>
+
+          <div class="subgroup-title">Investments</div>
+          <div class="row"><label for="ca_brokerage1">Brokerage Account 1</label><div class="amount-field"><span>$</span><input type="text" inputmode="decimal" id="ca_brokerage1" data-group="currentAssets"></div></div>
+          <div class="row"><label for="ca_brokerage2">Brokerage Account 2</label><div class="amount-field"><span>$</span><input type="text" inputmode="decimal" id="ca_brokerage2" data-group="currentAssets"></div></div>
+          <div class="row"><label for="ca_crypto1">Crypto Account</label><div class="amount-field"><span>$</span><input type="text" inputmode="decimal" id="ca_crypto1" data-group="currentAssets"></div></div>
+          <div class="row"><label for="ca_otherInvestment">Other Investment Account</label><div class="amount-field"><span>$</span><input type="text" inputmode="decimal" id="ca_otherInvestment" data-group="currentAssets"></div></div>
+
+          <div class="subtotal-row"><span>Total Current Assets</span><span class="val" id="totalCurrentAssets">$0</span></div>
+        </div>
+      </div>
+
+      <!-- Current Liabilities -->
+      <div class="card liabilities">
+        <div class="card-head">Current Liabilities</div>
+        <div class="card-body">
+          <div class="subgroup-title">Credit Cards</div>
+          <div class="row"><label for="cl_cc1">Credit Card 1</label><div class="amount-field"><span>$</span><input type="text" inputmode="decimal" id="cl_cc1" data-group="currentLiabilities"></div></div>
+          <div class="row"><label for="cl_cc2">Credit Card 2</label><div class="amount-field"><span>$</span><input type="text" inputmode="decimal" id="cl_cc2" data-group="currentLiabilities"></div></div>
+          <div class="row"><label for="cl_cc3">Credit Card 3</label><div class="amount-field"><span>$</span><input type="text" inputmode="decimal" id="cl_cc3" data-group="currentLiabilities"></div></div>
+          <div class="row"><label for="cl_cc4">Credit Card 4</label><div class="amount-field"><span>$</span><input type="text" inputmode="decimal" id="cl_cc4" data-group="currentLiabilities"></div></div>
+          <div class="row"><label for="cl_cc5">Credit Card 5</label><div class="amount-field"><span>$</span><input type="text" inputmode="decimal" id="cl_cc5" data-group="currentLiabilities"></div></div>
+
+          <div class="subgroup-title">Other Current Liabilities</div>
+          <div class="row"><label for="cl_otherDebt1">Other Debt Account 1</label><div class="amount-field"><span>$</span><input type="text" inputmode="decimal" id="cl_otherDebt1" data-group="currentLiabilities"></div></div>
+          <div class="row"><label for="cl_otherDebt2">Other Debt Account 2</label><div class="amount-field"><span>$</span><input type="text" inputmode="decimal" id="cl_otherDebt2" data-group="currentLiabilities"></div></div>
+
+          <div class="subtotal-row"><span>Total Current Liabilities</span><span class="val" id="totalCurrentLiabilities">$0</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== SECTION 2: LONG TERM ===================== -->
+  <section class="block">
+    <div class="section-head">
+      <div class="section-num">02</div>
+      <div>
+        <h2>Long-Term Assets &amp; Liabilities</h2>
+        <p>Retirement savings, property, vehicles, and debts you'll carry for years.</p>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <!-- Long Term Assets -->
+      <div class="card assets">
+        <div class="card-head">Long-Term Assets</div>
+        <div class="card-body">
+          <div class="subgroup-title">Retirement Accounts</div>
+          <div class="row"><label for="lta_401k1">401(k) Account 1</label><div class="amount-field"><span>$</span><input type="text" inputmode="decimal" id="lta_401k1" data-group="longTermAssets"></div></div>
+          <div class="row"><label for="lta_401k2">401(k) Account 2</label><div class="amount-field"><span>$</span><input type="text" inputmode="decimal" id="lta_401k2" data-group="longTermAssets"></div></div>
+          <div class="row"><label for="lta_rothIra">Roth IRA</label><div class="amount-field"><span>$</span><input type="text" inputmode="decimal" id="lta_rothIra" data-group="longTermAssets"></div></div>
+          <div class="row"><label for="lta_traditionalIra">Traditional IRA</label><div class="amount-field"><span>$</span><input type="text" inputmode="decimal" id="lta_traditionalIra" data-group="longTermAssets"></div></div>
+          <div class="row"><label for="lta_hsa">HSA Account</label><div class="amount-field"><span>$</span><input type="text" inputmode="decimal" id="lta_hsa" data-group="longTermAssets"></div></div>
+          <div class="row"><label for="lta_otherRetirement">Other Retirement Account</label><div class="amount-field"><span>$</span><input type="text" inputmode="decimal" id="lta_otherRetirement" data-group="longTermAssets"></div></div>
+
+          <div class="subgroup-title">Other Long-Term Assets</div>
+          <div class="row"><label for="lta_cars">Cars</label><div class="amount-field"><span>$</span><input type="text" inputmode="decimal" id="lta_cars" data-group="longTermAssets"></div></div>
+          <div class="row"><label for="lta_house">House</label><div class="amount-field"><span>$</span><input type="text" inputmode="decimal" id="lta_house" data-group="longTermAssets"></div></div>
+
+          <div class="subtotal-row"><span>Total Long-Term Assets</span><span class="val" id="totalLongTermAssets">$0</span></div>
+        </div>
+      </div>
+
+      <!-- Long Term Liabilities -->
+      <div class="card liabilities">
+        <div class="card-head">Long-Term Liabilities</div>
+        <div class="card-body">
+          <div class="subgroup-title">Loans &amp; Mortgage</div>
+          <div class="row"><label for="ltl_studentLoan1">Student Loan 1</label><div class="amount-field"><span>$</span><input type="text" inputmode="decimal" id="ltl_studentLoan1" data-group="longTermLiabilities"></div></div>
+          <div class="row"><label for="ltl_studentLoan2">Student Loan 2</label><div class="amount-field"><span>$</span><input type="text" inputmode="decimal" id="ltl_studentLoan2" data-group="longTermLiabilities"></div></div>
+          <div class="row"><label for="ltl_carLoan">Car Loan</label><div class="amount-field"><span>$</span><input type="text" inputmode="decimal" id="ltl_carLoan" data-group="longTermLiabilities"></div></div>
+          <div class="row"><label for="ltl_mortgage">Mortgage</label><div class="amount-field"><span>$</span><input type="text" inputmode="decimal" id="ltl_mortgage" data-group="longTermLiabilities"></div></div>
+          <div class="row"><label for="ltl_otherLoans">Other Loans</label><div class="amount-field"><span>$</span><input type="text" inputmode="decimal" id="ltl_otherLoans" data-group="longTermLiabilities"></div></div>
+
+          <div class="subtotal-row"><span>Total Long-Term Liabilities</span><span class="val" id="totalLongTermLiabilities">$0</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== SECTION 3: SNAPSHOT ===================== -->
+  <section class="block">
+    <div class="section-head">
+      <div class="section-num">03</div>
+      <div>
+        <h2>Your Financial Snapshot</h2>
+        <p>Calculated automatically from everything above.</p>
+      </div>
+    </div>
+
+    <div class="snapshot">
+      <div class="stat-grid">
+
+        <div class="stat highlight">
+          <div class="stat-label">Net Worth</div>
+          <div class="stat-value" id="statNetWorth">$0</div>
+          <div class="stat-note">Total Assets − Total Liabilities. What you own vs. what you owe — this can be negative.</div>
+        </div>
+
+        <div class="stat">
+          <div class="stat-label">Total Assets</div>
+          <div class="stat-value" id="statTotalAssets">$0</div>
+        </div>
+
+        <div class="stat">
+          <div class="stat-label">Total Liabilities</div>
+          <div class="stat-value" id="statTotalLiabilities">$0</div>
+        </div>
+
+        <div class="stat">
+          <div class="stat-label">Working Capital</div>
+          <div class="stat-value" id="statWorkingCapital">$0</div>
+          <div class="stat-note">Current Assets − Current Liabilities.</div>
+        </div>
+
+        <div class="stat">
+          <div class="stat-label">Average Monthly Expenses</div>
+          <div class="input-wrap"><span>$</span><input type="text" inputmode="decimal" id="calc_avgMonthlyExpenses" placeholder="0.00"></div>
+          <div class="stat-note">Estimate your typical monthly spending.</div>
+        </div>
+
+        <div class="stat">
+          <div class="stat-label">Months of Working Capital</div>
+          <div class="stat-value" id="statMonthsWC">—</div>
+          <div class="stat-note">How many months your liquid assets could cover expenses.</div>
+        </div>
+
+        <div class="stat">
+          <div class="stat-label">Cash on Hand</div>
+          <div class="input-wrap"><span>$</span><input type="text" inputmode="decimal" id="calc_cashOnHand" placeholder="0.00"></div>
+          <div class="stat-note">Physical cash plus money in checking/savings only.</div>
+        </div>
+
+        <div class="stat">
+          <div class="stat-label">Months of Cash on Hand</div>
+          <div class="stat-value" id="statMonthsCash">—</div>
+          <div class="stat-note">A rough emergency-fund gauge. 3–6 months is a common target.</div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== SECTION 4: HISTORY & TREND ===================== -->
+  <section class="block">
+    <div class="section-head">
+      <div class="section-num">04</div>
+      <div>
+        <h2>History &amp; Trend</h2>
+        <p>Log a dated snapshot of today's totals to start tracking your net worth over time.</p>
+      </div>
+    </div>
+
+    <div class="history-card">
+      <div class="history-log-row">
+        <div class="history-log-field">
+          <label for="historyDate">Snapshot date</label>
+          <input type="date" id="historyDate">
+        </div>
+        <button type="button" class="log-btn" id="logSnapshotBtn">Log this snapshot</button>
+      </div>
+
+      <div id="historyEmpty" class="history-empty">No history yet — log today's totals above, then come back periodically to watch the trend.</div>
+
+      <div id="historyChartWrap" class="history-chart-wrap" style="display:none;">
+        <svg id="historyChart" viewBox="0 0 760 260" preserveAspectRatio="xMidYMid meet"></svg>
+      </div>
+
+      <table class="history-table" id="historyTable" style="display:none;">
+        <thead>
+          <tr><th>Date</th><th>Net Worth</th><th>Change</th><th></th></tr>
+        </thead>
+        <tbody id="historyTableBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    <p>All figures stay in your browser: values are saved on this device only, and reload automatically the next time you visit this page. Nothing is uploaded or shared. This tool is for general educational purposes and isn't financial advice.</p>
+    <button class="clear-btn" id="clearBtn">Clear All Data</button>
+  </footer>
+</div>
+
+<footer id="site-footer"></footer>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---- Keep the "Your Net Worth" sticky bar pinned just below the site nav ----
+  // #fn-site-nav's content is injected by nav.js (possibly asynchronously), and its
+  // height can change across breakpoints. Rather than hardcode a pixel offset, we
+  // measure whatever nav.js renders and only offset when the nav itself is actually
+  // fixed/sticky (so we don't leave a gap if the nav scrolls away with the page).
+  (function initNavOffset(){
+    var navHost = document.getElementById('fn-site-nav');
+    if(!navHost) return;
+
+    function isPinned(el){
+      var pos = getComputedStyle(el).position;
+      return pos === 'fixed' || pos === 'sticky';
+    }
+
+    function findPinnedEl(){
+      if(isPinned(navHost)) return navHost;
+      for(var i = 0; i < navHost.children.length; i++){
+        if(isPinned(navHost.children[i])) return navHost.children[i];
+      }
+      return null;
+    }
+
+    function updateNavOffset(){
+      var pinnedEl = findPinnedEl();
+      var h = pinnedEl ? pinnedEl.getBoundingClientRect().height : 0;
+      document.documentElement.style.setProperty('--nav-offset', h + 'px');
+    }
+
+    updateNavOffset();
+    window.addEventListener('load', updateNavOffset);
+    window.addEventListener('resize', updateNavOffset);
+
+    // nav.js may inject/alter markup asynchronously (e.g. a fetched header partial)
+    new MutationObserver(updateNavOffset).observe(navHost, { childList: true, subtree: true });
+    if(window.ResizeObserver){ new ResizeObserver(updateNavOffset).observe(navHost); }
+  })();
+
+  var STORAGE_KEY = "netWorthInputs";
+  var HISTORY_KEY = "netWorthHistory";
+
+  var allInputs = Array.prototype.slice.call(document.querySelectorAll('input[type="text"]'));
+
+  var currencyFmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+  var currencyFmtCents = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  function parseNum(val){
+    if(!val) return 0;
+    var n = parseFloat(String(val).replace(/[^0-9.\-]/g, ''));
+    return isNaN(n) ? 0 : Math.max(n, 0);
+  }
+
+  function sumGroup(group){
+    var total = 0;
+    allInputs.forEach(function(inp){
+      if(inp.dataset.group === group){ total += parseNum(inp.value); }
+    });
+    return total;
+  }
+
+  function setText(id, text){
+    var el = document.getElementById(id);
+    if(el) el.textContent = text;
+  }
+
+  function fmt(n){
+    return currencyFmt.format(Math.round(n));
+  }
+
+  // latest computed totals, kept up to date by every recalc() so the
+  // "Log this snapshot" button (in the history section below) always has
+  // today's numbers on hand without recomputing them itself
+  var latestTotals = { totalAssets: 0, totalLiabilities: 0, netWorth: 0 };
+
+  function recalc(){
+    var totalCurrentAssets = sumGroup('currentAssets');
+    var totalCurrentLiabilities = sumGroup('currentLiabilities');
+    var totalLongTermAssets = sumGroup('longTermAssets');
+    var totalLongTermLiabilities = sumGroup('longTermLiabilities');
+
+    var totalAssets = totalCurrentAssets + totalLongTermAssets;
+    var totalLiabilities = totalCurrentLiabilities + totalLongTermLiabilities;
+    var netWorth = totalAssets - totalLiabilities;
+    var workingCapital = totalCurrentAssets - totalCurrentLiabilities;
+    latestTotals = { totalAssets: totalAssets, totalLiabilities: totalLiabilities, netWorth: netWorth };
+
+    var avgExpenses = parseNum(document.getElementById('calc_avgMonthlyExpenses').value);
+    var cashOnHand = parseNum(document.getElementById('calc_cashOnHand').value);
+
+    setText('totalCurrentAssets', fmt(totalCurrentAssets));
+    setText('totalCurrentLiabilities', fmt(totalCurrentLiabilities));
+    setText('totalLongTermAssets', fmt(totalLongTermAssets));
+    setText('totalLongTermLiabilities', fmt(totalLongTermLiabilities));
+
+    setText('statTotalAssets', fmt(totalAssets));
+    setText('statTotalLiabilities', fmt(totalLiabilities));
+    setText('statWorkingCapital', fmt(workingCapital));
+
+    var netEl = document.getElementById('statNetWorth');
+    netEl.textContent = fmt(netWorth);
+    netEl.className = 'stat-value ' + (netWorth >= 0 ? 'pos' : 'neg');
+
+    var stickyEl = document.getElementById('stickyNetWorth');
+    stickyEl.textContent = fmt(netWorth);
+    stickyEl.className = 'sticky-value ' + (netWorth >= 0 ? 'pos' : 'neg');
+    setText('stickyAssets', fmt(totalAssets));
+    setText('stickyLiabilities', fmt(totalLiabilities));
+
+    setText('statMonthsWC', avgExpenses > 0 ? (workingCapital / avgExpenses).toFixed(1) + ' mo' : '—');
+    setText('statMonthsCash', avgExpenses > 0 ? (cashOnHand / avgExpenses).toFixed(1) + ' mo' : '—');
+  }
+
+  function formatFieldOnBlur(inp){
+    var n = parseNum(inp.value);
+    inp.value = n === 0 ? '' : currencyFmtCents.format(n).replace('$','');
+  }
+
+  function pad(n){ return String(n).padStart(2, '0'); }
+
+  function formatTimestamp(d){
+    return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()) + ' ' +
+           pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+  }
+
+  function getAllValues(){
+    var data = {};
+    allInputs.forEach(function(inp){ data[inp.id] = inp.value; });
+    return data;
+  }
+
+  // localStorage under the site's standard per-calculator key convention
+  // (matches every other calculator, and lets ProfileManager/nav.js's
+  // snapshot + export system capture and restore this page's inputs too —
+  // this page previously used a bespoke cookie that neither of those
+  // features knew how to reach)
+  function saveToStorage(){
+    var data = getAllValues();
+    var savedAtStr = formatTimestamp(new Date());
+    data._savedAt = savedAtStr;
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
+    updateSaveIndicator(savedAtStr, true);
+  }
+
+  var saveTimer = null;
+  function saveDebounced(){
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(saveToStorage, 500);
+  }
+
+  var flashTimer = null;
+  function updateSaveIndicator(savedAtStr, flash){
+    var el = document.getElementById('saveIndicator');
+    el.textContent = 'Last saved: ' + savedAtStr;
+    if(flash){
+      el.classList.add('flash');
+      clearTimeout(flashTimer);
+      flashTimer = setTimeout(function(){ el.classList.remove('flash'); }, 1200);
+    }
+  }
+
+  function loadFromStorage(){
+    var raw = null;
+    try { raw = localStorage.getItem(STORAGE_KEY); } catch(e) {}
+    if(!raw) return;
+    try{
+      var data = JSON.parse(raw);
+      allInputs.forEach(function(inp){
+        if(Object.prototype.hasOwnProperty.call(data, inp.id)){
+          inp.value = data[inp.id];
+        }
+      });
+      if(data._savedAt){ updateSaveIndicator(data._savedAt, false); }
+    }catch(e){ /* ignore corrupt data */ }
+  }
+
+  function clearAll(){
+    allInputs.forEach(function(inp){ inp.value = ''; });
+    try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
+    document.getElementById('saveIndicator').textContent = 'Not saved yet';
+    recalc();
+  }
+
+  // ---------- history: dated net-worth snapshots + trend chart ----------
+  var SVG_NS = 'http://www.w3.org/2000/svg';
+
+  function loadHistory(){
+    try {
+      var raw = localStorage.getItem(HISTORY_KEY);
+      var list = raw ? JSON.parse(raw) : [];
+      return Array.isArray(list) ? list : [];
+    } catch(e) { return []; }
+  }
+  function saveHistory(list){
+    try { localStorage.setItem(HISTORY_KEY, JSON.stringify(list)); } catch(e) {}
+  }
+
+  function renderHistoryChart(list){
+    var svg = document.getElementById('historyChart');
+    while(svg.firstChild) svg.removeChild(svg.firstChild);
+    if(list.length < 2) return; // a single point has no trend to draw
+
+    var W = 760, H = 260, padL = 70, padR = 20, padT = 20, padB = 34;
+    var plotW = W - padL - padR, plotH = H - padT - padB;
+
+    var values = list.map(function(e){ return e.netWorth; });
+    var minV = Math.min(0, Math.min.apply(null, values));
+    var maxV = Math.max.apply(null, values);
+    if(maxV === minV) maxV = minV + 1; // avoid divide-by-zero on a flat line
+
+    function xAt(i){ return padL + (list.length === 1 ? 0 : (i / (list.length - 1)) * plotW); }
+    function yAt(v){ return padT + plotH - ((v - minV) / (maxV - minV)) * plotH; }
+
+    // gridlines + y-axis labels (4 bands)
+    var bands = 4;
+    for(var b = 0; b <= bands; b++){
+      var v = minV + (maxV - minV) * (b / bands);
+      var y = yAt(v);
+      var line = document.createElementNS(SVG_NS, 'line');
+      line.setAttribute('x1', padL); line.setAttribute('x2', W - padR);
+      line.setAttribute('y1', y); line.setAttribute('y2', y);
+      line.setAttribute('stroke', 'var(--line)'); line.setAttribute('stroke-width', '1');
+      svg.appendChild(line);
+
+      var label = document.createElementNS(SVG_NS, 'text');
+      label.setAttribute('x', padL - 10); label.setAttribute('y', y + 4);
+      label.setAttribute('text-anchor', 'end');
+      label.setAttribute('font-size', '11'); label.setAttribute('fill', 'var(--ink-soft)');
+      label.textContent = fmt(v);
+      svg.appendChild(label);
+    }
+
+    // zero line, emphasized, when the range actually crosses zero
+    if(minV < 0 && maxV > 0){
+      var zeroY = yAt(0);
+      var zline = document.createElementNS(SVG_NS, 'line');
+      zline.setAttribute('x1', padL); zline.setAttribute('x2', W - padR);
+      zline.setAttribute('y1', zeroY); zline.setAttribute('y2', zeroY);
+      zline.setAttribute('stroke', 'var(--ink-soft)'); zline.setAttribute('stroke-width', '1.5');
+      svg.appendChild(zline);
+    }
+
+    // x-axis date labels — thin out if there are many points so they don't overlap
+    var maxLabels = 7;
+    var step = Math.max(1, Math.ceil(list.length / maxLabels));
+    list.forEach(function(entry, i){
+      if(i % step !== 0 && i !== list.length - 1) return;
+      var label = document.createElementNS(SVG_NS, 'text');
+      label.setAttribute('x', xAt(i)); label.setAttribute('y', H - padB + 18);
+      label.setAttribute('text-anchor', 'middle');
+      label.setAttribute('font-size', '11'); label.setAttribute('fill', 'var(--ink-soft)');
+      label.textContent = entry.date;
+      svg.appendChild(label);
+    });
+
+    // filled area under the line
+    var areaPts = list.map(function(e, i){ return xAt(i) + ',' + yAt(e.netWorth); }).join(' ');
+    var area = document.createElementNS(SVG_NS, 'polygon');
+    area.setAttribute('points', xAt(0) + ',' + yAt(minV >= 0 ? minV : 0) + ' ' + areaPts + ' ' +
+      xAt(list.length - 1) + ',' + yAt(minV >= 0 ? minV : 0));
+    area.setAttribute('fill', 'var(--sage)'); area.setAttribute('opacity', '0.12');
+    svg.appendChild(area);
+
+    // the trend line itself
+    var linePts = list.map(function(e, i){ return xAt(i) + ',' + yAt(e.netWorth); }).join(' ');
+    var poly = document.createElementNS(SVG_NS, 'polyline');
+    poly.setAttribute('points', linePts);
+    poly.setAttribute('fill', 'none');
+    poly.setAttribute('stroke', 'var(--sage-dark)');
+    poly.setAttribute('stroke-width', '2.5');
+    poly.setAttribute('stroke-linecap', 'round');
+    poly.setAttribute('stroke-linejoin', 'round');
+    svg.appendChild(poly);
+
+    // a dot per data point, with a native <title> tooltip for the exact value
+    list.forEach(function(entry, i){
+      var dot = document.createElementNS(SVG_NS, 'circle');
+      dot.setAttribute('cx', xAt(i)); dot.setAttribute('cy', yAt(entry.netWorth));
+      dot.setAttribute('r', '4');
+      dot.setAttribute('fill', entry.netWorth >= 0 ? 'var(--sage-dark)' : 'var(--red-dark)');
+      var tip = document.createElementNS(SVG_NS, 'title');
+      tip.textContent = entry.date + ': ' + fmt(entry.netWorth);
+      dot.appendChild(tip);
+      svg.appendChild(dot);
+    });
+  }
+
+  function renderHistoryTable(list){
+    var body = document.getElementById('historyTableBody');
+    body.innerHTML = '';
+    var sorted = list.slice().sort(function(a, b){ return a.date < b.date ? 1 : -1; }); // newest first
+    sorted.forEach(function(entry, idx){
+      var prevEntry = list[list.indexOf(entry) - 1]; // chronologically previous (list is oldest-first)
+      var delta = prevEntry ? entry.netWorth - prevEntry.netWorth : null;
+      var tr = document.createElement('tr');
+      var deltaHtml = delta === null ? '—' :
+        '<span class="' + (delta >= 0 ? 'pos' : 'neg') + '">' + (delta >= 0 ? '+' : '') + fmt(delta) + '</span>';
+      tr.innerHTML =
+        '<td>' + entry.date + '</td>' +
+        '<td class="' + (entry.netWorth >= 0 ? 'pos' : 'neg') + '">' + fmt(entry.netWorth) + '</td>' +
+        '<td>' + deltaHtml + '</td>' +
+        '<td><button type="button" class="history-row-delete" data-del="' + entry.date + '" title="Delete this entry">&times;</button></td>';
+      body.appendChild(tr);
+    });
+    body.querySelectorAll('[data-del]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var date = btn.getAttribute('data-del');
+        saveHistory(loadHistory().filter(function(e){ return e.date !== date; }));
+        refreshHistory();
+      });
+    });
+  }
+
+  function refreshHistory(){
+    var list = loadHistory().slice().sort(function(a, b){ return a.date < b.date ? -1 : 1; }); // oldest first
+    var hasData = list.length > 0;
+    document.getElementById('historyEmpty').style.display = hasData ? 'none' : '';
+    document.getElementById('historyTable').style.display = hasData ? '' : 'none';
+    document.getElementById('historyChartWrap').style.display = list.length >= 2 ? '' : 'none';
+    if(hasData) renderHistoryTable(list);
+    if(list.length >= 2) renderHistoryChart(list);
+  }
+
+  function logSnapshot(){
+    var dateInput = document.getElementById('historyDate');
+    var date = dateInput.value || formatDateOnly(new Date());
+    var list = loadHistory().filter(function(e){ return e.date !== date; }); // one entry per date — overwrite
+    list.push({
+      date: date,
+      assets: latestTotals.totalAssets,
+      liabilities: latestTotals.totalLiabilities,
+      netWorth: latestTotals.netWorth
+    });
+    saveHistory(list);
+    refreshHistory();
+  }
+
+  function formatDateOnly(d){
+    return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
+  }
+
+  // Wire up events
+  allInputs.forEach(function(inp){
+    inp.addEventListener('input', function(){ recalc(); saveDebounced(); });
+    inp.addEventListener('blur', function(){ formatFieldOnBlur(inp); recalc(); saveDebounced(); });
+  });
+
+  var clearBtn = document.getElementById('clearBtn');
+  var confirming = false;
+  clearBtn.addEventListener('click', function(){
+    if(!confirming){
+      confirming = true;
+      clearBtn.textContent = 'Click again to confirm';
+      clearBtn.classList.add('confirm');
+      setTimeout(function(){
+        confirming = false;
+        clearBtn.textContent = 'Clear All Data';
+        clearBtn.classList.remove('confirm');
+      }, 3000);
+    } else {
+      clearAll();
+      confirming = false;
+      clearBtn.textContent = 'Clear All Data';
+      clearBtn.classList.remove('confirm');
+    }
+  });
+
+  document.getElementById('logSnapshotBtn').addEventListener('click', logSnapshot);
+
+  // Init
+  loadFromStorage();
+  allInputs.forEach(formatFieldOnBlur);
+  recalc();
+  document.getElementById('historyDate').value = formatDateOnly(new Date());
+  refreshHistory();
+
+})();
+</script>
+
+</body>
+</html>

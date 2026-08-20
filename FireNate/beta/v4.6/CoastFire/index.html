@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script src="../assets/js/theme-init.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FireNate - Coast &amp; Barista FIRE</title>
+<meta name="description" content="Find out if you've already saved enough to coast to your retirement goal without adding another dollar — and model a lower-stress, lower-income Barista FIRE phase along the way.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/site.css">
+<link rel="stylesheet" href="../assets/css/timeToFI.css">
+<link rel="stylesheet" href="../assets/css/toolbar.css">
+<script src="../assets/js/theme.js" defer></script>
+<script src="../assets/js/user-profile.js" defer></script>
+<script src="../assets/js/nav.js" defer></script>
+<script src="../assets/js/profile-autofill.js" defer></script>
+<script src="../assets/js/field-help.js" defer></script>
+<script>
+window.FN_BASE = "../"; window.FN_PAGE = "coast-fire";
+window.FN_FIELD_HELP = {
+  "title": "About this Tool",
+  "intro": "Coast FIRE is the point where your current savings, left alone to grow, will reach your goal by retirement — no more contributions required. This tool also models a Barista FIRE phase where you keep contributing a smaller amount.",
+  "sections": [
+    {
+      "heading": "You today",
+      "items": [
+        {
+          "label": "Current Age",
+          "text": "Your age right now."
+        },
+        {
+          "label": "Current Savings",
+          "text": "What you've already saved toward retirement."
+        },
+        {
+          "label": "Current Monthly Savings",
+          "text": "How much you're contributing per month right now, before you coast."
+        }
+      ]
+    },
+    {
+      "heading": "The goal",
+      "items": [
+        {
+          "label": "Retirement Age",
+          "text": "The age you want your goal amount reached by."
+        },
+        {
+          "label": "Retirement Goal",
+          "text": "The portfolio size you're aiming for at retirement age."
+        },
+        {
+          "label": "Annual Return Rate",
+          "text": "The average annual investment growth rate you expect, before inflation."
+        }
+      ]
+    },
+    {
+      "heading": "Coast / Barista phase",
+      "items": [
+        {
+          "label": "Barista Start Age",
+          "text": "The age you'd like to scale back to lighter, lower-pressure work (or stop saving for retirement entirely)."
+        },
+        {
+          "label": "Barista Monthly Savings",
+          "text": "How much you'd still contribute per month during that lighter-work phase — can be $0 for a pure coast."
+        }
+      ]
+    }
+  ]
+};
+window.FN_PROFILE_FIELDS = {
+  currentAge: "#currentAge",
+  currentSavings: "#currentSavings",
+  retireAge: "#retireAge",
+  goalAmount: "#goalAmount",
+  expectedReturn: "#returnPct"
+};
+window.FN_PROFILE_LEGACY_KEY = "coastFireInputs";
+</script>
+<style>
+  /* ---------- toolbar overrides (shared: assets/css/toolbar.css) ---------- */
+  :root{ --toolbar-content-max-height:640px; }
+
+  /* ---------- EXPLAINER ---------- */
+  .cf-explainer{
+    background:var(--surface); border:1px solid var(--line); border-top:4px solid var(--target);
+    border-radius:var(--radius); padding:22px 24px; margin-top:4px;
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:20px;
+  }
+  .cf-explainer-step .tag{
+    font-family:var(--mono); font-size:10.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+    margin-bottom:6px; display:block;
+  }
+  .cf-explainer-step.s1 .tag{ color:var(--gold); }
+  .cf-explainer-step.s2 .tag{ color:var(--target); }
+  .cf-explainer-step.s3 .tag{ color:var(--jade); }
+  .cf-explainer-step p{ margin:0; font-size:13.5px; color:var(--ink-dim); line-height:1.6; }
+  .cf-explainer-step strong{ color:var(--ink); }
+  .cf-explainer-note{
+    grid-column:1/-1; margin-top:2px; padding-top:14px; border-top:1px dashed var(--line-soft);
+    font-size:12px; color:var(--ink-faint); line-height:1.6;
+  }
+
+  /* ---------- VERDICT BANNER ---------- */
+  .cf-verdict{
+    display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+    background:var(--surface); border:1px solid var(--line); border-top:4px solid var(--gold);
+    border-radius:var(--radius); padding:22px 24px; margin-top:4px;
+  }
+  .cf-verdict.yes{ border-top-color:var(--jade); }
+  .cf-verdict.no{ border-top-color:var(--target); }
+  .cf-verdict-headline{ font-family:var(--serif); font-size:22px; font-weight:600; color:var(--ink); margin:0 0 4px; }
+  .cf-verdict-sub{ font-size:13px; color:var(--ink-dim); margin:0; }
+  .cf-verdict-amt{ font-family:var(--serif); font-size:30px; font-weight:600; }
+  .cf-verdict-amt.jade{ color:var(--jade); }
+  .cf-verdict-amt.target{ color:var(--target); }
+
+  /* ---------- inline SVG line chart (no external chart library) ---------- */
+  #cfChart{ width:100%; height:auto; display:block; overflow:visible; }
+  .cf-line-balance{ fill:none; stroke:var(--jade); stroke-width:2.5; stroke-linecap:round; stroke-linejoin:round; }
+  .cf-line-required{ fill:none; stroke:var(--target); stroke-width:2; stroke-dasharray:5 4; stroke-linecap:round; stroke-linejoin:round; }
+  .cf-dot-balance{ fill:var(--jade); }
+  .cf-grid-line{ stroke:var(--line); stroke-width:1; }
+  .cf-grid-label, .cf-axis-label{ font-family:var(--mono); font-size:10px; fill:var(--ink-faint); }
+  .cf-goal-line{ stroke:var(--gold); stroke-width:1.5; stroke-dasharray:2 3; }
+  .cf-coast-marker{ stroke:var(--plum); stroke-width:1.5; stroke-dasharray:4 3; }
+
+  /* ---------- TABLE ---------- */
+  tbody tr.cf-coasting td{ background:rgba(31,146,84,0.08); }
+  tbody tr.cf-barista td:first-child{ color:var(--plum); font-weight:600; }
+
+  /* ---------- CHART HOVER TOOLTIP ---------- */
+  #cfTooltip{
+    position:fixed; pointer-events:none; background:var(--surface); border:1px solid var(--line);
+    border-radius:10px; padding:9px 13px; font-family:var(--mono); font-size:12px; color:var(--ink);
+    opacity:0; transform:translate(-50%,-115%); transition:opacity .12s; z-index:50;
+    white-space:nowrap; box-shadow:0 8px 24px -10px rgba(0,0,0,0.45);
+  }
+  #cfTooltip .yr{ color:var(--ink-faint); margin-bottom:3px; }
+  #cfTooltip b{ color:var(--gold); }
+  [data-theme="neon"] #cfTooltip .yr{ color:var(--ink-dim); }
+</style>
+</head>
+<body>
+<div id="fn-site-nav"></div>
+
+<div class="cf-inputs" id="cfInputs">
+  <div class="wrap cf-summary-row" style="position:relative">
+    <div class="cf-summary" id="cfSummary">&mdash;</div>
+    <button type="button" class="fn-help-btn" style="position:absolute; right:20px; top:50%; transform:translateY(-50%)" aria-label="What do these inputs mean?">?</button>
+  </div>
+  <div class="cf-content" id="cfContent">
+    <div class="wrap cf-inner">
+      <div class="cf-fields">
+        <div class="cf-field">
+          <label for="currentAge">Current Age</label>
+          <div class="cf-input-row"><input class="cf-narrow" type="number" id="currentAge" value="30" min="0" max="100" step="0.5"></div>
+        </div>
+        <div class="cf-field">
+          <label for="retireAge">Retirement Age</label>
+          <div class="cf-input-row"><input class="cf-narrow" type="number" id="retireAge" value="55" min="0" max="120" step="0.5"></div>
+        </div>
+        <div class="cf-field">
+          <label for="currentSavings">Current Savings</label>
+          <div class="cf-input-row"><span class="cf-prefix">$</span><input type="text" inputmode="decimal" pattern="[0-9,.]*" id="currentSavings" value="60,000.00"></div>
+        </div>
+        <div class="cf-field">
+          <label for="goalAmount">Retirement Goal</label>
+          <div class="cf-input-row"><span class="cf-prefix">$</span><input type="text" inputmode="decimal" pattern="[0-9,.]*" id="goalAmount" value="1,000,000.00"></div>
+        </div>
+        <div class="cf-field">
+          <label for="returnPct">Annual Return Rate</label>
+          <div class="cf-input-row"><input class="cf-narrow" type="number" id="returnPct" value="7" min="-20" max="30" step="0.1"><span class="cf-suffix">%</span></div>
+        </div>
+        <div class="cf-field">
+          <label for="currentContribMonthly">Current Monthly Savings</label>
+          <div class="cf-input-row"><span class="cf-prefix">$</span><input type="text" inputmode="decimal" pattern="[0-9,.]*" id="currentContribMonthly" value="1,500.00"></div>
+        </div>
+        <div class="cf-field">
+          <label for="baristaStartAge">Barista Start Age</label>
+          <div class="cf-input-row"><input class="cf-narrow" type="number" id="baristaStartAge" value="40" min="0" max="120" step="0.5"></div>
+        </div>
+        <div class="cf-field">
+          <label for="baristaContribMonthly">Barista Monthly Savings</label>
+          <div class="cf-input-row"><span class="cf-prefix">$</span><input type="text" inputmode="decimal" pattern="[0-9,.]*" id="baristaContribMonthly" value="200.00"></div>
+        </div>
+      </div>
+      <div class="cf-save">
+        <span class="save-status" id="cfSaveStatus">Not saved yet</span>
+        <button type="button" id="resetBtn" class="reset-btn">Reset to defaults</button>
+      </div>
+    </div>
+  </div>
+  <div class="wrap cf-toggle-row">
+    <button id="cfToggle" type="button" class="cf-toggle" aria-expanded="true" aria-controls="cfContent">
+      <svg class="cf-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+      <span id="cfToggleLabel">Hide inputs</span>
+    </button>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">FIRE Nate - Coast &amp; Barista FIRE</p>
+    <h1 id="pageTitleHeader">You might not need to save <em>another dollar</em>.</h1>
+    <p class="lede">Coast FI is the point where your existing savings, left completely alone to grow, will reach your retirement goal by your target age &mdash; no more contributions required. Once you're there, "Barista FIRE" means downshifting to lower-stress, lower-income work that just covers your bills while your nest egg keeps compounding in the background.</p>
+  </header>
+
+  <div class="cf-explainer">
+    <div class="cf-explainer-step s1">
+      <span class="tag">Coast FI number</span>
+      <p>The amount you'd need <strong>today</strong> to hit your goal by retirement on growth alone &mdash; found by discounting your goal backward from your retirement age at your expected return rate.</p>
+    </div>
+    <div class="cf-explainer-step s2">
+      <span class="tag">Coast FI age</span>
+      <p>If you're not there yet, this projects your current contributions forward to find the <strong>first age where your growing balance crosses above</strong> the (shrinking) amount you'd need to coast from that age.</p>
+    </div>
+    <div class="cf-explainer-step s3">
+      <span class="tag">Barista phase</span>
+      <p>From your chosen Barista start age onward, contributions drop to whatever a lighter income can still spare &mdash; often just enough to cover living costs, sometimes a little more. <strong>The balance still grows toward your goal on its own.</strong></p>
+    </div>
+    <div class="cf-explainer-note">
+      This assumes a steady annual return with no volatility, which real markets never deliver — treat the Coast FI age as a rough milestone, not a guarantee, and revisit it as your numbers change. It also doesn't account for inflation eroding your goal's purchasing power over a long coast period; consider using a goal already adjusted for that.
+    </div>
+  </div>
+
+  <h2 class="ledger-title" style="margin-top: 40px; margin-bottom: 4px;">Verdict</h2>
+  <div class="cf-verdict" id="cfVerdict"></div>
+
+  <h2 class="ledger-title" style="margin-top: 40px; margin-bottom: 4px;">Summary</h2>
+  <div class="status" id="statusStrip"></div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h2>Your balance vs. what coasting requires</h2>
+      <span class="sub">WHERE THE TWO LINES CROSS IS YOUR COAST FI AGE</span>
+    </div>
+    <div class="chart-card">
+      <svg id="cfChart" viewBox="0 0 1120 340"></svg>
+      <div id="cfTooltip"></div>
+      <div class="legend-row">
+        <span class="legend-dot jade"></span> Projected balance
+        <span class="legend-dot target"></span> Required to coast from that age
+        <span class="legend-dot gold"></span> Retirement goal (reference)
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h2>Year-by-year detail</h2>
+      <span class="sub">SAVING PHASE, THEN BARISTA PHASE, TO RETIREMENT</span>
+    </div>
+    <div class="table-card">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th style="text-align:left;">Age</th>
+              <th style="text-align:left;">Phase</th>
+              <th>Balance</th>
+              <th>Required to Coast</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="cfTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+<footer id="site-footer"></footer>
+
+</div>
+
+<script src="../assets/js/calc-utils.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const fmtUSD = n => n.toLocaleString('en-US', {style:'currency', currency:'USD', maximumFractionDigits:0});
+const fmtNum = n => n.toLocaleString('en-US', {maximumFractionDigits:1});
+const formatCurrencyField = id => {
+  const raw = parseCurrency(id);
+  $(id).value = raw.toLocaleString('en-US', {maximumFractionDigits:2});
+};
+function sanitizeCurrencyInput(id){
+  const el = $(id);
+  const before = el.value;
+  const cursorFromEnd = before.length - (el.selectionStart ?? before.length);
+  let cleaned = before.replace(/[^0-9.,]/g, '');
+  const parts = cleaned.split('.');
+  if (parts.length > 2){
+    cleaned = parts[0] + '.' + parts.slice(1).join('');
+  }
+  if (cleaned !== before){
+    el.value = cleaned;
+    const newPos = Math.max(0, cleaned.length - cursorFromEnd);
+    el.setSelectionRange(newPos, newPos);
+  }
+}
+
+// ---------- sticky, collapsible input toolbar ----------
+const COLLAPSE_KEY = 'coast-fire-inputs-collapsed';
+const cfInputsEl = $('cfInputs');
+const cfToggle = $('cfToggle');
+const cfToggleLabel = $('cfToggleLabel');
+const cfSummary = $('cfSummary');
+const cfSaveStatus = $('cfSaveStatus');
+
+let inputsCollapsed = false;
+function setInputsCollapsed(collapsed){
+  inputsCollapsed = collapsed;
+  if (cfInputsEl) cfInputsEl.classList.toggle('collapsed', collapsed);
+  if (cfToggle) cfToggle.setAttribute('aria-expanded', String(!collapsed));
+  if (cfToggleLabel) cfToggleLabel.textContent = collapsed ? 'Show inputs' : 'Hide inputs';
+  try { localStorage.setItem(COLLAPSE_KEY, collapsed ? '1' : '0'); } catch(e) {}
+}
+if (cfToggle){
+  cfToggle.addEventListener('click', () => setInputsCollapsed(!inputsCollapsed));
+}
+
+function pad2(n){ return String(n).padStart(2, '0'); }
+function updateSaveStatus(){
+  if (!cfSaveStatus) return;
+  const d = new Date();
+  cfSaveStatus.textContent = `Last saved: ${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
+}
+function updateCfSummary(m){
+  if (!cfSummary) return;
+  cfSummary.textContent = `Coast FI number today: ${fmtUSD(m.coastToday)}  |  ${m.isCoastNow ? 'Already coasting' : (m.coastFIAge !== null ? `Coast FI at age ${fmtNum(m.coastFIAge)}` : 'Not reached by retirement')}`;
+}
+
+// ---------- coast/barista simulation ----------
+function coastNumberAt(age, retireAge, goal, r){
+  const yrs = Math.max(0, retireAge - age);
+  const base = 1 + r;
+  if (base <= 0) return goal;
+  return goal / Math.pow(base, yrs);
+}
+
+function compute(){
+  const currentAge = parseFloat($('currentAge').value) || 0;
+  const retireAge = parseFloat($('retireAge').value) || 0;
+  const currentSavings = parseCurrency('currentSavings');
+  const goalAmount = parseCurrency('goalAmount');
+  const returnPct = parseFloat($('returnPct').value) || 0;
+  const currentContribMonthly = parseCurrency('currentContribMonthly');
+  const baristaStartAge = parseFloat($('baristaStartAge').value) || 0;
+  const baristaContribMonthly = parseCurrency('baristaContribMonthly');
+
+  const r = returnPct / 100;
+  const monthlyRate = r / 12;
+
+  const coastToday = coastNumberAt(currentAge, retireAge, goalAmount, r);
+  const isCoastNow = currentSavings >= coastToday;
+
+  const totalYears = Math.max(0, Math.round(retireAge - currentAge));
+  let balance = currentSavings;
+  let coastFIAge = isCoastNow ? currentAge : null;
+  const rows = [];
+
+  for (let y = 0; y <= totalYears; y++){
+    const age = currentAge + y;
+    const requiredCoast = coastNumberAt(age, retireAge, goalAmount, r);
+    const reachedCoast = balance >= requiredCoast - 0.5;
+    if (coastFIAge === null && reachedCoast) coastFIAge = age;
+
+    rows.push({
+      age, balance, requiredCoast, reachedCoast,
+      phase: age < baristaStartAge ? 'Saving' : 'Barista'
+    });
+
+    if (y === totalYears) break;
+    const monthlyContrib = age < baristaStartAge ? currentContribMonthly : baristaContribMonthly;
+    for (let mo = 0; mo < 12; mo++){
+      balance = balance * (1 + monthlyRate) + monthlyContrib;
+    }
+  }
+
+  const finalBalance = rows.length ? rows[rows.length - 1].balance : currentSavings;
+  const surplus = finalBalance - goalAmount;
+
+  return { currentAge, retireAge, goalAmount, currentSavings, coastToday, isCoastNow, coastFIAge, rows, finalBalance, surplus, baristaStartAge };
+}
+
+// ---------- render ----------
+function render(){
+  const m = compute();
+
+  // verdict banner
+  const verdict = $('cfVerdict');
+  verdict.className = 'cf-verdict ' + (m.isCoastNow ? 'yes' : 'no');
+  if (m.isCoastNow){
+    verdict.innerHTML = `
+      <div>
+        <div class="cf-verdict-headline">You're already Coast FI</div>
+        <p class="cf-verdict-sub">Your current savings of ${fmtUSD(m.currentSavings)} already clears the ${fmtUSD(m.coastToday)} needed today to reach ${fmtUSD(m.goalAmount)} by age ${fmtNum(m.retireAge)} &mdash; even with zero more contributions.</p>
+      </div>
+      <div class="cf-verdict-amt jade">+${fmtUSD(m.currentSavings - m.coastToday)}</div>
+    `;
+  } else {
+    const gap = m.coastToday - m.currentSavings;
+    verdict.innerHTML = `
+      <div>
+        <div class="cf-verdict-headline">${m.coastFIAge !== null ? `Coast FI around age ${fmtNum(m.coastFIAge)}` : 'Not reached within this horizon'}</div>
+        <p class="cf-verdict-sub">You're ${fmtUSD(gap)} short of today's ${fmtUSD(m.coastToday)} Coast FI number &mdash; at your current savings rate${m.coastFIAge !== null ? `, you'll cross it around age ${fmtNum(m.coastFIAge)}` : ', you won\'t cross it before your target retirement age with these assumptions'}.</p>
+      </div>
+      <div class="cf-verdict-amt target">${fmtUSD(gap)} to go</div>
+    `;
+  }
+
+  // status strip
+  const strip = $('statusStrip');
+  strip.innerHTML = '';
+  const add = (k, v, cls) => {
+    const div = document.createElement('div');
+    div.className = 'stat';
+    div.innerHTML = `<div class="k">${k}</div><div class="v ${cls||''}">${v}</div>`;
+    strip.appendChild(div);
+  };
+  add('Coast FI number (today)', fmtUSD(m.coastToday));
+  add('Coast FI age', m.coastFIAge !== null ? fmtNum(m.coastFIAge) : 'Not reached', m.coastFIAge !== null ? 'jade' : 'target');
+  add('Balance at retirement', fmtUSD(m.finalBalance), 'jade');
+  add('Goal', fmtUSD(m.goalAmount));
+  add('Surplus vs. goal', fmtUSD(m.surplus), m.surplus >= 0 ? 'jade' : 'target');
+
+  // table
+  const tbody = $('cfTableBody');
+  tbody.innerHTML = '';
+  m.rows.forEach(row => {
+    const tr = document.createElement('tr');
+    if (row.reachedCoast) tr.classList.add('cf-coasting');
+    if (row.phase === 'Barista') tr.classList.add('cf-barista');
+    tr.innerHTML = `
+      <td style="text-align:left;">${fmtNum(row.age)}</td>
+      <td style="text-align:left;">${row.phase}</td>
+      <td>${fmtUSD(row.balance)}</td>
+      <td>${fmtUSD(row.requiredCoast)}</td>
+      <td>${row.reachedCoast ? 'Coasting &#10003;' : 'Still saving'}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  updateCfSummary(m);
+  renderChart(m);
+}
+
+// ---------- inline SVG line chart (no external chart library) ----------
+const cfSvgNS = 'http://www.w3.org/2000/svg';
+const cfChartSvg = $('cfChart');
+const cfTooltip = $('cfTooltip');
+
+function cfNiceCeil(v){
+  if (v <= 0) return 1;
+  const mag = Math.pow(10, Math.floor(Math.log10(v)));
+  const norm = v / mag;
+  let step;
+  if (norm <= 1) step = 1; else if (norm <= 2) step = 2; else if (norm <= 5) step = 5; else step = 10;
+  return step * mag;
+}
+
+function renderChart(m){
+  const W = 1120, H = 340;
+  const padL = 70, padR = 20, padT = 20, padB = 34;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const rows = m.rows;
+  if (!rows.length) return;
+
+  const allVals = rows.flatMap(r => [r.balance, r.requiredCoast]).concat([m.goalAmount]);
+  const maxV = cfNiceCeil(Math.max(...allVals, 1) * 1.05);
+
+  cfChartSvg.innerHTML = '';
+
+  function xAt(i){ return padL + (rows.length === 1 ? 0 : (i / (rows.length - 1)) * plotW); }
+  function yAt(v){ return padT + plotH - (Math.max(0, v) / maxV) * plotH; }
+
+  const steps = 5;
+  for (let i = 0; i <= steps; i++){
+    const val = maxV * i / steps;
+    const y = yAt(val);
+    const line = document.createElementNS(cfSvgNS, 'line');
+    line.setAttribute('x1', padL); line.setAttribute('x2', W - padR);
+    line.setAttribute('y1', y); line.setAttribute('y2', y);
+    line.setAttribute('class', 'cf-grid-line');
+    cfChartSvg.appendChild(line);
+
+    const label = document.createElementNS(cfSvgNS, 'text');
+    label.setAttribute('x', padL - 8); label.setAttribute('y', y + 4);
+    label.setAttribute('text-anchor', 'end'); label.setAttribute('class', 'cf-grid-label');
+    label.textContent = fmtUSD(val);
+    cfChartSvg.appendChild(label);
+  }
+
+  const maxLabels = 12;
+  const labelStep = Math.max(1, Math.ceil(rows.length / maxLabels));
+  rows.forEach((row, i) => {
+    if (i % labelStep !== 0 && i !== rows.length - 1) return;
+    const label = document.createElementNS(cfSvgNS, 'text');
+    label.setAttribute('x', xAt(i)); label.setAttribute('y', H - padB + 18);
+    label.setAttribute('text-anchor', 'middle'); label.setAttribute('class', 'cf-axis-label');
+    label.textContent = 'Age ' + fmtNum(row.age);
+    cfChartSvg.appendChild(label);
+  });
+
+  // goal reference line
+  const goalY = yAt(m.goalAmount);
+  const goalLine = document.createElementNS(cfSvgNS, 'line');
+  goalLine.setAttribute('x1', padL); goalLine.setAttribute('x2', W - padR);
+  goalLine.setAttribute('y1', goalY); goalLine.setAttribute('y2', goalY);
+  goalLine.setAttribute('class', 'cf-goal-line');
+  cfChartSvg.appendChild(goalLine);
+
+  // coast-FI age marker
+  if (m.coastFIAge !== null){
+    const idx = rows.findIndex(r => Math.abs(r.age - m.coastFIAge) < 0.01);
+    if (idx >= 0){
+      const cx = xAt(idx);
+      const cline = document.createElementNS(cfSvgNS, 'line');
+      cline.setAttribute('x1', cx); cline.setAttribute('x2', cx);
+      cline.setAttribute('y1', padT); cline.setAttribute('y2', padT + plotH);
+      cline.setAttribute('class', 'cf-coast-marker');
+      cfChartSvg.appendChild(cline);
+    }
+  }
+
+  function drawLine(key, lineCls, dotCls){
+    const pts = rows.map((r, i) => xAt(i) + ',' + yAt(r[key])).join(' ');
+    const poly = document.createElementNS(cfSvgNS, 'polyline');
+    poly.setAttribute('points', pts);
+    poly.setAttribute('class', lineCls);
+    cfChartSvg.appendChild(poly);
+    if (!dotCls) return;
+    rows.forEach((r, i) => {
+      const dot = document.createElementNS(cfSvgNS, 'circle');
+      dot.setAttribute('cx', xAt(i)); dot.setAttribute('cy', yAt(r[key]));
+      dot.setAttribute('r', '3.5'); dot.setAttribute('class', dotCls);
+      dot.style.cursor = 'pointer';
+      dot.addEventListener('mousemove', (e) => {
+        cfTooltip.style.opacity = 1;
+        cfTooltip.style.left = e.clientX + 'px';
+        cfTooltip.style.top = e.clientY + 'px';
+        cfTooltip.innerHTML = `<div class="yr">Age ${fmtNum(r.age)} &middot; ${r.phase}</div>Balance <b>${fmtUSD(r.balance)}</b><br>Required to coast <b>${fmtUSD(r.requiredCoast)}</b>`;
+      });
+      dot.addEventListener('mouseleave', () => { cfTooltip.style.opacity = 0; });
+      cfChartSvg.appendChild(dot);
+    });
+  }
+  drawLine('requiredCoast', 'cf-line-required', null);
+  drawLine('balance', 'cf-line-balance', 'cf-dot-balance');
+}
+
+// ---------- persistence ----------
+const STORAGE_KEY = 'coastFireInputs';
+const DEFAULTS = {
+  currentAge: '30', retireAge: '55', currentSavings: '60000', goalAmount: '1000000',
+  returnPct: '7', currentContribMonthly: '1500', baristaStartAge: '40', baristaContribMonthly: '200'
+};
+const CURRENCY_FIELDS = ['currentSavings', 'goalAmount', 'currentContribMonthly', 'baristaContribMonthly'];
+const ALL_FIELDS = Object.keys(DEFAULTS);
+
+function saveInputs(){
+  const vals = {};
+  ALL_FIELDS.forEach(id => { vals[id] = $(id).value; });
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(vals)); } catch(e) { /* storage unavailable, ignore */ }
+  updateSaveStatus();
+}
+function loadInputs(){
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const vals = JSON.parse(raw);
+    Object.keys(vals).forEach(id => { if ($(id)) $(id).value = vals[id]; });
+  } catch(e) { /* storage unavailable or corrupt, ignore */ }
+}
+
+ALL_FIELDS.forEach(id => {
+  if (CURRENCY_FIELDS.includes(id)) return; // wired separately below with sanitization
+  $(id).addEventListener('input', () => { saveInputs(); render(); });
+});
+CURRENCY_FIELDS.forEach(id => {
+  $(id).addEventListener('input', () => { sanitizeCurrencyInput(id); saveInputs(); render(); });
+  $(id).addEventListener('blur', () => { formatCurrencyField(id); saveInputs(); });
+});
+
+$('resetBtn').addEventListener('click', () => {
+  Object.keys(DEFAULTS).forEach(id => { $(id).value = DEFAULTS[id]; });
+  if (window.FNProfileAutofill) window.FNProfileAutofill.apply(true);
+  CURRENCY_FIELDS.forEach(formatCurrencyField);
+  saveInputs();
+  render();
+});
+
+loadInputs();
+CURRENCY_FIELDS.forEach(formatCurrencyField);
+try { setInputsCollapsed(localStorage.getItem(COLLAPSE_KEY) === '1'); } catch(e) { setInputsCollapsed(false); }
+render();
+</script>
+</body>
+</html>

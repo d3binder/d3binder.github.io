@@ -1,0 +1,241 @@
+/* =========================================================================
+   FireNate — shared sticky collapsible input toolbar.
+   Used by every calculator page built on this pattern (TimeToFI, CoastFire,
+   CrossoverPoint, EmergencyFund, FireMilestones, HealthcareBridge,
+   MonteCarlo, RMD, RothLadder, RentVsBuy, SafeWithdrawalRate,
+   SocialSecurityBridge, VariableWithdrawalRate, CarBuying). Each page keeps
+   its own class prefix (.ti-, .cf-, .cx-, ...) in its own markup — this
+   file just lists every prefix together on the same shared rules, so a
+   toolbar-wide change (color, spacing, a new theme) only needs editing once
+   instead of once per page. A page whose toolbar needs to differ from the
+   defaults below (input width, collapsed-content max-height) overrides the
+   relevant --toolbar-* variable in its own inline <style>; a page with
+   genuinely extra fields (a <select>, an extra button) keeps that bit of
+   CSS inline too, since it doesn't apply anywhere else.
+   ========================================================================= */
+
+:root{
+  --toolbar-bg:
+    linear-gradient(115deg, #4A2F12 0%, #2E1740 100%);
+  --toolbar-bg-solid:#2E1740;
+  --toolbar-line: rgba(243,238,221,0.18);
+  --toolbar-text:#F8F3E8;
+  --toolbar-muted:#C9BFDA;
+  --toolbar-muted-2:#9C8FAE;
+  --gold-bright:#F3B23A;
+  --sage-bright:#4FDB8F;
+  --teal-bright:#4FD8E8;
+  --rust-bright:#FF7A5C;
+  --plum-bright:#D98CE8;
+
+  /* the handful of dimensions that vary by page (mostly by how wide a
+     typical value is) — a page overrides one of these instead of
+     redeclaring the whole rule it belongs to */
+  --toolbar-input-width:104px;
+  --toolbar-narrow-width:64px;
+  --toolbar-content-max-height:600px;
+}
+:root[data-theme="dark"]{
+  --toolbar-bg:
+    linear-gradient(115deg, #241C30 0%, #123B33 100%);
+  --toolbar-bg-solid:#241C30;
+}
+:root[data-theme="neon"]{
+  --toolbar-bg:
+    linear-gradient(115deg, #1e1b4b 0%, #020617 100%);
+  --toolbar-bg-solid:#0b1120;
+  --toolbar-line: rgba(168,85,247,0.35);
+  --toolbar-text:#e5e7eb;
+  --toolbar-muted:#b8c2d9;
+  --toolbar-muted-2:#7c8aa8;
+  --gold-bright:#a855f7;
+  --sage-bright:#34d399;
+  --teal-bright:#22d3ee;
+  --rust-bright:#f472b6;
+  --plum-bright:#c084fc;
+}
+:root[data-theme="sunshine"]{
+  --toolbar-bg:
+    linear-gradient(115deg, #B8790F 0%, #6B3480 100%);
+  --toolbar-bg-solid:#1F6B44;
+}
+
+.ti-inputs, .cf-inputs, .cx-inputs, .ef-inputs, .fm-inputs, .hcb-inputs,
+.mc-inputs, .rmd-inputs, .rl-inputs, .rvb-inputs, .swr-inputs, .ssb-inputs,
+.vw-inputs, .cb-inputs{
+  position:sticky; top:60px; z-index:38;
+  background:var(--toolbar-bg);
+  color:var(--toolbar-text);
+  border-bottom:1px solid var(--toolbar-line);
+  box-shadow:0 12px 28px rgba(0,0,0,0.22);
+}
+.ti-summary-row, .cf-summary-row, .cx-summary-row, .ef-summary-row,
+.fm-summary-row, .hcb-summary-row, .mc-summary-row, .rmd-summary-row,
+.rl-summary-row, .rvb-summary-row, .swr-summary-row, .ssb-summary-row,
+.vw-summary-row, .cb-summary-row{
+  display:flex; justify-content:center; padding:11px 24px 0;
+}
+.ti-summary, .cf-summary, .cx-summary, .ef-summary, .fm-summary,
+.hcb-summary, .mc-summary, .rmd-summary, .rl-summary, .rvb-summary,
+.swr-summary, .ssb-summary, .vw-summary, .cb-summary{
+  max-width:100%;
+  font-family:var(--mono); font-weight:600; font-size:12px;
+  background:linear-gradient(90deg, var(--gold-bright), var(--rust-bright) 35%, var(--plum-bright) 65%, var(--teal-bright));
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:center;
+}
+.ti-toggle-row, .cf-toggle-row, .cx-toggle-row, .ef-toggle-row,
+.fm-toggle-row, .hcb-toggle-row, .mc-toggle-row, .rmd-toggle-row,
+.rl-toggle-row, .rvb-toggle-row, .swr-toggle-row, .ssb-toggle-row,
+.vw-toggle-row, .cb-toggle-row{
+  display:flex; justify-content:center; padding:8px 24px 12px;
+}
+.ti-toggle, .cf-toggle, .cx-toggle, .ef-toggle, .fm-toggle, .hcb-toggle,
+.mc-toggle, .rmd-toggle, .rl-toggle, .rvb-toggle, .swr-toggle, .ssb-toggle,
+.vw-toggle, .cb-toggle{
+  display:inline-flex; align-items:center; gap:7px; flex-shrink:0;
+  background:rgba(217,140,232,0.16); border:1px solid var(--plum-bright); color:var(--plum-bright);
+  font-family:var(--mono); font-size:11px; font-weight:600; letter-spacing:.05em; text-transform:uppercase;
+  padding:6px 14px; border-radius:20px; cursor:pointer;
+  transition:background-color .15s, border-color .15s, color .15s; white-space:nowrap;
+}
+.ti-toggle:hover, .cf-toggle:hover, .cx-toggle:hover, .ef-toggle:hover,
+.fm-toggle:hover, .hcb-toggle:hover, .mc-toggle:hover, .rmd-toggle:hover,
+.rl-toggle:hover, .rvb-toggle:hover, .swr-toggle:hover, .ssb-toggle:hover,
+.vw-toggle:hover, .cb-toggle:hover{
+  background:linear-gradient(90deg, var(--plum-bright), var(--teal-bright)); border-color:var(--plum-bright); color:var(--toolbar-bg-solid);
+}
+.ti-toggle:active, .cf-toggle:active, .cx-toggle:active, .ef-toggle:active,
+.fm-toggle:active, .hcb-toggle:active, .mc-toggle:active, .rmd-toggle:active,
+.rl-toggle:active, .rvb-toggle:active, .swr-toggle:active, .ssb-toggle:active,
+.vw-toggle:active, .cb-toggle:active{ transform:translateY(1px); }
+.ti-toggle:focus-visible, .cf-toggle:focus-visible, .cx-toggle:focus-visible,
+.ef-toggle:focus-visible, .fm-toggle:focus-visible, .hcb-toggle:focus-visible,
+.mc-toggle:focus-visible, .rmd-toggle:focus-visible, .rl-toggle:focus-visible,
+.rvb-toggle:focus-visible, .swr-toggle:focus-visible, .ssb-toggle:focus-visible,
+.vw-toggle:focus-visible, .cb-toggle:focus-visible{
+  outline:2px solid var(--plum-bright); outline-offset:2px;
+}
+.ti-chevron, .cf-chevron, .cx-chevron, .ef-chevron, .fm-chevron, .hcb-chevron,
+.mc-chevron, .rmd-chevron, .rl-chevron, .rvb-chevron, .swr-chevron, .ssb-chevron,
+.vw-chevron, .cb-chevron{ transition:transform .2s ease; flex-shrink:0; }
+.ti-inputs.collapsed .ti-chevron, .cf-inputs.collapsed .cf-chevron,
+.cx-inputs.collapsed .cx-chevron, .ef-inputs.collapsed .ef-chevron,
+.fm-inputs.collapsed .fm-chevron, .hcb-inputs.collapsed .hcb-chevron,
+.mc-inputs.collapsed .mc-chevron, .rmd-inputs.collapsed .rmd-chevron,
+.rl-inputs.collapsed .rl-chevron, .rvb-inputs.collapsed .rvb-chevron,
+.swr-inputs.collapsed .swr-chevron, .ssb-inputs.collapsed .ssb-chevron,
+.vw-inputs.collapsed .vw-chevron, .cb-inputs.collapsed .cb-chevron{
+  transform:rotate(180deg);
+}
+.ti-content, .cf-content, .cx-content, .ef-content, .fm-content, .hcb-content,
+.mc-content, .rmd-content, .rl-content, .rvb-content, .swr-content, .ssb-content,
+.vw-content, .cb-content{
+  max-height:var(--toolbar-content-max-height); overflow:hidden; opacity:1;
+  transition:max-height .25s ease, opacity .2s ease;
+}
+.ti-inputs.collapsed .ti-content, .cf-inputs.collapsed .cf-content,
+.cx-inputs.collapsed .cx-content, .ef-inputs.collapsed .ef-content,
+.fm-inputs.collapsed .fm-content, .hcb-inputs.collapsed .hcb-content,
+.mc-inputs.collapsed .mc-content, .rmd-inputs.collapsed .rmd-content,
+.rl-inputs.collapsed .rl-content, .rvb-inputs.collapsed .rvb-content,
+.swr-inputs.collapsed .swr-content, .ssb-inputs.collapsed .ssb-content,
+.vw-inputs.collapsed .vw-content, .cb-inputs.collapsed .cb-content{
+  max-height:0; opacity:0; pointer-events:none;
+}
+.ti-inner, .cf-inner, .cx-inner, .ef-inner, .fm-inner, .hcb-inner, .mc-inner,
+.rmd-inner, .rl-inner, .rvb-inner, .swr-inner, .ssb-inner, .vw-inner, .cb-inner{
+  padding:4px 24px 16px;
+  display:flex; align-items:flex-end; flex-wrap:wrap; gap:18px 30px;
+}
+.ti-fields, .cf-fields, .cx-fields, .ef-fields, .fm-fields, .hcb-fields,
+.mc-fields, .rmd-fields, .rl-fields, .swr-fields, .ssb-fields, .vw-fields,
+.cb-fields{
+  display:flex; align-items:flex-end; flex-wrap:wrap; gap:16px; flex:1 1 auto;
+}
+.ti-field, .cf-field, .cx-field, .ef-field, .fm-field, .hcb-field, .mc-field,
+.rmd-field, .rl-field, .rvb-field, .swr-field, .ssb-field, .vw-field, .cb-field{
+  display:flex; flex-direction:column; gap:6px;
+}
+.ti-field label, .cf-field label, .cx-field label, .ef-field label,
+.fm-field label, .hcb-field label, .mc-field label, .rmd-field label,
+.rl-field label, .rvb-field label, .swr-field label, .ssb-field label,
+.vw-field label, .cb-field label{
+  font-family:var(--mono); font-size:10.5px; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--toolbar-muted); white-space:nowrap;
+}
+.ti-input-row, .cf-input-row, .cx-input-row, .ef-input-row, .fm-input-row,
+.hcb-input-row, .mc-input-row, .rmd-input-row, .rl-input-row, .rvb-input-row,
+.swr-input-row, .ssb-input-row, .vw-input-row, .cb-input-row{
+  display:flex; align-items:center; gap:4px;
+}
+.ti-prefix, .ti-suffix, .cf-prefix, .cf-suffix, .cx-prefix, .cx-suffix,
+.ef-prefix, .ef-suffix, .fm-prefix, .fm-suffix, .hcb-prefix, .hcb-suffix,
+.mc-prefix, .mc-suffix, .rmd-prefix, .rmd-suffix, .rl-prefix, .rl-suffix,
+.rvb-prefix, .rvb-suffix, .swr-prefix, .swr-suffix, .ssb-prefix, .ssb-suffix,
+.vw-prefix, .vw-suffix, .cb-prefix, .cb-suffix{
+  font-family:var(--mono); font-size:14px; color:var(--gold-bright); font-weight:500;
+}
+.ti-field input, .cf-field input, .cx-field input, .ef-field input,
+.fm-field input, .hcb-field input, .mc-field input, .rmd-field input,
+.rl-field input, .rvb-field input, .swr-field input, .ssb-field input,
+.vw-field input, .cb-field input{
+  background:rgba(0,0,0,0.22); border:1px solid transparent; border-radius:7px; color:var(--toolbar-text);
+  font-family:var(--mono); font-size:14.5px; font-weight:500; padding:8px 10px; outline:none;
+  transition:border-color .15s, box-shadow .15s; box-shadow:0 1px 2px rgba(0,0,0,0.2);
+  width:var(--toolbar-input-width); font-variant-numeric:tabular-nums;
+}
+.ti-field input.ti-narrow, .cf-field input.cf-narrow, .cx-field input.cx-narrow,
+.ef-field input.ef-narrow, .fm-field input.fm-narrow, .hcb-field input.hcb-narrow,
+.mc-field input.mc-narrow, .rmd-field input.rmd-narrow, .rl-field input.rl-narrow,
+.rvb-field input.rvb-narrow, .swr-field input.swr-narrow, .ssb-field input.ssb-narrow,
+.vw-field input.vw-narrow, .cb-field input.cb-narrow{
+  width:var(--toolbar-narrow-width);
+}
+.ti-field input:focus, .cf-field input:focus, .cx-field input:focus,
+.ef-field input:focus, .fm-field input:focus, .hcb-field input:focus,
+.mc-field input:focus, .rmd-field input:focus, .rl-field input:focus,
+.rvb-field input:focus, .swr-field input:focus, .ssb-field input:focus,
+.vw-field input:focus, .cb-field input:focus{
+  border-color:var(--gold-bright); box-shadow:0 0 0 3px rgba(243,178,58,0.28);
+}
+.ti-save, .cf-save, .cx-save, .ef-save, .fm-save, .hcb-save, .mc-save,
+.rmd-save, .rl-save, .rvb-save, .swr-save, .ssb-save, .vw-save, .cb-save{
+  display:flex; flex-direction:column; align-items:flex-end; gap:8px; margin-left:auto;
+}
+.ti-save .save-status, .cf-save .save-status, .cx-save .save-status,
+.ef-save .save-status, .fm-save .save-status, .hcb-save .save-status,
+.mc-save .save-status, .rmd-save .save-status, .rl-save .save-status,
+.rvb-save .save-status, .swr-save .save-status, .ssb-save .save-status,
+.vw-save .save-status, .cb-save .save-status{
+  font-family:var(--mono); font-size:11.5px; letter-spacing:.04em; color:var(--toolbar-muted-2); white-space:nowrap;
+}
+.ti-save .reset-btn, .cf-save .reset-btn, .cx-save .reset-btn,
+.ef-save .reset-btn, .fm-save .reset-btn, .hcb-save .reset-btn,
+.mc-save .reset-btn, .rmd-save .reset-btn, .rl-save .reset-btn,
+.rvb-save .reset-btn, .swr-save .reset-btn, .ssb-save .reset-btn,
+.vw-save .reset-btn, .cb-save .reset-btn{
+  background:rgba(255,122,92,0.08); border:1px solid var(--rust-bright); color:var(--rust-bright);
+  font-family:var(--mono); font-size:11.5px; letter-spacing:.05em; text-transform:uppercase;
+  padding:7px 16px; border-radius:20px; cursor:pointer; transition:background-color .15s, color .15s; white-space:nowrap;
+}
+.ti-save .reset-btn:hover, .cf-save .reset-btn:hover, .cx-save .reset-btn:hover,
+.ef-save .reset-btn:hover, .fm-save .reset-btn:hover, .hcb-save .reset-btn:hover,
+.mc-save .reset-btn:hover, .rmd-save .reset-btn:hover, .rl-save .reset-btn:hover,
+.rvb-save .reset-btn:hover, .swr-save .reset-btn:hover, .ssb-save .reset-btn:hover,
+.vw-save .reset-btn:hover, .cb-save .reset-btn:hover{
+  background:var(--rust-bright); color:var(--toolbar-bg-solid);
+}
+.ti-save .reset-btn:active, .cf-save .reset-btn:active, .cx-save .reset-btn:active,
+.ef-save .reset-btn:active, .fm-save .reset-btn:active, .hcb-save .reset-btn:active,
+.mc-save .reset-btn:active, .rmd-save .reset-btn:active, .rl-save .reset-btn:active,
+.rvb-save .reset-btn:active, .swr-save .reset-btn:active, .ssb-save .reset-btn:active,
+.vw-save .reset-btn:active, .cb-save .reset-btn:active{
+  transform:translateY(1px);
+}
+@media (max-width:820px){
+  .ti-save, .cf-save, .cx-save, .ef-save, .fm-save, .hcb-save, .mc-save,
+  .rmd-save, .rl-save, .rvb-save, .swr-save, .ssb-save, .vw-save, .cb-save{
+    margin-left:0; align-items:flex-start; flex-direction:row; justify-content:space-between; width:100%;
+  }
+}
