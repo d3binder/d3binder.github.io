@@ -410,22 +410,42 @@
 
     <div class="versions">
 
-      <a class="version-card is-soon" href="v4.7/index.html" aria-disabled="true" tabindex="-1" onclick="return false;">
-        <div class="version-icon">B.4.7</div>
+      <a class="version-card is-soon" href="v4.8/index.html" aria-disabled="true" tabindex="-1" onclick="return false;">
+        <div class="version-icon">B.4.8</div>
         <div class="version-info">
-          <p class="name">Beta 4.7</p>
-          <p class="path">/beta/v4.7</p>
-          <p class="notes"><ul>
-            <li>Not started yet</li>
-         </ul></p>
+          <p class="name">Beta 4.8</p>
+          <p class="path">/beta/v4.8</p>
+          <p class="notes">In development — not yet available.</p>
         </div>
-        <span class="status-pill soon">T.B.D.</span>
+        <span class="status-pill soon">🔜 Coming Soon</span>
       </a>
 
-      <a class="version-card is-active is-live-green" href="v4.6/index.html">
+      <a class="version-card is-active is-live-green" href="v4.7/index.html">
+        <div class="version-icon">B.4.7</div>
+        <div class="version-info">
+          <p class="name">Beta 4.7 — Current</p>
+          <p class="path">/beta/v4.7</p>
+          <p class="notes"><ul>
+            <li>Branched from v4.6</li>
+            <li>Every calculator's "?" help window now lists every single input field individually (Net Worth's was condensed into 4 summary bullets for its 30 fields — now all 30 are listed by name)</li>
+            <li>Service worker cache bumped so this version doesn't share a cache with v4.6</li>
+            <li>New "Getting Started" section: the original guide is now "Using This Site", alongside a new "Picking Calculators" page — a branching quiz that asks a few questions and recommends calculators, plus a subway-map-style "Financial Concepts Map" for browsing every calculator by topic (Saving, Debt, Retirement), where each stop shows what to understand first, which calculators help, and what people usually ask next</li>
+            <li>Picking Calculators lets you choose Quiz or Map on load, shows results in a resizable side panel (a slide-up drawer on mobile), and lets you switch between quiz and map without reloading</li>
+            <li>New calculator: Budget Calculator — sorts monthly income into Needs/Wants/Savings, compares the split against the 50/30/20 guideline with live bucket bars and a plain-English verdict, and logs dated snapshots to track your budget over time (same one-entry-per-date history behavior as Net Worth)</li>
+            <li>Budget Calculator wired into the nav menu, homepage, Profile Manager's example-data generator, and the Financial Concepts Map's previously-empty Budgeting node</li>
+            <li>Renamed "First Steps" to "The Basics" and "Your Path to FI" to "Financial Independence" site-wide, and retitled the calculator-picker entry to "Picking Calculators" with a new map icon</li>
+            <li>Added a "Feedback &amp; communications" section to Terms, Conditions &amp; Copyright, clarifying that submissions aren't guaranteed a response and become FireNate's property</li>
+            <li>Added 19 new regression tests covering Budget Calculator's math and history logic — full suite now at 195 checks, all passing</li>
+         </ul></p>
+          <p class="cta-hint">Click to open the current build</p>
+        </div>
+        <span class="status-pill active">✔ Current</span>
+      </a>
+
+      <a class="version-card is-active is-live-orange" href="v4.6/index.html">
         <div class="version-icon">B.4.6</div>
         <div class="version-info">
-          <p class="name">Beta 4.6 — Current</p>
+          <p class="name">Beta 4.6</p>
           <p class="path">/beta/v4.6</p>
           <p class="notes"><ul>
             <li>New calculator: Cash Out or Hold — decide whether to sell investments to pay off debt or stay invested, accounting for capital gains tax and short/long-term holding period</li>
@@ -441,9 +461,9 @@
             <li>Added meta descriptions and a robots.txt ahead of publishing</li>
             <li>Consolidated duplicated toolbar CSS and JS across 14 calculator pages into shared files, for easier maintenance going forward</li>
          </ul></p>
-          <p class="cta-hint">Click to open the current build</p>
+          <p class="cta-hint">Click to open </p>
         </div>
-        <span class="status-pill active">✔ Current</span>
+        <span class="status-pill active">View</span>
       </a>
 
       <a class="version-card is-active is-live-orange" href="v4.5/index.html">
@@ -665,7 +685,7 @@
           <li style="color:var(--accent)">No promises are made or implied.</li>
           <li style="color:var(--text-dim)">Always consult a licensed professional before making any changes, decisions, or actions.</li>
           <li style="color:goldenrod;">This site uses cookies, but no information is used for tracking purposes, and all information stays on your local device.</li>
-          <li style="color:var(--green-bright);">Page Last Updated: 2026-08-20</li>
+          <li style="color:var(--green-bright);">Page Last Updated: 2026-08-21</li>
       </ul>
       </footer>
   </div>

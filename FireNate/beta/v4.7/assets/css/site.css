@@ -1,0 +1,1847 @@
+/* =========================================================================
+   FireNate — shared site chrome (nav + footer)
+   Loaded on every page. All rules are scoped under #fn-site-nav /
+   #site-footer (or the fn- prefix) so they never collide with a
+   calculator page's own inline styles.
+   ========================================================================= */
+
+:root{
+  /* matches the site's vibrant dark-mode palette (bg/panel/text/accents) so the
+     always-dark nav reads as part of the same theme instead of its own muted one */
+  --fn-ink:#15111A;
+  --fn-panel:#1E1826;
+  --fn-panel-2:#241C30;
+  --fn-line: rgba(255,255,255,0.13);
+  --fn-text:#F3EEE4;
+  --fn-text-dim:#B8A8C0;
+  --fn-text-faint:#9C8CB0;
+  --fn-gold:#F3B23A;
+  --fn-gold-soft: rgba(243,178,58,0.16);
+  --fn-jade:#4FDB8F;
+  --fn-jade-soft: rgba(79,219,143,0.16);
+  --fn-azure:#4FD8E8;
+  --fn-azure-soft: rgba(79,216,232,0.22);
+  --fn-plum:#D98CE8;
+  --fn-plum-soft: rgba(217,140,232,0.18);
+  --fn-rust:#FF7A5C;
+  --fn-rust-soft: rgba(255,122,92,0.18);
+
+  --fn-serif:'Fraunces', Georgia, serif;
+  --fn-sans:'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --fn-mono:'IBM Plex Mono', 'JetBrains Mono', 'Courier New', monospace;
+}
+
+/* ---------------------------------------------------------------------- */
+/* NEON GLASS THEME — nav/panel chrome normally ignores light vs dark      */
+/* entirely (see note above), but this third theme is a distinct enough   */
+/* visual identity that the chrome opts in too. Recoloring these vars     */
+/* alone reskins the large majority of the nav automatically, since every */
+/* rule below is already built on them; structural glass/glow additions   */
+/* (blur, gradients, glow shadows) live further down, gated the same way. */
+/* ---------------------------------------------------------------------- */
+html[data-theme="neon"]{
+  --fn-ink:#05060f;
+  --fn-panel: rgba(15,23,42,0.93);
+  --fn-panel-2: rgba(30,27,58,0.95);
+  --fn-line: rgba(168,85,247,0.35);
+  --fn-text:#e5e7eb;
+  --fn-text-dim:#b8c2d9;
+  --fn-text-faint:#7c8aa8;
+  /* "gold" is the site's primary/brand accent token — under neon it carries
+     the theme's signature violet rather than literal gold */
+  --fn-gold:#a855f7;
+  --fn-gold-soft: rgba(168,85,247,0.2);
+  --fn-jade:#34d399;
+  --fn-jade-soft: rgba(52,211,153,0.18);
+  --fn-azure:#22d3ee;
+  --fn-azure-soft: rgba(34,211,238,0.2);
+  --fn-plum:#c084fc;
+  --fn-plum-soft: rgba(192,132,252,0.2);
+  --fn-rust:#f472b6;
+  --fn-rust-soft: rgba(244,114,182,0.2);
+}
+
+/* ---------------------------------------------------------------------- */
+/* SUNSHINE GLASS THEME — same glass material as neon, lit by daylight     */
+/* instead of city-at-night. Same variable-recolor approach: this alone   */
+/* reskins nearly everything, structural glass/glow additions live        */
+/* further down next to neon's own.                                      */
+/* ---------------------------------------------------------------------- */
+html[data-theme="sunshine"]{
+  --fn-ink:#1F3540;
+  --fn-panel: rgba(255,255,255,0.9);
+  --fn-panel-2: rgba(255,247,235,0.94);
+  --fn-line: rgba(31,92,110,0.18);
+  --fn-text:#1F3540;
+  --fn-text-dim:#4C6672;
+  --fn-text-faint:#557580;
+  /* "gold" is the site's primary/brand accent token — sunshine keeps it
+     literally gold, its whole point being to lean into that warmth */
+  --fn-gold:#F5A623;
+  --fn-gold-soft: rgba(245,166,35,0.18);
+  --fn-jade:#3FA66B;
+  --fn-jade-soft: rgba(63,166,107,0.16);
+  --fn-azure:#1F8A9E;
+  --fn-azure-soft: rgba(31,138,158,0.16);
+  --fn-plum:#C87DDC;
+  --fn-plum-soft: rgba(200,125,220,0.18);
+  --fn-rust:#FF6F59;
+  --fn-rust-soft: rgba(255,111,89,0.18);
+}
+
+/* ---------------------------------------------------------------------- */
+/* LCARS THEME — deliberately flat and opaque, not glassy like neon/       */
+/* sunshine above: solid black, bold accent-color blocks, no blur or      */
+/* translucency anywhere. Recoloring these vars alone reskins nearly      */
+/* everything, same as the other themes; structural flat-panel/pill       */
+/* treatment lives further down next to neon/sunshine's own.              */
+/* ---------------------------------------------------------------------- */
+html[data-theme="lcars"]{
+  --fn-ink:#000000;
+  --fn-panel:#0d0d0d;
+  --fn-panel-2:#161616;
+  --fn-line: rgba(255,159,28,0.3);
+  --fn-text:#FFE3BA;
+  --fn-text-dim:#C9A97E;
+  --fn-text-faint:#9C8058;
+  /* "gold" is the site's primary/brand accent token — lcars uses its
+     signature amber-orange */
+  --fn-gold:#FF9F1C;
+  --fn-gold-soft: rgba(255,159,28,0.2);
+  --fn-jade:#B5D96C;
+  --fn-jade-soft: rgba(181,217,108,0.18);
+  --fn-azure:#9999FF;
+  --fn-azure-soft: rgba(153,153,255,0.2);
+  --fn-plum:#CC99CC;
+  --fn-plum-soft: rgba(204,153,204,0.18);
+  --fn-rust:#FF6B6B;
+  --fn-rust-soft: rgba(255,107,107,0.18);
+  --fn-display:'Antonio', 'Arial Narrow', sans-serif;
+}
+
+#fn-site-nav, #site-footer{ font-family: var(--fn-sans); }
+#fn-site-nav *, #site-footer *{ box-sizing:border-box; }
+
+/* ---------------------------------------------------------------------- */
+/* NAV                                                                     */
+/* ---------------------------------------------------------------------- */
+#fn-site-nav{
+  position:sticky;
+  top:0;
+  z-index:1000;
+  background:rgba(21,17,26,0.92);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--fn-line);
+}
+.fn-nav-inner{
+  position:relative;
+  max-width:1180px;
+  margin:0 auto;
+  padding:0 24px;
+  height:60px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:20px;
+}
+.fn-page-title{
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  font-family:var(--fn-mono);
+  font-size:12.5px;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  color:var(--fn-text-dim);
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  max-width:min(38vw, 320px);
+  pointer-events:none;
+}
+@media (max-width:700px){ .fn-page-title{ display:none; } }
+.fn-brand{
+  display:inline-flex;
+  align-items:baseline;
+  gap:8px;
+  text-decoration:none;
+  color:var(--fn-text);
+  font-family:var(--fn-serif);
+  font-weight:600;
+  font-size:17px;
+  letter-spacing:-0.01em;
+  white-space:nowrap;
+}
+.fn-brand .fn-dot{ color:var(--fn-gold); font-size:18px; line-height:1; }
+.fn-brand .fn-tag{
+  font-family:var(--fn-mono);
+  font-weight:500;
+  font-size:10.5px;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:var(--fn-text-faint);
+  padding-left:8px;
+  border-left:1px solid var(--fn-line);
+}
+@media (max-width:560px){ .fn-brand .fn-tag{ display:none; } }
+
+/* .fn-links-wrap does the outer positioning and stays put (not scrollable);
+   .fn-links inside it is the actual scrolling list. Splitting them this way
+   lets the fade/arrow hints below sit as non-scrolling siblings pinned to
+   the wrap's own top/bottom edges, instead of scrolling away with the list. */
+.fn-links-wrap{
+  position:absolute;
+  top:60px;
+  left:0;
+  right:0;
+  display:none;
+}
+#fn-site-nav.fn-open .fn-links-wrap{ display:block; }
+@media (min-width:701px){
+  .fn-links-wrap{
+    left:auto;
+    right:0;
+    width:max-content;
+  }
+}
+
+.fn-links{
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  gap:2px;
+  width:100%;
+  box-sizing:border-box;
+  background:var(--fn-panel);
+  border-bottom:1px solid var(--fn-line);
+  padding:8px 16px 16px;
+  max-height:66vh;
+  overflow-y:auto;
+  box-shadow:0 16px 34px rgba(0,0,0,0.4);
+}
+
+/* pinned to the top of the scrolling list (not the list's own scroll) so the
+   search box stays put while page links scroll underneath it. the negative
+   margin + matching padding cancels .fn-links' own padding so this panel
+   sits flush against the dropdown's edges instead of leaving a gap. */
+.fn-links-search-wrap{
+  position:sticky;
+  top:-8px;
+  z-index:3;
+  background:var(--fn-panel);
+  margin:-8px -16px 8px;
+  padding:8px 16px 10px;
+  border-bottom:1px solid var(--fn-line);
+}
+.fn-links-search{
+  width:100%;
+  box-sizing:border-box;
+  background:var(--fn-panel-2);
+  border:1px solid var(--fn-line);
+  border-radius:8px;
+  color:var(--fn-text);
+  font-family:var(--fn-sans);
+  font-size:13px;
+  padding:8px 10px;
+  outline:none;
+  transition:border-color .15s;
+}
+.fn-links-search::placeholder{ color:var(--fn-text-faint); }
+.fn-links-search:focus{ border-color:var(--fn-jade); }
+
+.fn-links-group .fn-nav-link{ padding-left:23px; }
+
+/* the group header is a real <button> (click target = the whole row, not
+   just the text) reset back to look like the plain label it replaced */
+.fn-links-group-label{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  width:100%;
+  background:none;
+  border:none;
+  cursor:pointer;
+  font-family:var(--fn-mono);
+  font-size:10.5px;
+  font-weight:600;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:var(--fn-text-faint);
+  padding:12px 12px 4px;
+  transition:color .15s;
+}
+.fn-links-group-label:hover{ color:var(--fn-text-dim); }
+.fn-links-group:first-of-type .fn-links-group-label{ padding-top:6px; }
+
+.fn-links-group-chevron{
+  flex-shrink:0;
+  transition:transform .15s ease;
+}
+.fn-links-group.is-collapsed .fn-links-group-chevron{ transform:rotate(-90deg); }
+
+/* stacks each group's links in a single vertical column (instead of the
+   inline links wrapping into a multi-column grid) and indents them so it's
+   visually clear which group heading they belong to */
+.fn-links-group-items{
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+/* this items wrapper's own explicit display:flex would otherwise beat the
+   browser's default [hidden]{display:none} (author styles always win over
+   the UA stylesheet regardless of specificity) — needed so both collapsing
+   a group and the search filter actually hide it, not just mark it hidden */
+.fn-links-group-items[hidden]{ display:none; }
+
+.fn-links-empty{
+  padding:18px 12px;
+  font-size:13px;
+  color:var(--fn-text-faint);
+  text-align:center;
+}
+
+/* on wider screens, size the dropdown to its content instead of stretching
+   edge-to-edge across the whole nav bar — full-width only makes sense as a
+   thumb-friendly mobile pattern. max-height:66vh above still applies here:
+   past two-thirds of the window's height it scrolls instead of growing. */
+@media (min-width:701px){
+  .fn-links{
+    min-width:230px;
+    max-width:340px;
+    border:1px solid var(--fn-line);
+    border-radius:12px;
+    padding:8px;
+  }
+  .fn-links-fade-top{ border-radius:12px 12px 0 0; }
+  .fn-links-fade-bottom{ border-radius:0 0 12px 12px; }
+  .fn-links-search-wrap{
+    margin:-8px -8px 8px;
+    padding:8px 8px 10px;
+  }
+}
+
+/* "more above/below" hints — only shown while there's actually more to
+   scroll in that direction (toggled via JS on open + on scroll) */
+.fn-links-fade{
+  position:absolute;
+  left:0;
+  right:0;
+  height:28px;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity .15s ease;
+  z-index:2;
+}
+.fn-links-fade-top{ top:0; background:linear-gradient(var(--fn-panel), transparent); }
+.fn-links-fade-bottom{ bottom:0; background:linear-gradient(transparent, var(--fn-panel)); }
+/* pointer-events only turns on once a fade is actually showing, so hovering
+   a fully-scrolled edge (where the arrow is hidden) doesn't swallow clicks
+   on the topmost/bottommost menu item underneath it */
+.fn-links-wrap.can-scroll-up .fn-links-fade-top{ opacity:1; pointer-events:auto; cursor:pointer; }
+.fn-links-wrap.can-scroll-down .fn-links-fade-bottom{ opacity:1; pointer-events:auto; cursor:pointer; }
+.fn-links-fade-arrow{
+  position:absolute;
+  left:50%;
+  transform:translateX(-50%);
+  font-size:16px;
+  line-height:1;
+  color:var(--fn-text-dim);
+}
+.fn-links-fade-top .fn-links-fade-arrow{ top:2px; }
+.fn-links-fade-bottom .fn-links-fade-arrow{ bottom:2px; }
+.fn-links a{
+  display:inline-flex;
+  align-items:center;
+  gap:9px;
+  text-decoration:none;
+  color:var(--fn-text-dim);
+  font-size:13px;
+  font-weight:500;
+  padding:11px 12px;
+  border-radius:7px;
+  border-left:3px solid transparent;
+  white-space:nowrap;
+  transition:color .15s, background .15s, border-color .15s;
+}
+.fn-links a:hover{ color:var(--fn-text); background:rgba(255,255,255,0.05); }
+/* icon inherits the link's own color (including its accent color on hover/
+   active, via data-c) automatically since it strokes with currentColor —
+   just dimmed slightly at rest so the label text stays the primary focus */
+.fn-links a .fn-nav-link-icon{ flex-shrink:0; opacity:.7; }
+.fn-links a:hover .fn-nav-link-icon,
+.fn-links a.fn-active .fn-nav-link-icon{ opacity:1; }
+/* .fn-links a's own display:inline-flex above would otherwise override the
+   browser's default [hidden]{display:none} — needed for the search filter
+   to actually hide non-matching links instead of just marking them hidden */
+.fn-links a[hidden]{ display:none; }
+
+/* each link gets its own fun accent color (set via data-c in nav.js) for
+   hover + active state, instead of every link sharing the same gold */
+.fn-links a[data-c="gold"]:hover, .fn-links a[data-c="gold"].fn-active{ color:var(--fn-gold); background:var(--fn-gold-soft); border-left-color:var(--fn-gold); }
+.fn-links a[data-c="jade"]:hover, .fn-links a[data-c="jade"].fn-active{ color:var(--fn-jade); background:var(--fn-jade-soft); border-left-color:var(--fn-jade); }
+.fn-links a[data-c="azure"]:hover, .fn-links a[data-c="azure"].fn-active{ color:var(--fn-azure); background:var(--fn-azure-soft); border-left-color:var(--fn-azure); }
+.fn-links a[data-c="plum"]:hover, .fn-links a[data-c="plum"].fn-active{ color:var(--fn-plum); background:var(--fn-plum-soft); border-left-color:var(--fn-plum); }
+.fn-links a[data-c="rust"]:hover, .fn-links a[data-c="rust"].fn-active{ color:var(--fn-rust); background:var(--fn-rust-soft); border-left-color:var(--fn-rust); }
+
+.fn-nav-toggle{
+  display:inline-flex;
+  background:none;
+  border:1px solid var(--fn-line);
+  color:var(--fn-text);
+  border-radius:8px;
+  width:38px;
+  height:34px;
+  cursor:pointer;
+  font-size:16px;
+  line-height:1;
+  align-items:center;
+  justify-content:center;
+  transition:border-color .15s, color .15s;
+}
+.fn-nav-toggle:hover,
+#fn-site-nav.fn-open .fn-nav-toggle{
+  border-color:var(--fn-jade);
+  color:var(--fn-jade);
+}
+
+/* ---------------------------------------------------------------------- */
+/* SETTINGS MENU (gear icon + dark-mode toggle)                            */
+/* ---------------------------------------------------------------------- */
+.fn-actions{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  position:relative;
+}
+.fn-settings-toggle{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  background:none;
+  border:1px solid var(--fn-line);
+  color:var(--fn-text-dim);
+  border-radius:8px;
+  width:38px;
+  height:34px;
+  cursor:pointer;
+  transition:border-color .15s, color .15s;
+}
+.fn-settings-toggle:hover,
+#fn-site-nav.fn-settings-open .fn-settings-toggle{
+  border-color:var(--fn-gold);
+  color:var(--fn-gold);
+}
+
+.fn-settings-panel{
+  position:absolute;
+  top:calc(100% + 10px);
+  right:0;
+  min-width:270px;
+  background:var(--fn-panel);
+  border:1px solid var(--fn-line);
+  border-radius:12px;
+  box-shadow:0 16px 40px rgba(0,0,0,0.5);
+  padding:14px 16px;
+  display:none;
+  z-index:1001;
+}
+#fn-site-nav.fn-settings-open .fn-settings-panel{ display:block; }
+
+.fn-settings-title{
+  font-family:var(--fn-mono);
+  font-size:10.5px;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--fn-text-faint);
+  margin:0 0 12px;
+}
+.fn-settings-title-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin:0 0 12px;
+}
+.fn-settings-title-row .fn-settings-title{ margin:0; }
+
+.fn-settings-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+}
+.fn-settings-label{ font-size:13.5px; color:var(--fn-text); }
+
+.fn-settings-divider{
+  height:1px;
+  background:var(--fn-line);
+  margin:14px 0;
+}
+
+.fn-settings-row-stack{
+  flex-direction:column;
+  align-items:stretch;
+  gap:8px;
+}
+
+.fn-settings-hint{
+  font-size:11.5px;
+  line-height:1.5;
+  color:var(--fn-text-faint);
+  margin:0;
+}
+
+.fn-reset-all{
+  width:100%;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  background:none;
+  border:1px solid var(--fn-rust);
+  color:var(--fn-rust);
+  font-family:var(--fn-mono);
+  font-size:11.5px;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+  padding:8px 10px;
+  border-radius:7px;
+  cursor:pointer;
+  transition:background-color .15s, color .15s;
+}
+.fn-reset-all svg{ flex-shrink:0; }
+.fn-reset-all:hover{ background:var(--fn-rust); color:var(--fn-ink); }
+
+.fn-theme-select{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  padding:3px;
+  border-radius:9px;
+  background:rgba(255,255,255,0.06);
+  border:1px solid var(--fn-line);
+}
+/* one row per brightness group (light: Light/Sunshine, dark: Dark/Neon/
+   LCARS) — a leading sun/moon icon labels the row instead of a text
+   heading, so the two groups read as "light themes" / "dark themes" at
+   a glance without taking up extra vertical space for a label */
+.fn-theme-group{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.fn-theme-group-icon{
+  flex-shrink:0;
+  color:var(--fn-text-faint);
+  margin-left:5px;
+}
+/* fixed 3-column track (the largest group's count) on both rows, not
+   auto-fit per row — so the 2-button light row and 3-button dark row
+   share the same column widths and their labels line up vertically
+   (Light over Dark, Sunshine over Neon) instead of each row centering
+   its own buttons independently across its own width */
+.fn-theme-group-options{
+  display:grid;
+  grid-template-columns:repeat(3, 1fr);
+  gap:3px;
+  flex:1;
+  min-width:0;
+}
+.fn-theme-option{
+  min-width:0;
+  background:none;
+  border:none;
+  border-radius:6px;
+  color:var(--fn-text-dim);
+  font-family:var(--fn-sans);
+  font-size:11px;
+  font-weight:600;
+  padding:7px 4px;
+  text-align:left;
+  cursor:pointer;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  transition:background-color .15s, color .15s;
+}
+.fn-theme-option:hover{ color:var(--fn-text); }
+.fn-theme-option.is-active{
+  background:var(--fn-gold);
+  color:#201205;
+}
+
+/* ---------------------------------------------------------------------- */
+/* USER PROFILE (user icon + "your info" form)                            */
+/* ---------------------------------------------------------------------- */
+.fn-profile-name-badge{
+  display:inline-flex;
+  align-items:center;
+  max-width:120px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-family:var(--fn-mono);
+  font-size:12px;
+  font-weight:600;
+  color:var(--fn-azure);
+  border:1px solid var(--fn-line);
+  border-radius:999px;
+  padding:5px 12px;
+}
+@media (max-width:700px){ .fn-profile-name-badge{ display:none; } }
+
+.fn-profile-toggle{
+  position:relative;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  background:none;
+  border:1px solid var(--fn-line);
+  color:var(--fn-text-dim);
+  border-radius:8px;
+  width:38px;
+  height:34px;
+  cursor:pointer;
+  transition:border-color .15s, color .15s;
+}
+.fn-profile-toggle:hover,
+#fn-site-nav.fn-profile-open .fn-profile-toggle{
+  border-color:var(--fn-azure);
+  color:var(--fn-azure);
+}
+
+/* "New here?" onboarding hint — points up at the profile icon until the
+   visitor either fills in their info or clicks anywhere else on the page */
+.fn-onboard-hint{
+  position:absolute;
+  top:calc(100% + 8px);
+  right:-6px;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  pointer-events:none;
+  z-index:1002;
+  animation:fn-onboard-fade-in .35s ease;
+}
+.fn-onboard-arrow{
+  margin-right:10px;
+  font-size:18px;
+  line-height:1;
+  color:var(--fn-azure);
+  filter:drop-shadow(0 2px 5px rgba(0,0,0,0.45));
+  animation:fn-onboard-bounce 1.15s ease-in-out infinite;
+}
+.fn-onboard-bubble{
+  margin-top:1px;
+  background:var(--fn-panel);
+  border:1px solid var(--fn-azure);
+  color:var(--fn-text);
+  font-family:var(--fn-sans);
+  font-size:12px;
+  font-weight:600;
+  letter-spacing:.01em;
+  padding:8px 13px;
+  border-radius:10px;
+  white-space:nowrap;
+  box-shadow:0 12px 28px rgba(0,0,0,0.45);
+}
+@keyframes fn-onboard-bounce{
+  0%, 100%{ transform:translateY(0); }
+  50%{ transform:translateY(-5px); }
+}
+@keyframes fn-onboard-fade-in{
+  from{ opacity:0; transform:translateY(-4px); }
+  to{ opacity:1; transform:translateY(0); }
+}
+@media (max-width:480px){
+  .fn-onboard-hint{ right:-40px; }
+}
+
+.fn-profile-panel{
+  position:absolute;
+  top:calc(100% + 10px);
+  right:0;
+  width:270px;
+  background:var(--fn-panel);
+  border:1px solid var(--fn-line);
+  border-radius:12px;
+  box-shadow:0 16px 40px rgba(0,0,0,0.5);
+  padding:14px 16px 16px;
+  display:none;
+  z-index:1001;
+}
+#fn-site-nav.fn-profile-open .fn-profile-panel{ display:block; }
+
+/* a fun, one-shot "look over here!" pop + color-cycling glow, triggered by
+   JS (e.g. FISnapshot's "Set up my profile" button) when a page wants to
+   draw the eye to the panel it just opened */
+@keyframes fn-attn-pop{
+  0%{ transform:scale(0.92); box-shadow:0 16px 40px rgba(0,0,0,0.5), 0 0 0 0 rgba(79,216,232,0); border-color:var(--fn-line); }
+  22%{ transform:scale(1.045); box-shadow:0 16px 40px rgba(0,0,0,0.5), 0 0 0 10px rgba(79,216,232,0.35); border-color:var(--fn-azure); }
+  48%{ transform:scale(0.98); box-shadow:0 16px 40px rgba(0,0,0,0.5), 0 0 0 3px rgba(217,140,232,0.3); border-color:var(--fn-plum); }
+  74%{ transform:scale(1.015); box-shadow:0 16px 40px rgba(0,0,0,0.5), 0 0 0 7px rgba(243,178,58,0.28); border-color:var(--fn-gold); }
+  100%{ transform:scale(1); box-shadow:0 16px 40px rgba(0,0,0,0.5), 0 0 0 0 rgba(0,0,0,0); border-color:var(--fn-line); }
+}
+.fn-profile-panel.fn-attn,
+.fn-settings-panel.fn-attn{
+  animation:fn-attn-pop 1.3s cubic-bezier(.34,1.56,.64,1);
+}
+
+@keyframes fn-attn-icon-pulse{
+  0%, 100%{ box-shadow:0 0 0 0 rgba(79,216,232,0); border-color:var(--fn-azure); }
+  40%{ box-shadow:0 0 0 6px rgba(79,216,232,0.4); border-color:var(--fn-azure); }
+}
+.fn-profile-toggle.fn-attn,
+.fn-settings-toggle.fn-attn,
+.fn-nav-toggle.fn-attn{
+  animation:fn-attn-icon-pulse 1.3s ease-out;
+}
+/* same "look over here" ring, extended to the individual panel buttons
+   (camera/share icons, the settings panel's reset button), a specific
+   hamburger-menu link, and to Profile Manager's own export/import buttons —
+   a page can point at any of these by name via the shared pulseAttention()
+   helper, not just the toggle that opens the panel */
+.fn-profile-snapshot.fn-attn,
+.fn-profile-share.fn-attn,
+.fn-quickload-toggle.fn-attn,
+.fn-profile-clear.fn-attn,
+.fn-reset-all.fn-attn,
+.fn-nav-link.fn-attn,
+.pm-btn.fn-attn,
+.fn-help-btn.fn-attn{
+  animation:fn-attn-icon-pulse 1.3s ease-out;
+}
+
+.fn-profile-hint{
+  font-size:11.5px;
+  line-height:1.4;
+  color:var(--fn-text-faint);
+  margin:14px 0 0;
+  padding-top:12px;
+  border-top:1px solid var(--fn-line);
+}
+
+.fn-profile-savemeta{
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+  font-size:9px;
+  line-height:1.3;
+  padding:5px 7px;
+  margin:0 0 14px;
+  border:1px solid var(--fn-line);
+  border-radius:6px;
+}
+.fn-profile-savemeta-row{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:10px;
+}
+.fn-profile-savemeta-label{ color:var(--fn-text-faint); flex:none; }
+.fn-profile-savemeta-value{ color:var(--fn-text-dim); font-weight:600; text-align:right; }
+
+.fn-profile-field{
+  margin-bottom:12px;
+}
+.fn-profile-field-row{
+  display:flex;
+  gap:14px;
+  margin-bottom:12px;
+}
+.fn-profile-field-row .fn-profile-field{
+  flex:1 1 0;
+  min-width:0;
+  margin-bottom:0;
+}
+#fn-site-nav .fn-profile-field input.fn-profile-input-narrow{
+  width:72px;
+  text-align:right;
+}
+#fn-site-nav .fn-profile-inputwrap-narrow{
+  width:92px;
+}
+.fn-profile-field label{
+  display:block;
+  font-size:11.5px;
+  color:var(--fn-text-dim);
+  margin-bottom:5px;
+}
+/* #fn-site-nav-prefixed (ID-level specificity) so these reliably beat a
+   calculator page's own bare `input[type=number]` / `input` rules — those
+   have matching class-tier specificity, so without the ID anchor here the
+   page's later-loaded stylesheet wins the cascade and its (page-theme-aware)
+   text color leaks into the nav's always-dark profile panel, making text in
+   the "Target retirement age" / "Expected annual return" fields unreadable
+   in light mode (dark text on the panel's dark background). */
+#fn-site-nav .fn-profile-field input{
+  width:100%;
+  background:rgba(255,255,255,0.05);
+  border:1px solid var(--fn-line);
+  color:var(--fn-text);
+  border-radius:7px;
+  padding:7px 9px;
+  font-family:var(--fn-sans);
+  font-size:13.5px;
+  outline:none;
+  transition:border-color .15s;
+}
+#fn-site-nav .fn-profile-field input:focus{ border-color:var(--fn-azure); }
+#fn-site-nav .fn-profile-field input::-webkit-calendar-picker-indicator{ filter:invert(0.7); cursor:pointer; }
+
+#fn-site-nav .fn-profile-inputwrap{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  background:rgba(255,255,255,0.05);
+  border:1px solid var(--fn-line);
+  border-radius:7px;
+  padding:0 9px;
+  transition:border-color .15s;
+}
+#fn-site-nav .fn-profile-inputwrap:focus-within{ border-color:var(--fn-azure); }
+#fn-site-nav .fn-profile-inputwrap input{
+  background:none;
+  border:none;
+  color:var(--fn-text);
+  padding:7px 0;
+  flex:1;
+  min-width:0;
+}
+#fn-site-nav .fn-profile-inputwrap input:focus{ border-color:transparent; }
+.fn-profile-affix{ font-size:12.5px; color:var(--fn-text-faint); }
+
+.fn-profile-field-row .fn-profile-field-birthday{ flex:1 1 auto; }
+.fn-profile-field-row .fn-profile-field.fn-profile-age-row{ flex:0 0 auto; min-width:68px; }
+
+/* right-align the narrow companion fields (Age, Retirement Age, Annual
+   Return Rate) so their labels and boxes all line up along the same right
+   edge, instead of the box sitting flush-left in its half-width column */
+.fn-profile-field-row .fn-profile-field.fn-profile-field-narrow,
+.fn-profile-field-row .fn-profile-field.fn-profile-age-row{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+}
+.fn-profile-field-narrow label,
+.fn-profile-age-row label{ margin-bottom:5px; text-align:right; }
+.fn-profile-age-value{
+  display:block;
+  font-family:var(--fn-mono);
+  font-size:15px;
+  color:var(--fn-gold);
+  background:rgba(255,255,255,0.05);
+  border:1px solid transparent;
+  border-radius:7px;
+  padding:6px 9px;
+  text-align:right;
+}
+
+.fn-settings-title-actions{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-shrink:0;
+}
+.fn-profile-actions-row{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:8px;
+  margin:0 0 12px;
+}
+.fn-settings-actions-divider{
+  width:1px;
+  height:18px;
+  background:var(--fn-line);
+  flex-shrink:0;
+  margin:0 1px;
+}
+.fn-quickload{
+  position:relative;
+}
+.fn-quickload-toggle{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:26px;
+  height:26px;
+  flex-shrink:0;
+  background:none;
+  border:1px solid var(--fn-line);
+  color:var(--fn-text-dim);
+  border-radius:6px;
+  cursor:pointer;
+  transition:border-color .15s, color .15s;
+}
+.fn-quickload-toggle:hover,
+.fn-quickload.open .fn-quickload-toggle{ border-color:var(--fn-plum); color:var(--fn-plum); }
+
+/* .fn-quickload-menu is the outer positioned wrap and stays put (not
+   scrollable); .fn-quickload-list inside it is the actual scrolling list —
+   same split as .fn-links-wrap/.fn-links, so the fade/arrow hints below can
+   stay pinned to the wrap's own top/bottom edges instead of scrolling away
+   with the list. */
+.fn-quickload-menu{
+  display:none;
+  position:absolute;
+  top:calc(100% + 6px);
+  right:0;
+  width:320px;
+  max-width:calc(100vw - 32px);
+  z-index:1002;
+}
+/* hover opens it for desktop mouse users; .open (toggled on click) covers
+   touch and keyboard users, and keeps it open while scrolling the list */
+.fn-quickload:hover .fn-quickload-menu,
+.fn-quickload.open .fn-quickload-menu{ display:block; }
+
+.fn-quickload-list{
+  background:var(--fn-panel-2);
+  border:1px solid var(--fn-line);
+  border-radius:10px;
+  box-shadow:0 16px 34px rgba(0,0,0,0.5);
+  padding:6px;
+  max-height:280px;
+  overflow-y:auto;
+}
+
+/* "more above/below" hints — only shown while there's actually more to
+   scroll in that direction (toggled via JS on open + on scroll) */
+.fn-quickload-fade{
+  position:absolute;
+  left:0;
+  right:0;
+  height:28px;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity .15s ease;
+  z-index:2;
+}
+.fn-quickload-fade-top{ top:0; background:linear-gradient(var(--fn-panel-2), transparent); border-radius:10px 10px 0 0; }
+.fn-quickload-fade-bottom{ bottom:0; background:linear-gradient(transparent, var(--fn-panel-2)); border-radius:0 0 10px 10px; }
+/* pointer-events only turns on once a fade is actually showing, so hovering
+   a fully-scrolled edge (where the arrow is hidden) doesn't swallow clicks
+   on the topmost/bottommost item underneath it */
+.fn-quickload-menu.can-scroll-up .fn-quickload-fade-top{ opacity:1; pointer-events:auto; cursor:pointer; }
+.fn-quickload-menu.can-scroll-down .fn-quickload-fade-bottom{ opacity:1; pointer-events:auto; cursor:pointer; }
+.fn-quickload-fade-arrow{
+  position:absolute;
+  left:50%;
+  transform:translateX(-50%);
+  font-size:16px;
+  line-height:1;
+  color:var(--fn-text-dim);
+}
+.fn-quickload-fade-top .fn-quickload-fade-arrow{ top:2px; }
+.fn-quickload-fade-bottom .fn-quickload-fade-arrow{ bottom:2px; }
+
+.fn-quickload-item{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:10px;
+  width:100%;
+  background:none;
+  border:none;
+  text-align:left;
+  color:var(--fn-text);
+  font-family:var(--fn-sans);
+  font-size:12.5px;
+  padding:8px 10px;
+  border-radius:6px;
+  cursor:pointer;
+}
+.fn-quickload-item:hover{ background:var(--fn-plum-soft); color:var(--fn-plum); }
+.fn-quickload-item .name{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.fn-quickload-item .when{
+  flex-shrink:0;
+  font-family:var(--fn-mono);
+  font-size:10px;
+  color:var(--fn-text-faint);
+}
+.fn-quickload-empty{
+  padding:10px;
+  font-size:12px;
+  color:var(--fn-text-faint);
+  text-align:center;
+}
+
+.fn-quickload-divider{
+  height:1px;
+  background:var(--fn-line);
+  margin:6px 4px;
+}
+.fn-quickload-manage{
+  display:block;
+  width:100%;
+  box-sizing:border-box;
+  text-align:center;
+  background:none;
+  color:var(--fn-azure);
+  font-family:var(--fn-sans);
+  font-size:12px;
+  font-weight:600;
+  letter-spacing:.02em;
+  text-decoration:none;
+  padding:8px 10px;
+  border-radius:6px;
+  cursor:pointer;
+  transition:background-color .15s, color .15s;
+}
+.fn-quickload-manage:hover{ background:var(--fn-azure-soft); }
+
+.fn-profile-save{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:26px;
+  height:26px;
+  flex-shrink:0;
+  background:none;
+  border:1px solid var(--fn-line);
+  color:var(--fn-text-dim);
+  border-radius:6px;
+  cursor:pointer;
+  transition:border-color .15s, color .15s, background-color .15s, opacity .15s;
+}
+.fn-profile-save:disabled{
+  opacity:0.35;
+  cursor:not-allowed;
+}
+.fn-profile-save.is-dirty{
+  border-color:var(--fn-gold);
+  color:var(--fn-gold);
+  background:var(--fn-gold-soft);
+}
+.fn-profile-save.is-dirty:hover{ background:var(--fn-gold); color:#201205; }
+@keyframes fn-save-flash{
+  0%{ box-shadow:0 0 0 0 rgba(243,178,58,0.55); }
+  100%{ box-shadow:0 0 0 8px rgba(243,178,58,0); }
+}
+.fn-profile-save.flash{ animation:fn-save-flash .5s ease-out; }
+
+.fn-profile-snapshot{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:26px;
+  height:26px;
+  flex-shrink:0;
+  background:none;
+  border:1px solid var(--fn-line);
+  color:var(--fn-text-dim);
+  border-radius:6px;
+  cursor:pointer;
+  transition:border-color .15s, color .15s;
+}
+.fn-profile-snapshot:hover{ border-color:var(--fn-jade); color:var(--fn-jade); }
+@keyframes fn-camera-flash{
+  0%{ box-shadow:0 0 0 0 rgba(255,255,255,0); background:none; }
+  20%{ box-shadow:0 0 0 5px rgba(255,255,255,0.55); background:rgba(255,255,255,0.9); border-color:#fff; color:#15111A; }
+  100%{ box-shadow:0 0 0 0 rgba(255,255,255,0); background:none; }
+}
+.fn-profile-snapshot.flash{ animation:fn-camera-flash .5s ease-out; }
+
+.fn-profile-share{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:26px;
+  height:26px;
+  flex-shrink:0;
+  background:none;
+  border:1px solid var(--fn-line);
+  color:var(--fn-text-dim);
+  border-radius:6px;
+  cursor:pointer;
+  transition:border-color .15s, color .15s, background .15s;
+}
+.fn-profile-share:hover{ border-color:var(--fn-azure); color:var(--fn-azure); }
+.fn-profile-share.copied{ border-color:var(--fn-jade); color:var(--fn-jade); background:var(--fn-jade-soft); }
+
+/* small toast confirming (or apologizing for) the "copy shareable link"
+   click — positioned via JS to sit right under whichever icon triggered
+   it, since .fn-profile-panel can reflow between visits */
+.fn-share-toast{
+  position:absolute;
+  transform:translate(-50%, -6px);
+  background:var(--fn-jade);
+  color:#0a2417;
+  font-family:var(--fn-sans);
+  font-size:11.5px;
+  font-weight:700;
+  padding:6px 10px;
+  border-radius:6px;
+  white-space:nowrap;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .2s ease, transform .2s ease;
+  z-index:1002;
+}
+.fn-share-toast.show{ opacity:1; transform:translate(-50%, 0); }
+.fn-share-toast.is-error{ background:var(--fn-rust); color:#2a0a05; }
+.fn-share-toast::after{
+  content:"";
+  position:absolute; left:50%; top:-4px; transform:translateX(-50%);
+  border-left:5px solid transparent; border-right:5px solid transparent;
+  border-bottom:5px solid var(--fn-jade);
+}
+.fn-share-toast.is-error::after{ border-bottom-color:var(--fn-rust); }
+
+.fn-camera-flash-overlay{
+  position:fixed;
+  inset:0;
+  background:#fff;
+  opacity:0;
+  pointer-events:none;
+  z-index:9999;
+}
+@keyframes fn-camera-flash-full{
+  0%{ opacity:0; }
+  12%{ opacity:0.85; }
+  100%{ opacity:0; }
+}
+.fn-camera-flash-overlay.flash{ animation:fn-camera-flash-full .6s ease-out; }
+
+/* full-screen "poof" shown right after "Clear all local data" is confirmed —
+   a dark backdrop with a trash icon that pops in and a burst of particles,
+   so a destructive action clicked through a plain confirm() dialog still
+   gets an unmistakable visual payoff before the page reloads */
+.fn-clearall-overlay{
+  position:fixed;
+  inset:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:14px;
+  background:rgba(21,17,26,0);
+  opacity:0;
+  pointer-events:none;
+  z-index:9999;
+}
+.fn-clearall-overlay.show{ animation:fn-clearall-backdrop 1.15s ease forwards; }
+@keyframes fn-clearall-backdrop{
+  0%{ opacity:0; background:rgba(21,17,26,0); }
+  15%{ opacity:1; background:rgba(21,17,26,0.86); }
+  82%{ opacity:1; background:rgba(21,17,26,0.86); }
+  100%{ opacity:0; background:rgba(21,17,26,0); }
+}
+.fn-clearall-icon{
+  position:relative;
+  width:64px;
+  height:64px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:50%;
+  background:var(--fn-panel-2);
+  border:1px solid var(--fn-line);
+  color:#fff;
+  opacity:0;
+  transform:scale(0.4);
+}
+.fn-clearall-overlay.show .fn-clearall-icon{ animation:fn-clearall-pop .5s cubic-bezier(.34,1.56,.64,1) .15s forwards; }
+@keyframes fn-clearall-pop{
+  0%{ opacity:0; transform:scale(0.4) rotate(-10deg); }
+  60%{ opacity:1; transform:scale(1.15) rotate(4deg); }
+  100%{ opacity:1; transform:scale(1) rotate(0deg); }
+}
+.fn-clearall-label{
+  font-family:var(--fn-sans);
+  font-size:13px;
+  font-weight:600;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  color:#fff;
+  opacity:0;
+}
+.fn-clearall-overlay.show .fn-clearall-label{ animation:fn-clearall-fadein .4s ease .45s forwards; }
+@keyframes fn-clearall-fadein{
+  from{ opacity:0; transform:translateY(4px); }
+  to{ opacity:1; transform:translateY(0); }
+}
+.fn-clearall-particles{
+  position:absolute;
+  top:50%;
+  left:50%;
+  width:0;
+  height:0;
+}
+.fn-clearall-particles span{
+  position:absolute;
+  top:0;
+  left:0;
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  background:var(--fn-jade, #4fd1a5);
+  opacity:0;
+}
+.fn-clearall-overlay.show .fn-clearall-particles span{ animation:fn-clearall-particle .7s ease-out .18s forwards; }
+@keyframes fn-clearall-particle{
+  0%{ opacity:0; transform:translate(-50%,-50%) rotate(var(--angle)) translateY(0) scale(1); }
+  15%{ opacity:1; }
+  100%{ opacity:0; transform:translate(-50%,-50%) rotate(var(--angle)) translateY(-70px) scale(0.4); }
+}
+
+.fn-profile-clear{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:26px;
+  height:26px;
+  flex-shrink:0;
+  background:none;
+  border:1px solid var(--fn-line);
+  color:var(--fn-text-faint);
+  border-radius:6px;
+  cursor:pointer;
+  transition:border-color .15s, color .15s;
+}
+.fn-profile-clear:hover{ border-color:#E0654F; color:#E0654F; }
+
+/* ---------------------------------------------------------------------- */
+/* FOOTER                                                                  */
+/* ---------------------------------------------------------------------- */
+/* an #id selector always outranks a page's own bare "footer{...}" rule
+   (meant for that page's local disclaimer footer), so this keeps the
+   shared footer's spacing/border consistent everywhere regardless of
+   what each page's own stylesheet declares for plain <footer> elements */
+#site-footer{ margin:0; padding:0; border:none; text-align:inherit; }
+.fn-footer-inner{
+  max-width:1180px;
+  margin:0 auto;
+  padding:48px 24px 32px;
+}
+.fn-footer-grid{
+  display:grid;
+  grid-template-columns:1.3fr 1fr 1fr;
+  gap:32px;
+  margin-bottom:32px;
+}
+@media (max-width:760px){ .fn-footer-grid{ grid-template-columns:1fr; gap:26px; } }
+.fn-footer-brand{
+  display:inline-flex;
+  align-items:baseline;
+  gap:8px;
+  color:var(--fn-text);
+  font-family:var(--fn-serif);
+  font-weight:600;
+  font-size:17px;
+  text-decoration:none;
+}
+.fn-footer-brand .fn-dot{ color:var(--fn-gold); }
+.fn-footer-grid p{
+  font-size:13px;
+  line-height:1.6;
+  color:var(--fn-text-faint);
+  max-width:38ch;
+  margin:12px 0 0;
+}
+.fn-footer-grid p.fn-footer-version{
+  font-family:var(--fn-mono);
+  font-size:11px;
+  letter-spacing:.04em;
+  opacity:.75;
+  margin-top:10px;
+}
+.fn-footer-grid h5{
+  font-family:var(--fn-mono);
+  font-size:11px;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--fn-jade);
+  margin:0 0 14px;
+}
+.fn-footer-grid ul{ list-style:none; margin:0; padding:0; }
+.fn-footer-grid li{ margin-bottom:9px; font-size:13.5px; }
+.fn-footer-grid a{ display:inline-flex; align-items:center; gap:8px; color:var(--fn-text-dim); text-decoration:none; }
+.fn-footer-grid a:hover{ color:var(--fn-gold); }
+.fn-footer-grid a svg{ flex-shrink:0; opacity:.7; }
+.fn-footer-grid a:hover svg{ opacity:1; }
+.fn-footer-bottom{
+  border-top:1px solid var(--fn-line);
+  padding-top:20px;
+  font-size:12px;
+  line-height:1.7;
+  color:var(--fn-text-faint);
+  font-family:var(--fn-mono);
+}
+.fn-footer-bottom strong{ color:var(--fn-text-dim); }
+
+@media print{
+  #fn-site-nav, #site-footer{ display:none !important; }
+}
+
+/* ---------------------------------------------------------------------- */
+/* INLINE GLOSSARY TERM TOOLTIPS (assets/js/glossary-tooltip.js)           */
+/* Always dark, like the nav — floating chrome over a page's own light or  */
+/* dark body content, not part of that page's own theme.                  */
+/* ---------------------------------------------------------------------- */
+.fn-term{
+  cursor:pointer;
+  border-bottom:1px dotted currentColor;
+  text-decoration:none;
+  color:inherit;
+}
+.fn-term:hover, .fn-term:focus-visible{ color:var(--fn-gold); outline:none; }
+
+.fn-term-popover{
+  position:absolute;
+  z-index:2000;
+  max-width:300px;
+  background:var(--fn-panel);
+  border:1px solid var(--fn-line);
+  border-radius:10px;
+  padding:12px 14px;
+  box-shadow:0 16px 34px rgba(0,0,0,0.4);
+  font-family:var(--fn-sans);
+}
+.fn-term-popover-title{
+  font-family:var(--fn-serif);
+  font-weight:600;
+  font-size:14px;
+  margin-bottom:6px;
+  color:var(--fn-gold);
+}
+.fn-term-popover-body{
+  font-size:12.5px;
+  line-height:1.5;
+  color:var(--fn-text-dim);
+}
+.fn-term-popover-link{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  margin-top:8px;
+  font-family:var(--fn-mono);
+  font-size:11px;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+  color:var(--fn-jade);
+  text-decoration:none;
+}
+.fn-term-popover-link:hover{ color:var(--fn-gold); }
+.fn-term-popover-link svg{ flex-shrink:0; }
+
+/* ---------------------------------------------------------------------- */
+/* PER-PAGE FIELD HELP MODAL (assets/js/field-help.js)                     */
+/* Always dark floating chrome, like the nav and the term-popover above —  */
+/* not part of the page's own light/dark theme. A page opts in by placing */
+/* a ".fn-help-btn" trigger (usually in its toolbar summary row) and      */
+/* defining window.FN_FIELD_HELP before field-help.js runs.               */
+/* ---------------------------------------------------------------------- */
+.fn-help-btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:26px;
+  height:26px;
+  flex-shrink:0;
+  border-radius:50%;
+  border:1px solid var(--fn-line);
+  background:var(--fn-panel-2);
+  color:var(--fn-text-dim);
+  font-family:var(--fn-serif);
+  font-weight:700;
+  font-size:14px;
+  cursor:pointer;
+  transition:border-color .15s, color .15s;
+}
+.fn-help-btn:hover, .fn-help-btn:focus-visible{
+  border-color:var(--fn-gold);
+  color:var(--fn-gold);
+  outline:none;
+}
+
+body.fn-help-lock{ overflow:hidden; }
+
+.fn-help-overlay{
+  position:fixed;
+  inset:0;
+  z-index:10000;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:24px;
+  background:rgba(5,4,8,0.6);
+  animation:fn-help-fade .15s ease;
+}
+@keyframes fn-help-fade{ from{ opacity:0; } to{ opacity:1; } }
+
+.fn-help-modal{
+  position:relative;
+  width:min(560px, 100%);
+  max-height:min(640px, 82vh);
+  overflow:hidden;
+  background:var(--fn-panel);
+  border:1px solid var(--fn-line);
+  border-radius:16px;
+  box-shadow:0 24px 60px rgba(0,0,0,0.5);
+  font-family:var(--fn-sans);
+  animation:fn-help-pop .18s ease;
+}
+@keyframes fn-help-pop{
+  from{ opacity:0; transform:scale(0.96) translateY(6px); }
+  to{ opacity:1; transform:scale(1) translateY(0); }
+}
+
+/* .fn-help-modal stays put (not scrollable) so the floating close button and
+   the fade/arrow hints below can sit as non-scrolling siblings pinned to its
+   edges — same split as the hamburger menu's .fn-links-wrap/.fn-links. */
+.fn-help-scroll{
+  max-height:min(640px, 82vh);
+  overflow-y:auto;
+  padding:22px 24px 26px;
+}
+
+.fn-help-head{
+  /* reserves room so long titles wrap before running under the floating
+     close button instead of being covered by it */
+  padding-right:34px;
+  margin-bottom:6px;
+}
+.fn-help-title{
+  font-family:var(--fn-serif);
+  font-size:19px;
+  font-weight:600;
+  color:var(--fn-text);
+}
+.fn-help-close{
+  position:absolute;
+  top:14px;
+  right:14px;
+  z-index:6;
+  flex-shrink:0;
+  width:28px;
+  height:28px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:50%;
+  border:1px solid var(--fn-line);
+  background:var(--fn-panel-2);
+  color:var(--fn-text-dim);
+  font-size:18px;
+  line-height:1;
+  cursor:pointer;
+  box-shadow:0 4px 14px rgba(0,0,0,0.35);
+}
+.fn-help-close:hover, .fn-help-close:focus-visible{ border-color:var(--fn-rust); color:var(--fn-rust); outline:none; }
+
+/* "more above/below" hints — only shown while there's actually more to
+   scroll in that direction (toggled via JS on open + on scroll), same
+   pattern as the hamburger menu's .fn-links-fade. Hovering either one
+   auto-scrolls the body in that direction for as long as the cursor stays. */
+.fn-help-fade{
+  position:absolute;
+  left:0;
+  right:0;
+  height:28px;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity .15s ease;
+  z-index:5;
+}
+.fn-help-fade-top{ top:0; background:linear-gradient(var(--fn-panel), transparent); border-radius:16px 16px 0 0; }
+.fn-help-fade-bottom{ bottom:0; background:linear-gradient(transparent, var(--fn-panel)); border-radius:0 0 16px 16px; }
+.fn-help-modal.can-scroll-up .fn-help-fade-top{ opacity:1; pointer-events:auto; cursor:pointer; }
+.fn-help-modal.can-scroll-down .fn-help-fade-bottom{ opacity:1; pointer-events:auto; cursor:pointer; }
+.fn-help-fade-arrow{
+  position:absolute;
+  left:50%;
+  transform:translateX(-50%);
+  font-size:16px;
+  line-height:1;
+  color:var(--fn-text-dim);
+}
+.fn-help-fade-top .fn-help-fade-arrow{ top:2px; }
+.fn-help-fade-bottom .fn-help-fade-arrow{ bottom:2px; }
+
+.fn-help-intro{
+  font-size:13.5px;
+  line-height:1.55;
+  color:var(--fn-text-dim);
+  margin-bottom:14px;
+  padding-bottom:14px;
+  border-bottom:1px solid var(--fn-line);
+}
+
+.fn-help-section + .fn-help-section{
+  margin-top:16px;
+  padding-top:16px;
+  border-top:1px solid var(--fn-line);
+}
+.fn-help-section-heading{
+  font-family:var(--fn-mono);
+  font-size:11px;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:var(--fn-gold);
+  margin-bottom:10px;
+}
+.fn-help-item + .fn-help-item{ margin-top:11px; }
+.fn-help-item-label{
+  font-size:13.5px;
+  font-weight:600;
+  color:var(--fn-text);
+  margin-bottom:2px;
+}
+.fn-help-item-text{
+  font-size:12.5px;
+  line-height:1.5;
+  color:var(--fn-text-dim);
+}
+
+/* ---------------------------------------------------------------------- */
+/* NEON GLASS — STRUCTURAL EXTRAS                                          */
+/* The variable overrides above already recolor nearly everything; these  */
+/* add the blur/translucency/glow physicality a color swap alone can't.   */
+/* ---------------------------------------------------------------------- */
+html[data-theme="neon"] body{
+  background:
+    radial-gradient(circle at top left, #1e1b4b 0, #0b1120 45%, #020617 100%) fixed;
+}
+/* no backdrop-filter here on purpose — #fn-site-nav is position:sticky and
+   repaints every scroll frame; stacking a blur on it plus the homepage's
+   own sticky quicklinks bar reliably hung the renderer during scroll.
+   A near-opaque flat background reads as glassy enough without it. */
+html[data-theme="neon"] #fn-site-nav{
+  background:rgba(15,23,42,0.9);
+  border-bottom-color:rgba(168,85,247,0.35);
+  box-shadow:0 1px 24px rgba(168,85,247,0.15);
+}
+html[data-theme="neon"] .fn-brand .fn-dot{
+  background:linear-gradient(135deg, #6366f1, #a855f7, #ec4899);
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
+}
+html[data-theme="neon"] .fn-profile-panel,
+html[data-theme="neon"] .fn-settings-panel,
+html[data-theme="neon"] .fn-quickload-list,
+html[data-theme="neon"] .fn-term-popover{
+  backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
+  box-shadow:0 16px 40px rgba(0,0,0,0.55), 0 0 30px rgba(168,85,247,0.22);
+}
+/* the help modal sits over its own dim scrim rather than page content, so it
+   gets a lighter scrim (more of the page's color bleeds through to blur)
+   plus a stronger blur+saturate and a glossy diagonal sheen + inner top
+   highlight — reads as an actual pane of glass instead of a flat dark card */
+html[data-theme="neon"] .fn-help-overlay{ background:rgba(4,7,20,0.42); }
+html[data-theme="neon"] .fn-help-modal{
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.09), rgba(255,255,255,0) 45%),
+    rgba(15,23,42,0.62);
+  backdrop-filter:blur(22px) saturate(160%);
+  -webkit-backdrop-filter:blur(22px) saturate(160%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.1),
+    0 16px 40px rgba(0,0,0,0.55),
+    0 0 30px rgba(168,85,247,0.28);
+}
+html[data-theme="neon"] .fn-help-fade-top{ background:linear-gradient(rgba(15,23,42,0.62), transparent); }
+html[data-theme="neon"] .fn-help-fade-bottom{ background:linear-gradient(transparent, rgba(15,23,42,0.62)); }
+html[data-theme="neon"] .fn-theme-select{
+  background:rgba(15,23,42,0.6);
+}
+html[data-theme="neon"] .fn-theme-option.is-active{
+  background:linear-gradient(135deg, #6366f1, #a855f7, #ec4899);
+  box-shadow:0 0 14px rgba(168,85,247,0.6);
+  color:#f9fafb;
+}
+html[data-theme="neon"] .fn-profile-save.is-dirty{
+  background:linear-gradient(135deg, #6366f1, #a855f7, #ec4899);
+  border-color:transparent;
+  color:#f9fafb;
+  box-shadow:0 0 14px rgba(236,72,153,0.55);
+}
+html[data-theme="neon"] .fn-profile-save.is-dirty:hover{ background:linear-gradient(135deg, #6366f1, #a855f7, #ec4899); filter:brightness(1.1); }
+html[data-theme="neon"] input:focus,
+html[data-theme="neon"] select:focus,
+html[data-theme="neon"] .fn-profile-field input:focus{
+  box-shadow:0 0 12px rgba(168,85,247,0.55);
+}
+html[data-theme="neon"] .fn-links-search:focus,
+html[data-theme="neon"] .fn-quickload-toggle:hover,
+html[data-theme="neon"] .fn-quickload.open .fn-quickload-toggle{
+  box-shadow:0 0 10px rgba(217,140,232,0.45);
+}
+
+/* ---------------------------------------------------------------------- */
+/* SUNSHINE GLASS — STRUCTURAL EXTRAS                                      */
+/* Mirrors the neon block above — same glass physicality, warm palette.   */
+/* ---------------------------------------------------------------------- */
+html[data-theme="sunshine"] body{
+  background:
+    radial-gradient(900px 480px at 8% -8%, rgba(255,203,92,0.4), transparent 55%),
+    radial-gradient(800px 460px at 96% 0%, rgba(127,214,154,0.32), transparent 55%),
+    radial-gradient(760px 520px at 60% 115%, rgba(255,160,138,0.25), transparent 55%),
+    linear-gradient(160deg, #cfe8fa 0%, #eaf5fd 45%, #fdf6e8 100%) fixed;
+}
+/* no backdrop-filter here on purpose — same sticky+blur scroll hang risk
+   documented on the neon nav above. A near-opaque flat background reads
+   as glassy enough without it. */
+html[data-theme="sunshine"] #fn-site-nav{
+  background:rgba(255,255,255,0.85);
+  border-bottom-color:rgba(31,92,110,0.18);
+  box-shadow:0 1px 24px rgba(245,166,35,0.18);
+}
+html[data-theme="sunshine"] .fn-brand .fn-dot{
+  background:linear-gradient(135deg, #FFCB5C, #F5A623, #FF6F59);
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
+}
+html[data-theme="sunshine"] .fn-profile-panel,
+html[data-theme="sunshine"] .fn-settings-panel,
+html[data-theme="sunshine"] .fn-quickload-list,
+html[data-theme="sunshine"] .fn-term-popover{
+  backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
+  box-shadow:0 16px 40px rgba(31,92,110,0.18), 0 0 30px rgba(245,166,35,0.16);
+}
+/* same reasoning as neon's own override above — a lighter scrim behind the
+   modal plus stronger blur+saturate and a glossy sheen reads as glass */
+html[data-theme="sunshine"] .fn-help-overlay{ background:rgba(31,53,64,0.28); }
+html[data-theme="sunshine"] .fn-help-modal{
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.5), rgba(255,255,255,0) 45%),
+    rgba(255,255,255,0.58);
+  backdrop-filter:blur(22px) saturate(160%);
+  -webkit-backdrop-filter:blur(22px) saturate(160%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.6),
+    0 16px 40px rgba(31,92,110,0.22),
+    0 0 30px rgba(245,166,35,0.22);
+}
+html[data-theme="sunshine"] .fn-help-fade-top{ background:linear-gradient(rgba(255,255,255,0.58), transparent); }
+html[data-theme="sunshine"] .fn-help-fade-bottom{ background:linear-gradient(transparent, rgba(255,255,255,0.58)); }
+html[data-theme="sunshine"] .fn-theme-select{
+  background:rgba(31,92,110,0.06);
+}
+html[data-theme="sunshine"] .fn-theme-option.is-active{
+  background:linear-gradient(135deg, #FFCB5C, #F5A623, #FF6F59);
+  box-shadow:0 0 14px rgba(245,166,35,0.5);
+  color:#3A2400;
+}
+html[data-theme="sunshine"] .fn-profile-save.is-dirty{
+  background:linear-gradient(135deg, #FFCB5C, #F5A623, #FF6F59);
+  border-color:transparent;
+  color:#3A2400;
+  box-shadow:0 0 14px rgba(255,111,89,0.4);
+}
+html[data-theme="sunshine"] .fn-profile-save.is-dirty:hover{ background:linear-gradient(135deg, #FFCB5C, #F5A623, #FF6F59); filter:brightness(1.05); }
+html[data-theme="sunshine"] input:focus,
+html[data-theme="sunshine"] select:focus,
+html[data-theme="sunshine"] .fn-profile-field input:focus{
+  box-shadow:0 0 12px rgba(245,166,35,0.4);
+}
+html[data-theme="sunshine"] .fn-links-search:focus,
+html[data-theme="sunshine"] .fn-quickload-toggle:hover,
+html[data-theme="sunshine"] .fn-quickload.open .fn-quickload-toggle{
+  box-shadow:0 0 10px rgba(200,125,220,0.35);
+}
+
+/* ---------------------------------------------------------------------- */
+/* LCARS — STRUCTURAL EXTRAS                                               */
+/* Flat and opaque on purpose — no backdrop-filter anywhere, unlike neon/  */
+/* sunshine above. Panels are already solid (--fn-panel is a plain hex,   */
+/* not rgba) so they need no blur to read as "real" surfaces; a pane of   */
+/* glass would work against the whole point of this theme.               */
+/* ---------------------------------------------------------------------- */
+html[data-theme="lcars"] body{
+  background:
+    radial-gradient(1000px 500px at 6% -10%, rgba(255,159,28,0.1), transparent 55%),
+    radial-gradient(900px 480px at 100% 0%, rgba(153,153,255,0.08), transparent 55%),
+    #000000;
+}
+html[data-theme="lcars"] #fn-site-nav{
+  background:#000000;
+  border-bottom:none;
+  box-shadow:none;
+  padding-bottom:7px;
+}
+/* the signature LCARS "console divider" — a row of solid color blocks,
+   hard edges, no blend between them. Real LCARS never gradients between
+   two different hues; a color only ever gradients into itself or fades to
+   transparent (see the sweep on the elbow cap below) */
+html[data-theme="lcars"] #fn-site-nav::after{
+  content:"";
+  position:absolute;
+  left:0; right:0; bottom:0;
+  height:7px;
+  background:
+    linear-gradient(90deg,
+      var(--fn-gold) 0, var(--fn-gold) 15%,
+      transparent 15%, transparent 16%,
+      var(--fn-plum) 16%, var(--fn-plum) 22%,
+      transparent 22%, transparent 23%,
+      var(--fn-azure) 23%, var(--fn-azure) 40%,
+      transparent 40%, transparent 41%,
+      var(--fn-jade) 41%, var(--fn-jade) 100%);
+}
+/* the "elbow" — LCARS's single most recognizable shape: a bar whose one
+   end sweeps into a large rounded cap instead of a square corner. The
+   brand wordmark sits inside it, bleeding to the true left edge of the
+   nav (canceling .fn-nav-inner's own padding) so the cap reads as part
+   of the window frame, not a floating pill. */
+html[data-theme="lcars"] .fn-brand{
+  font-family:var(--fn-display);
+  font-weight:700;
+  letter-spacing:.03em;
+  text-transform:uppercase;
+  background:var(--fn-gold);
+  color:#1a0f00;
+  height:60px;
+  margin:0 0 0 -24px;
+  padding:0 22px 0 24px;
+  border-radius:0 0 34px 0;
+}
+html[data-theme="lcars"] .fn-brand .fn-dot{
+  color:#1a0f00;
+}
+html[data-theme="lcars"] .fn-brand .fn-tag{
+  color:rgba(26,15,0,0.6);
+  border-left-color:rgba(26,15,0,0.3);
+}
+html[data-theme="lcars"] .fn-page-title,
+html[data-theme="lcars"] .fn-links-group-label,
+html[data-theme="lcars"] .fn-nav-link,
+html[data-theme="lcars"] .fn-theme-option,
+html[data-theme="lcars"] .fn-profile-save,
+html[data-theme="lcars"] .fn-reset-all,
+html[data-theme="lcars"] .hp-card-tag,
+html[data-theme="lcars"] .hp-card-cta,
+html[data-theme="lcars"] .fn-help-title,
+html[data-theme="lcars"] .fn-help-section-heading{
+  font-family:var(--fn-display);
+  letter-spacing:.03em;
+  text-transform:uppercase;
+}
+/* solid color fills instead of the other themes' soft-tint-plus-left-
+   border, and full pill radius instead of the usual 7px — LCARS controls
+   are always fully-rounded capsules or square, nothing in between. Every
+   link gets its data-c color as a dim fill at rest (not just on hover),
+   so the hamburger menu reads as a stack of colored LCARS blocks even
+   before interacting with it — hover/active jump to a full-strength fill. */
+html[data-theme="lcars"] .fn-links a{
+  border-radius:999px;
+  border-left:none;
+}
+html[data-theme="lcars"] .fn-links a[data-c="gold"]{ background:var(--fn-gold-soft); }
+html[data-theme="lcars"] .fn-links a[data-c="jade"]{ background:var(--fn-jade-soft); }
+html[data-theme="lcars"] .fn-links a[data-c="azure"]{ background:var(--fn-azure-soft); }
+html[data-theme="lcars"] .fn-links a[data-c="plum"]{ background:var(--fn-plum-soft); }
+html[data-theme="lcars"] .fn-links a[data-c="rust"]{ background:var(--fn-rust-soft); }
+html[data-theme="lcars"] .fn-links a[data-c="gold"]:hover, html[data-theme="lcars"] .fn-links a[data-c="gold"].fn-active{ background:var(--fn-gold); color:#1a0f00; }
+html[data-theme="lcars"] .fn-links a[data-c="jade"]:hover, html[data-theme="lcars"] .fn-links a[data-c="jade"].fn-active{ background:var(--fn-jade); color:#0f1a00; }
+html[data-theme="lcars"] .fn-links a[data-c="azure"]:hover, html[data-theme="lcars"] .fn-links a[data-c="azure"].fn-active{ background:var(--fn-azure); color:#0a0a2e; }
+html[data-theme="lcars"] .fn-links a[data-c="plum"]:hover, html[data-theme="lcars"] .fn-links a[data-c="plum"].fn-active{ background:var(--fn-plum); color:#2e0a2e; }
+html[data-theme="lcars"] .fn-links a[data-c="rust"]:hover, html[data-theme="lcars"] .fn-links a[data-c="rust"].fn-active{ background:var(--fn-rust); color:#2e0a0a; }
+html[data-theme="lcars"] .fn-nav-link.fn-active{ font-weight:700; }
+html[data-theme="lcars"] .fn-nav-link.fn-active .fn-nav-link-icon{ opacity:1; }
+html[data-theme="lcars"] .fn-theme-select{
+  background:#0d0d0d;
+  border-radius:16px;
+}
+html[data-theme="lcars"] .fn-theme-option{
+  border-radius:999px;
+}
+html[data-theme="lcars"] .fn-theme-option.is-active{
+  background:var(--fn-gold);
+  color:#1a0f00;
+  font-weight:700;
+}
+html[data-theme="lcars"] .fn-profile-save.is-dirty{
+  background:var(--fn-gold);
+  border-color:transparent;
+  color:#1a0f00;
+  font-weight:700;
+}
+html[data-theme="lcars"] .fn-profile-save.is-dirty:hover{ background:#FFCC66; }
+/* asymmetric corner rounding on floating chrome — one big sweep, three
+   square corners, the same elbow logic as the nav brand above */
+html[data-theme="lcars"] .fn-profile-panel,
+html[data-theme="lcars"] .fn-settings-panel,
+html[data-theme="lcars"] .fn-help-modal{
+  border-radius:22px 0 0 0;
+}
+html[data-theme="lcars"] .fn-help-close{
+  border-radius:999px;
+  background:var(--fn-rust);
+  border-color:transparent;
+  color:#1a0f00;
+}
+html[data-theme="lcars"] .fn-help-close:hover{ background:#FF9494; color:#1a0f00; }
+/* real LCARS control buttons are never ghost/outline — every button on
+   the console is a solid filled block. The three nav icon buttons each
+   get their own accent color so the top-right corner reads as a proper
+   manifold, not a row of generic icon buttons. */
+html[data-theme="lcars"] .fn-nav-toggle{
+  background:var(--fn-azure); border:none; color:#0a0a2e; border-radius:999px;
+}
+html[data-theme="lcars"] .fn-nav-toggle:hover,
+html[data-theme="lcars"] #fn-site-nav.fn-open .fn-nav-toggle{ background:#B8B8FF; color:#0a0a2e; }
+html[data-theme="lcars"] .fn-settings-toggle{
+  background:var(--fn-plum); border:none; color:#2e0a2e; border-radius:999px;
+}
+html[data-theme="lcars"] .fn-settings-toggle:hover,
+html[data-theme="lcars"] #fn-site-nav.fn-settings-open .fn-settings-toggle{ background:#E0B8E8; color:#2e0a2e; }
+html[data-theme="lcars"] .fn-profile-toggle{
+  background:var(--fn-jade); border:none; color:#0f1a00; border-radius:999px;
+}
+html[data-theme="lcars"] .fn-profile-toggle:hover,
+html[data-theme="lcars"] #fn-site-nav.fn-profile-open .fn-profile-toggle{ background:#D4F0A0; color:#0f1a00; }
+/* mirrors the brand elbow on the opposite end of the nav — a solid block
+   sweeping into the icon cluster, so the bar reads as a single manifold
+   frame (color block → black gap → color block) rather than a logo on
+   one end and bare icons on the other */
+html[data-theme="lcars"] .fn-actions{
+  background:#2A2A2A;
+  height:44px;
+  padding:0 18px 0 26px;
+  margin-right:-24px;
+  border-radius:22px 0 0 22px;
+}
+@media (max-width:700px){
+  html[data-theme="lcars"] .fn-actions{ padding:0 10px 0 16px; margin-right:-16px; }
+}
+/* a second segmented console bar, mirrored, framing the bottom of every
+   page the same way the nav bar frames the top */
+html[data-theme="lcars"] #site-footer{
+  position:relative;
+  padding-top:7px;
+}
+html[data-theme="lcars"] #site-footer::before{
+  content:"";
+  position:absolute;
+  left:0; right:0; top:0;
+  height:7px;
+  background:
+    linear-gradient(90deg,
+      var(--fn-jade) 0, var(--fn-jade) 18%,
+      transparent 18%, transparent 19%,
+      var(--fn-azure) 19%, var(--fn-azure) 34%,
+      transparent 34%, transparent 35%,
+      var(--fn-plum) 35%, var(--fn-plum) 45%,
+      transparent 45%, transparent 46%,
+      var(--fn-gold) 46%, var(--fn-gold) 100%);
+}
+html[data-theme="lcars"] input:focus,
+html[data-theme="lcars"] select:focus,
+html[data-theme="lcars"] .fn-profile-field input:focus{
+  outline:2px solid var(--fn-azure);
+  outline-offset:1px;
+  box-shadow:none;
+}
+html[data-theme="lcars"] .fn-links-search:focus,
+html[data-theme="lcars"] .fn-quickload-toggle:hover,
+html[data-theme="lcars"] .fn-quickload.open .fn-quickload-toggle{
+  box-shadow:0 0 0 2px var(--fn-azure);
+}

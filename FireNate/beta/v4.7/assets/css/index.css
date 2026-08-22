@@ -1,0 +1,450 @@
+:root{
+    /* page-local palette — decoupled from the shared --fn-* nav variables
+       so the nav can stay dark everywhere while this page goes light+vivid */
+    --hp-bg:#F6F3EC;
+    --hp-panel:#ffffff;
+    --hp-panel-2:#FCF3DE;
+    --hp-line: rgba(154,79,42,0.16);
+    --hp-text:#26221C;
+    --hp-text-dim:#8C5A46;
+    --hp-text-faint:#96603C;
+
+    --hp-gold:#D9840F;
+    --hp-gold-soft: rgba(217,132,15,0.16);
+    --hp-sage:#1F9254;
+    --hp-sage-soft: rgba(31,146,84,0.14);
+    --hp-teal:#0F8B9C;
+    --hp-teal-soft: rgba(15,139,156,0.15);
+    --hp-rust:#DB3B23;
+    --hp-rust-soft: rgba(219,59,35,0.14);
+    --hp-plum:#9C3FAE;
+    --hp-plum-soft: rgba(156,63,174,0.14);
+  }
+
+  /* ---------- VIBRANT DARK MODE ---------- */
+  :root[data-theme="dark"]{
+    --hp-bg:#15111A;
+    --hp-panel:#1E1826;
+    --hp-panel-2:#241C30;
+    --hp-line: rgba(255,255,255,0.12);
+    --hp-text:#F3EEE4;
+    --hp-text-dim:#B8A8C0;
+    --hp-text-faint:#9C8CB0;
+
+    --hp-gold:#F3B23A;
+    --hp-gold-soft: rgba(243,178,58,0.16);
+    --hp-sage:#4FDB8F;
+    --hp-sage-soft: rgba(79,219,143,0.14);
+    --hp-teal:#4FD8E8;
+    --hp-teal-soft: rgba(79,216,232,0.16);
+    --hp-rust:#FF7A5C;
+    --hp-rust-soft: rgba(255,122,92,0.16);
+    --hp-plum:#D98CE8;
+    --hp-plum-soft: rgba(217,140,232,0.16);
+  }
+
+  /* ---------- MODERN NEON GLASS ---------- */
+  :root[data-theme="neon"]{
+    --hp-bg:#020617;
+    --hp-panel: rgba(255,255,255,0.06);
+    --hp-panel-2: rgba(255,255,255,0.1);
+    --hp-line: rgba(255,255,255,0.16);
+    --hp-text:#e5e7eb;
+    --hp-text-dim:#9ca3af;
+    --hp-text-faint:#8b95a8;
+
+    --hp-gold:#a855f7;
+    --hp-gold-soft: rgba(168,85,247,0.18);
+    --hp-sage:#34d399;
+    --hp-sage-soft: rgba(52,211,153,0.16);
+    --hp-teal:#22d3ee;
+    --hp-teal-soft: rgba(34,211,238,0.18);
+    --hp-rust:#f472b6;
+    --hp-rust-soft: rgba(244,114,182,0.18);
+    --hp-plum:#c084fc;
+    --hp-plum-soft: rgba(192,132,252,0.18);
+  }
+
+  [data-theme="neon"] .hp-card{
+    border:1px solid var(--hp-line);
+    backdrop-filter:blur(14px);
+    -webkit-backdrop-filter:blur(14px);
+    box-shadow:0 0 24px rgba(168,85,247,0.18);
+  }
+  [data-theme="neon"] .hp-card:hover{
+    border-color:rgba(168,85,247,0.5);
+    box-shadow:0 0 30px rgba(168,85,247,0.32);
+  }
+  [data-theme="neon"] h1 em{
+    background:linear-gradient(135deg, #6366f1, #a855f7, #ec4899);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+  }
+  /* .hp-quicklinks-inner's "gradient border" is 2 stacked background-images —
+     an opaque padding-box layer masks a border-box gradient so only a 1px
+     ring shows through. --hp-panel is intentionally near-transparent for
+     neon's glass look elsewhere, which would let that gradient bleed across
+     the whole pill here instead of staying a ring — so this gets its own
+     more-opaque interior fill instead of inheriting --hp-panel directly.
+     No backdrop-filter here on purpose — this bar is position:sticky and
+     repaints every scroll frame; stacking a blur on it plus the nav's own
+     sticky blur reliably hung the renderer during scroll. */
+  [data-theme="neon"] .hp-quicklinks-inner{
+    background-image:
+      linear-gradient(rgba(15,23,42,0.85), rgba(15,23,42,0.85)),
+      linear-gradient(90deg, #6366f1, #a855f7, #ec4899);
+  }
+  [data-theme="neon"] .hp-quicklinks a.active{
+    background:linear-gradient(90deg, #6366f1, #a855f7, #ec4899);
+    box-shadow:0 0 14px rgba(168,85,247,0.5);
+  }
+
+  /* ---------- MODERN SUNSHINE GLASS ---------- */
+  :root[data-theme="sunshine"]{
+    --hp-bg:#eaf5fd;
+    --hp-panel: rgba(255,255,255,0.62);
+    --hp-panel-2: rgba(255,247,235,0.72);
+    --hp-line: rgba(31,92,110,0.18);
+    --hp-text:#1F3540;
+    --hp-text-dim:#4C6672;
+    --hp-text-faint:#557580;
+
+    --hp-gold:#F5A623;
+    --hp-gold-soft: rgba(245,166,35,0.18);
+    --hp-sage:#3FA66B;
+    --hp-sage-soft: rgba(63,166,107,0.16);
+    --hp-teal:#1F8A9E;
+    --hp-teal-soft: rgba(31,138,158,0.16);
+    --hp-rust:#FF6F59;
+    --hp-rust-soft: rgba(255,111,89,0.18);
+    --hp-plum:#C87DDC;
+    --hp-plum-soft: rgba(200,125,220,0.18);
+  }
+
+  [data-theme="sunshine"] .hp-card{
+    border:1px solid var(--hp-line);
+    backdrop-filter:blur(14px);
+    -webkit-backdrop-filter:blur(14px);
+    box-shadow:0 0 24px rgba(245,166,35,0.14);
+  }
+  [data-theme="sunshine"] .hp-card:hover{
+    border-color:rgba(245,166,35,0.5);
+    box-shadow:0 0 30px rgba(245,166,35,0.24);
+  }
+  [data-theme="sunshine"] h1 em{
+    background:linear-gradient(135deg, #FFCB5C, #F5A623, #FF6F59);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+  }
+  /* same gradient-border trick as neon above — --hp-panel is intentionally
+     translucent for the glass look, which would let the border gradient
+     bleed across the whole pill instead of staying a ring, so this gets
+     its own more-opaque interior fill. No backdrop-filter — same sticky
+     scroll-hang risk as neon and the nav bar. */
+  [data-theme="sunshine"] .hp-quicklinks-inner{
+    background-image:
+      linear-gradient(rgba(255,252,245,0.88), rgba(255,252,245,0.88)),
+      linear-gradient(90deg, #FFCB5C, #F5A623, #FF6F59);
+  }
+  [data-theme="sunshine"] .hp-quicklinks a.active{
+    background:linear-gradient(90deg, #FFCB5C, #F5A623, #FF6F59);
+    box-shadow:0 0 14px rgba(245,166,35,0.45);
+    color:#3A2400;
+  }
+
+  /* ---------- LCARS ---------- */
+  :root[data-theme="lcars"]{
+    --hp-bg:#000000;
+    --hp-panel:#0d0d0d;
+    --hp-panel-2:#161616;
+    --hp-line: rgba(255,159,28,0.3);
+    --hp-text:#FFE3BA;
+    --hp-text-dim:#C9A97E;
+    --hp-text-faint:#9C8058;
+
+    --hp-gold:#FF9F1C;
+    --hp-gold-soft: rgba(255,159,28,0.2);
+    --hp-sage:#B5D96C;
+    --hp-sage-soft: rgba(181,217,108,0.18);
+    --hp-teal:#9999FF;
+    --hp-teal-soft: rgba(153,153,255,0.2);
+    --hp-rust:#FF6B6B;
+    --hp-rust-soft: rgba(255,107,107,0.18);
+    --hp-plum:#CC99CC;
+    --hp-plum-soft: rgba(204,153,204,0.18);
+  }
+  /* flat on purpose — no backdrop-filter, unlike neon/sunshine above. The
+     shared .hp-card::before accent bar becomes a full-height left rail
+     here (instead of the other themes' thin top line) — LCARS panels read
+     as color blocks, not color accents. */
+  [data-theme="lcars"] .hp-card{
+    border:1px solid var(--hp-line);
+    padding-left:34px;
+  }
+  [data-theme="lcars"] .hp-card::before{
+    top:0; left:0; right:auto; bottom:0;
+    width:14px; height:auto;
+    border-radius:8px 0 0 8px;
+  }
+  [data-theme="lcars"] .hp-card:hover{
+    border-color:var(--hp-gold);
+  }
+  [data-theme="lcars"] .hp-card-cta{
+    align-self:flex-start;
+    background:rgba(255,159,28,0.15);
+    padding:4px 12px;
+    border-radius:999px;
+  }
+  [data-theme="lcars"] .hp-card:hover .hp-card-cta{ background:rgba(255,159,28,0.28); }
+  /* the more-specific selectors below (.hp-section-head h2, .hp-card h3,
+     .hp-about h3) tie this rule's specificity and are declared later in
+     the file, so cascade order alone would let them win and silently
+     keep the serif font — list them explicitly here rather than relying
+     on order */
+  [data-theme="lcars"] h2, [data-theme="lcars"] h3,
+  [data-theme="lcars"] .hp-section-head h2,
+  [data-theme="lcars"] .hp-card h3,
+  [data-theme="lcars"] .hp-about h3{
+    font-family:'Antonio', 'Arial Narrow', sans-serif;
+    letter-spacing:.02em;
+  }
+  /* the big hero headline gets its own, blockier display face — Michroma
+     is closer to the squarish geometry of real LCARS titling (Eurostile
+     Bold Extended / Microgramma, both commercial and unavailable here)
+     than Antonio, which stays reserved for nav/labels/buttons so the two
+     don't compete at the same size */
+  [data-theme="lcars"] h1,
+  [data-theme="lcars"] .hp-hero h1{
+    font-family:'Michroma', 'Antonio', 'Arial Narrow', sans-serif;
+    letter-spacing:0;
+  }
+  [data-theme="lcars"] h1 em{
+    background:linear-gradient(135deg, #FF9F1C, #FFCC66, #CC99CC);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+  }
+  /* same gradient-border trick as neon/sunshine above — --hp-panel is a
+     plain opaque hex here (not translucent), so this could inherit it
+     directly, but a dedicated fill keeps this rule self-contained and
+     consistent with the other themes' version of the same trick */
+  [data-theme="lcars"] .hp-quicklinks-inner{
+    background-image:
+      linear-gradient(#0d0d0d, #0d0d0d),
+      linear-gradient(90deg, #FF9F1C, #FFCC66, #CC99CC);
+  }
+  /* dim solid fill per pill at rest (not just on hover/active) — five
+     quicklinks map 1:1 to the five homepage sections below, so a fixed
+     rotation reads as intentional color-coding rather than decoration */
+  [data-theme="lcars"] .hp-quicklinks a{ background:var(--hp-gold-soft); font-weight:600; }
+  [data-theme="lcars"] .hp-quicklinks a:nth-child(2){ background:var(--hp-sage-soft); }
+  [data-theme="lcars"] .hp-quicklinks a:nth-child(3){ background:var(--hp-teal-soft); }
+  [data-theme="lcars"] .hp-quicklinks a:nth-child(4){ background:var(--hp-plum-soft); }
+  [data-theme="lcars"] .hp-quicklinks a:nth-child(5){ background:var(--hp-rust-soft); }
+  [data-theme="lcars"] .hp-quicklinks a.active{
+    background:var(--hp-gold);
+    color:#1a0f00;
+    font-weight:700;
+  }
+  /* solid capsule fills instead of the other themes' soft-tint-on-dark —
+     LCARS badges are always a fully-saturated color block with black text */
+  [data-theme="lcars"] .hp-card-tag{ border-radius:999px; font-weight:700; }
+  [data-theme="lcars"] .hp-card-tag.gold{ color:#1a0f00; background:var(--hp-gold); }
+  [data-theme="lcars"] .hp-card-tag.jade{ color:#0f1a00; background:var(--hp-sage); }
+  [data-theme="lcars"] .hp-card-tag.azure{ color:#0a0a2e; background:var(--hp-teal); }
+  [data-theme="lcars"] .hp-card-tag.rust{ color:#2e0a0a; background:var(--hp-rust); }
+  [data-theme="lcars"] .hp-card-tag.plum{ color:#2e0a2e; background:var(--hp-plum); }
+  [data-theme="lcars"] .hp-section-head .num{
+    display:inline-block;
+    background:var(--hp-gold); color:#1a0f00; font-weight:700;
+    padding:4px 14px; border-radius:999px; letter-spacing:.08em;
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background:
+      radial-gradient(1100px 520px at 10% -10%, rgba(31,146,84,0.14), transparent 58%),
+      radial-gradient(900px 480px at 95% -5%, rgba(217,132,15,0.16), transparent 55%),
+      radial-gradient(800px 520px at 50% 120%, rgba(156,63,174,0.08), transparent 60%),
+      var(--hp-bg);
+    color:var(--hp-text);
+    font-family:var(--fn-sans);
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{ color:inherit; }
+  ::selection{ background:var(--hp-gold-soft); color:var(--hp-text); }
+
+  .wrap{ max-width:1180px; margin:0 auto; padding:0 24px; }
+
+  /* ---------- HERO ---------- */
+  .hp-hero{ padding:88px 0 5px; border-bottom:3px solid var(--hp-gold); }
+  .hp-eyebrow{
+    font-family:var(--fn-mono); font-size:12px; letter-spacing:0.2em; text-transform:uppercase;
+    color:var(--hp-sage); margin:0 0 18px; display:flex; align-items:center; gap:10px;
+  }
+  .hp-eyebrow::before{ content:''; width:22px; height:1px; background:var(--hp-sage); display:inline-block; }
+  .hp-hero h1{
+    font-family:var(--fn-serif); font-weight:500; font-size:clamp(36px,6vw,64px);
+    line-height:1.05; margin:0 0 20px; letter-spacing:-0.01em; max-width:18ch;
+  }
+  .hp-hero h1 em{ font-style:italic; color:var(--hp-gold); font-weight:400; }
+  .hp-hero p.lede{ color:var(--hp-text-dim); font-size:17px; line-height:1.6; max-width:60ch; margin:0 0 32px; }
+
+  .hp-hero-stats{ display:flex; flex-wrap:wrap; gap:36px; }
+  .hp-hero-stats .stat .k{
+    font-family:var(--fn-mono); font-size:11px; letter-spacing:0.1em; text-transform:uppercase;
+    color:var(--hp-text-faint); margin-bottom:6px;
+  }
+  .hp-hero-stats .stat .v{ font-family:var(--fn-serif); font-size:26px; color:var(--hp-text); font-weight:500; }
+  .hp-hero-stats .stat .v.gold{ color:var(--hp-gold); }
+  .hp-hero-stats .stat .v.jade{ color:var(--hp-sage); }
+  .hp-hero-stats .stat .v.azure{ color:var(--hp-teal); }
+
+  /* ---------- TOOLS GRID ---------- */
+  .hp-section{ padding:64px 0; }
+  .hp-section-head{ margin-bottom:32px; max-width:64ch; }
+  .hp-section-head .num{
+    font-family:var(--fn-mono); font-size:12px; color:var(--hp-gold); letter-spacing:0.1em; margin-bottom:10px;
+  }
+  .hp-section-head h2{
+    font-family:var(--fn-serif); font-weight:500; font-size:clamp(24px,3vw,32px); margin:0 0 10px; letter-spacing:-0.01em;
+    position:relative; padding-bottom:14px;
+  }
+  .hp-section-head h2::after{
+    content:""; position:absolute; left:0; bottom:0; width:48px; height:4px; border-radius:4px;
+    background:linear-gradient(90deg, var(--hp-gold), var(--hp-rust));
+  }
+  .hp-section-head p{ color:var(--hp-text-dim); font-size:15px; line-height:1.6; margin:0; }
+
+  .hp-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:1px; background:var(--hp-line); border:1px solid var(--hp-line); border-radius:14px; overflow:hidden; }
+  .hp-card{
+    background:var(--hp-panel); padding:28px 26px; text-decoration:none; color:inherit;
+    display:flex; flex-direction:column; gap:14px; transition:background .15s;
+    position:relative; overflow:hidden;
+  }
+
+  /* diagonal "New!" corner ribbon for recently-added calculators */
+  .hp-card-new::after{
+    content:"New!";
+    position:absolute; top:16px; right:-38px; width:150px;
+    transform:rotate(45deg); transform-origin:center;
+    background:linear-gradient(135deg, var(--hp-gold), var(--hp-rust));
+    color:#201205;
+    font-family:var(--fn-mono); font-size:11px; font-weight:700;
+    letter-spacing:0.08em; text-transform:uppercase; text-align:center;
+    white-space:nowrap;
+    padding:4px 0; box-shadow:0 3px 10px rgba(0,0,0,0.28);
+    pointer-events:none; z-index:2;
+  }
+
+  /* diagonal "Updated!" corner ribbon — for existing pages that got a
+     substantial revision, distinct (green/teal) from "New!"'s warm gold/rust */
+  .hp-card-updated::after{
+    content:"Updated";
+    position:absolute; top:16px; right:-38px; width:150px;
+    transform:rotate(45deg); transform-origin:center;
+    background:linear-gradient(135deg, var(--hp-sage), var(--hp-teal));
+    color:#fff;
+    font-family:var(--fn-mono); font-size:11px; font-weight:700;
+    letter-spacing:0.08em; text-transform:uppercase; text-align:center;
+    white-space:nowrap;
+    padding:4px 0; box-shadow:0 3px 10px rgba(0,0,0,0.28);
+    pointer-events:none; z-index:2;
+  }
+
+  /* diagonal "Important" corner ribbon — a bolder rust/plum pairing so it
+     reads as more urgent than the "New!"/"Updated" ribbons. Its own text
+     ("IMPORTANT") is longer than the others, so it gets a wider box —
+     without it the text wraps onto a second line inside the fixed-width
+     ribbon and the two lines visually overlap once rotated. */
+  .hp-card-important::after{
+    content:"Important";
+    position:absolute; top:14px; right:-46px; width:170px;
+    transform:rotate(45deg); transform-origin:center;
+    background:linear-gradient(135deg, var(--hp-rust), var(--hp-plum));
+    color:#fff;
+    font-family:var(--fn-mono); font-size:11px; font-weight:700;
+    letter-spacing:0.06em; text-transform:uppercase; text-align:center;
+    white-space:nowrap;
+    padding:4px 0; box-shadow:0 3px 10px rgba(0,0,0,0.28);
+    pointer-events:none; z-index:2;
+  }
+
+  /* diagonal "Sponsor" corner ribbon, distinct color from the "New!" ribbon */
+  .hp-card-sponsor::after{
+    content:"Sponsor";
+    position:absolute; top:16px; right:-38px; width:150px;
+    transform:rotate(45deg); transform-origin:center;
+    background:linear-gradient(135deg, var(--hp-plum), var(--hp-teal));
+    color:#fff;
+    font-family:var(--fn-mono); font-size:11px; font-weight:700;
+    letter-spacing:0.08em; text-transform:uppercase; text-align:center;
+    white-space:nowrap;
+    padding:4px 0; box-shadow:0 3px 10px rgba(0,0,0,0.28);
+    pointer-events:none; z-index:2;
+  }
+  :root[data-theme="dark"] .hp-card-sponsor::after{
+    background:linear-gradient(135deg, #6B2A7A, #10707E);
+  }
+
+  .hp-card .hp-card-cta a {text-decoration: none;}
+  .hp-card:hover{ background:var(--hp-panel-2); }
+  .hp-card:hover .hp-card-cta{ color:var(--hp-gold); }
+
+  .hp-card:hover .hp-card-cta:hover{ color:var(--hp-teal); }
+  .hp-card-tag{
+    display:inline-flex; align-self:flex-start; align-items:center; gap:6px;
+    font-family:var(--fn-mono); font-size:10.5px; letter-spacing:0.1em; text-transform:uppercase;
+    padding:4px 10px; border-radius:999px; border:1px solid currentColor;
+  }
+  .hp-card-tag.gold{ color:var(--hp-gold); background:var(--hp-gold-soft); }
+  .hp-card-tag.jade{ color:var(--hp-sage); background:var(--hp-sage-soft); }
+  .hp-card-tag.azure{ color:var(--hp-teal); background:var(--hp-teal-soft); }
+  .hp-card-tag.rust{ color:var(--hp-rust); background:var(--hp-rust-soft); }
+  .hp-card-tag.plum{ color:var(--hp-plum); background:var(--hp-plum-soft); }
+  .hp-card h3{ font-family:var(--fn-serif); font-weight:600; font-size:20px; margin:0; line-height:1.25; display:flex; align-items:center; gap:9px; }
+  .hp-card h3 svg{ flex-shrink:0; color:var(--hp-gold); }
+  /* the sponsor card has no icon and mixes text with an inline <del> —
+     flex turns each text/inline chunk into its own non-wrapping item,
+     breaking normal word-wrap, so this card keeps the plain block flow */
+  .hp-card-sponsor h3{ display:block; }
+  .hp-card p{ color:var(--hp-text-dim); font-size:14px; line-height:1.55; margin:0; flex:1; }
+  .hp-card-cta{
+    font-family:var(--fn-mono); font-size:12px; letter-spacing:0.05em; text-transform:uppercase;
+    color:var(--hp-text-faint); display:flex; align-items:center; gap:6px; transition:color .15s;
+  }
+
+  /* rotate a colored top-accent across the grid so the cards read as varied, not uniform */
+  .hp-card::before{
+    content:""; position:absolute; top:0; left:0; right:0; height:4px;
+    background:var(--hp-gold);
+  }
+  .hp-grid .hp-card:nth-child(5n+2)::before{ background:var(--hp-sage); }
+  .hp-grid .hp-card:nth-child(5n+3)::before{ background:var(--hp-teal); }
+  .hp-grid .hp-card:nth-child(5n+4)::before{ background:var(--hp-rust); }
+  .hp-grid .hp-card:nth-child(5n+5)::before{ background:var(--hp-plum); }
+
+  /* ---------- ABOUT STRIP ---------- */
+  .hp-about{
+    background:var(--hp-panel-2); border:1px solid var(--hp-line); border-radius:14px;
+    padding:28px 30px; display:grid; grid-template-columns:1.2fr 1fr; gap:28px; align-items:center;
+  }
+  @media (max-width:760px){ .hp-about{ grid-template-columns:1fr; } }
+  .hp-about h3{ font-family:var(--fn-serif); font-weight:600; font-size:19px; margin:0 0 10px; }
+  .hp-about p{ color:var(--hp-text-dim); font-size:14px; line-height:1.6; margin:0; }
+  .hp-about ul{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:10px; }
+  .hp-about li{
+    font-family:var(--fn-mono); font-size:12.5px; color:var(--hp-text-dim);
+    display:flex; align-items:baseline; gap:8px;
+  }
+  .hp-about li::before{ content:'—'; color:var(--hp-sage); }
+
+
+  @media (max-width:640px){
+    .hp-hero{ padding:56px 0 40px; }
+    .hp-section{ padding:48px 0; }
+  }

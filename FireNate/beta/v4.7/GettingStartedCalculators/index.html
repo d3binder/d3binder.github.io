@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script src="../assets/js/theme-init.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FireNate - Getting Started: Calculators</title>
+<meta name="description" content="New to personal finance? Take a quick quiz or browse a visual map, and we'll point you to the FireNate calculators that'll actually help.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Antonio:wght@400;500;600;700&family=Michroma&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/site.css">
+<link rel="stylesheet" href="../assets/css/timeToFI.css">
+<script src="../assets/js/theme.js" defer></script>
+<script src="../assets/js/user-profile.js" defer></script>
+<script src="../assets/js/nav.js" defer></script>
+<script>
+window.FN_BASE = "../"; window.FN_PAGE = "getting-started-calculators";
+</script>
+<style>
+  /* ---------- LANDING CHOOSER ---------- */
+  .gsc-chooser{ margin-top:8px; }
+  .gsc-chooser-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:16px; }
+  .gsc-choice{
+    display:block; width:100%; text-align:left; background:var(--surface); border:1px solid var(--line);
+    border-top:4px solid var(--gold); border-radius:var(--radius); padding:28px 26px; cursor:pointer;
+    font-family:var(--sans); transition:border-color .15s ease, transform .15s ease;
+  }
+  .gsc-choice:hover{ border-color:var(--gold-dim); transform:translateY(-2px); }
+  .gsc-choice.gsc-choice-map{ border-top-color:var(--target); }
+  .gsc-choice.gsc-choice-map:hover{ border-color:var(--target); }
+  .gsc-choice-icon{ color:var(--gold-dim); margin-bottom:14px; }
+  .gsc-choice-map .gsc-choice-icon{ color:var(--target); }
+  [data-theme="lcars"] .gsc-choice h3{ font-family:var(--display); letter-spacing:.02em; }
+  .gsc-choice h3{ font-family:var(--serif); font-size:19px; font-weight:500; margin:0 0 8px; color:var(--ink); }
+  .gsc-choice p{ font-size:13.5px; color:var(--ink-dim); line-height:1.55; margin:0; }
+
+  /* ---------- SHARED SHELL ---------- */
+  /* lives inside <header>, above the header's own bottom border, so it
+     reads as page chrome (like a mode indicator) rather than content —
+     styled like the site's other pill buttons (.qz-btn-ghost) instead of
+     a bare text link, since it's a real mode switch, not a footnote */
+  .gsc-switch{
+    display:inline-flex; align-items:center; gap:8px; margin-top:18px;
+    background:none; border:1px solid var(--line); color:var(--ink-dim);
+    font-family:var(--sans); font-size:13px; font-weight:600;
+    padding:9px 18px; border-radius:999px; cursor:pointer;
+    transition:border-color .15s ease, color .15s ease;
+  }
+  .gsc-switch:hover{ border-color:var(--gold-dim); color:var(--gold); }
+  .gsc-switch svg{ flex-shrink:0; }
+
+  .gsc-cols{ display:flex; gap:0; }
+
+  .gsc-main{
+    flex:1 1 60%; min-width:0; background:var(--surface); border:1px solid var(--line); border-top:4px solid var(--gold);
+    border-radius:var(--radius); padding:32px 30px;
+  }
+  @media (max-width:520px){ .gsc-main{ padding:26px 20px; } }
+
+  .gsc-resizer{
+    flex:0 0 auto; width:17px; align-self:stretch; cursor:col-resize; position:relative;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .gsc-resizer::before{ content:""; width:1px; height:100%; background:var(--line); }
+  .gsc-resizer::after{
+    content:""; position:absolute; width:4px; height:36px; border-radius:3px; background:var(--line);
+    transition:background-color .15s ease;
+  }
+  .gsc-resizer:hover::after, .gsc-resizer.is-dragging::after{ background:var(--gold-dim); }
+
+  .gsc-side{
+    flex:0 0 40%; min-width:280px; max-width:560px; position:relative;
+    background:var(--surface); border:1px solid var(--line); border-top:4px solid var(--target);
+    border-radius:var(--radius); padding:28px 26px;
+  }
+  .gsc-side-placeholder{ color:var(--ink-faint); font-size:14px; text-align:center; padding:30px 6px; }
+  .gsc-drawer-close{ display:none; }
+  .gsc-backdrop{ display:none; }
+
+  @media (max-width:860px){
+    .gsc-cols{ flex-direction:column; }
+    .gsc-resizer{ display:none; }
+    .gsc-side{
+      position:fixed; left:0; right:0; bottom:0; z-index:60;
+      max-height:75vh; overflow-y:auto; max-width:none;
+      border-radius:18px 18px 0 0; box-shadow:0 -10px 30px rgba(0,0,0,0.28);
+      transform:translateY(100%); transition:transform .3s ease;
+      padding:34px 22px 28px;
+    }
+    .gsc-side::before{
+      content:""; position:absolute; top:10px; left:50%; transform:translateX(-50%);
+      width:36px; height:4px; border-radius:3px; background:var(--line);
+    }
+    .gsc-side.is-open{ transform:translateY(0); }
+    .gsc-drawer-close{
+      display:flex; align-items:center; justify-content:center; position:absolute; top:12px; right:14px;
+      width:30px; height:30px; border-radius:50%; background:var(--surface-2); border:1px solid var(--line);
+      color:var(--ink-dim); font-size:18px; cursor:pointer; line-height:1; padding:0;
+    }
+    .gsc-backdrop{
+      display:block; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:59;
+      opacity:0; pointer-events:none; transition:opacity .3s ease;
+    }
+    .gsc-backdrop.is-open{ opacity:1; pointer-events:auto; }
+  }
+
+  /* ---------- QUIZ (renders into #gscMain / #gscSideInner) ---------- */
+  .qz-progress{ display:flex; align-items:center; gap:12px; margin-bottom:24px; }
+  .qz-progress-label{
+    font-family:var(--mono); font-size:11px; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--ink-faint); white-space:nowrap;
+  }
+  .qz-progress-track{ flex:1; height:4px; border-radius:4px; background:var(--surface-2); overflow:hidden; }
+  .qz-progress-fill{
+    height:100%; background:linear-gradient(90deg, var(--gold), var(--jade));
+    border-radius:4px; transition:width .3s ease; width:0%;
+  }
+
+  .qz-back{
+    display:inline-flex; align-items:center; gap:6px; background:none; border:none; color:var(--ink-faint);
+    font-family:var(--sans); font-size:12.5px; font-weight:600; cursor:pointer; padding:0; margin-bottom:16px;
+  }
+  .qz-back:hover{ color:var(--gold); }
+  .qz-back svg{ flex-shrink:0; }
+
+  [data-theme="lcars"] .qz-question{ font-family:var(--display); letter-spacing:.02em; }
+  .qz-question{
+    font-family:var(--serif); font-size:clamp(20px,3.2vw,26px); font-weight:500;
+    margin:0 0 22px; color:var(--ink); line-height:1.3;
+  }
+
+  .qz-options{ display:flex; flex-direction:column; gap:10px; }
+  .qz-option{
+    display:block; width:100%; text-align:left; background:var(--surface-2); border:1px solid var(--line);
+    border-radius:10px; padding:14px 18px; font-family:var(--sans); font-size:14.5px; font-weight:600;
+    color:var(--ink); cursor:pointer; transition:border-color .15s ease, transform .15s ease, background-color .15s ease;
+  }
+  .qz-option:hover{ border-color:var(--gold-dim); background:var(--surface); transform:translateY(-1px); }
+  .qz-option:focus-visible{ outline:2px solid var(--target); outline-offset:2px; }
+
+  .qz-done-text{ color:var(--ink-dim); font-size:14.5px; line-height:1.6; margin:0 0 20px; }
+
+  [data-theme="lcars"] .qz-results-head h2{ font-family:var(--display); letter-spacing:.02em; }
+  .qz-results-head h2{ font-family:var(--serif); font-size:clamp(20px,3.2vw,26px); font-weight:500; margin:0 0 6px; color:var(--ink); }
+  .qz-results-head p{ color:var(--ink-dim); font-size:14.5px; margin:0; line-height:1.55; }
+
+  .qz-results-grid{ display:grid; grid-template-columns:1fr; gap:14px; margin:22px 0 4px; }
+  .qz-result-card{
+    display:block; background:var(--surface-2); border:1px solid var(--line); border-top:3px solid var(--gold);
+    border-radius:10px; padding:18px 20px; text-decoration:none;
+    transition:border-color .15s ease, transform .15s ease;
+  }
+  .qz-result-card:hover{ border-color:var(--gold-dim); transform:translateY(-1px); }
+  .qz-result-card .name{ display:flex; align-items:center; gap:8px; font-weight:700; color:var(--ink); font-size:15px; margin-bottom:6px; }
+  .qz-result-card .name svg{ flex-shrink:0; color:var(--gold-dim); }
+  .qz-result-card .reason{ font-size:13px; color:var(--ink-faint); line-height:1.55; }
+  .qz-result-card .cta{
+    display:inline-block; margin-top:10px; font-size:11.5px; font-weight:700; color:var(--gold-dim);
+    text-transform:uppercase; letter-spacing:.05em;
+  }
+
+  .qz-btn{
+    display:inline-flex; align-items:center; gap:8px;
+    background:linear-gradient(135deg, var(--gold), var(--gold-dim));
+    color:#201205; font-weight:700; font-size:13.5px;
+    padding:10px 20px; border-radius:999px; border:none; cursor:pointer;
+    font-family:var(--sans); text-decoration:none;
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .qz-btn:hover{ transform:translateY(-1px); box-shadow:0 8px 20px -6px rgba(217,132,15,0.45); }
+  .qz-btn.qz-btn-ghost{
+    background:none; border:1px solid var(--line); color:var(--ink-dim); font-weight:600;
+  }
+  .qz-btn.qz-btn-ghost:hover{ border-color:var(--gold-dim); color:var(--gold); box-shadow:none; }
+
+  .qz-results-footer{ display:flex; flex-wrap:wrap; gap:10px; margin-top:18px; }
+
+  /* ---------- FINANCIAL CONCEPTS MAP (renders into #gscMain / #gscSideInner) ---------- */
+  .cm-lane{ margin-bottom:32px; }
+  .cm-lane:last-child{ margin-bottom:0; }
+  .cm-lane-label{
+    font-family:var(--mono); font-size:11px; letter-spacing:.08em; text-transform:uppercase;
+    margin-bottom:18px; display:flex; align-items:center; gap:8px;
+  }
+  .cm-lane-dot{ width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .cm-lane-jade .cm-lane-dot{ background:var(--jade); }
+  .cm-lane-danger .cm-lane-dot{ background:var(--danger); }
+  .cm-lane-target .cm-lane-dot{ background:var(--target); }
+  .cm-lane-jade .cm-lane-label{ color:var(--jade); }
+  .cm-lane-danger .cm-lane-label{ color:var(--danger); }
+  .cm-lane-target .cm-lane-label{ color:var(--target); }
+
+  .cm-track{ position:relative; overflow-x:auto; padding:6px 4px 4px; }
+  .cm-track-line{ position:absolute; top:15px; left:24px; right:24px; height:2px; background:var(--line); }
+  .cm-nodes{ position:relative; display:flex; justify-content:space-between; gap:26px; min-width:400px; }
+  .cm-node{
+    display:flex; flex-direction:column; align-items:center; gap:9px; background:none; border:none;
+    cursor:pointer; padding:0; width:90px; flex-shrink:0;
+  }
+  .cm-node-dot{
+    width:16px; height:16px; border-radius:50%; background:var(--surface); border:2px solid var(--line);
+    transition:border-color .15s ease, background-color .15s ease, transform .15s ease;
+  }
+  .cm-node:hover .cm-node-dot{ transform:scale(1.15); }
+  .cm-node:focus-visible{ outline:2px solid var(--target); outline-offset:4px; border-radius:50%; }
+  .cm-node-label{ font-size:12px; font-weight:600; color:var(--ink-dim); text-align:center; line-height:1.3; }
+  .cm-lane-jade .cm-node.is-active .cm-node-dot{ background:var(--jade); border-color:var(--jade); }
+  .cm-lane-danger .cm-node.is-active .cm-node-dot{ background:var(--danger); border-color:var(--danger); }
+  .cm-lane-target .cm-node.is-active .cm-node-dot{ background:var(--target); border-color:var(--target); }
+  .cm-node.is-active .cm-node-label{ color:var(--ink); font-weight:700; }
+
+  [data-theme="lcars"] .cm-detail-title{ font-family:var(--display); letter-spacing:.02em; }
+  .cm-detail-title{ font-family:var(--serif); font-size:20px; font-weight:500; color:var(--ink); margin:0 0 16px; }
+  .cm-detail-block{ margin-bottom:16px; }
+  .cm-detail-block:last-child{ margin-bottom:0; }
+  .cm-detail-block h4{ font-family:var(--mono); font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-faint); margin:0 0 8px; }
+  .cm-detail-block p{ font-size:14px; color:var(--ink-dim); line-height:1.6; margin:0; }
+  .cm-detail-calcs{ display:flex; flex-wrap:wrap; gap:8px; }
+  .cm-detail-calc-link{
+    display:inline-flex; align-items:center; gap:6px; background:var(--surface-2); border:1px solid var(--line);
+    border-radius:999px; padding:6px 14px; font-size:13px; font-weight:600; color:var(--ink); text-decoration:none;
+    transition:border-color .15s ease;
+  }
+  .cm-detail-calc-link:hover{ border-color:var(--gold-dim); }
+  .cm-detail-calc-link svg{ color:var(--gold-dim); flex-shrink:0; }
+  .cm-detail-none{ font-size:13.5px; color:var(--ink-faint); font-style:italic; }
+  .cm-detail-questions{ margin:0; padding-left:18px; color:var(--ink-dim); font-size:13.5px; line-height:1.7; }
+</style>
+</head>
+<body>
+<div id="fn-site-nav"></div>
+
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">FireNate — Getting Started: Calculators</p>
+    <h1>Not sure where to start? <em>Let's find out together.</em></h1>
+    <p class="lede">Pick whichever fits you better — answer a few quick questions, or browse the whole picture yourself as a map.</p>
+    <button type="button" class="gsc-switch" id="gscSwitch" hidden></button>
+  </header>
+
+  <div class="gsc-chooser" id="gscChooser">
+    <div class="gsc-chooser-grid">
+      <button type="button" class="gsc-choice" data-mode="quiz">
+        <svg class="gsc-choice-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+        <h3>Take the Quiz</h3>
+        <p>Answer four quick questions about your situation and we'll point you to the two or three calculators that'll actually help.</p>
+      </button>
+      <button type="button" class="gsc-choice gsc-choice-map" data-mode="map">
+        <svg class="gsc-choice-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="6" r="2.5"></circle><circle cx="5" cy="18" r="2.5"></circle><line x1="5" y1="8.5" x2="5" y2="15.5"></line><circle cx="19" cy="12" r="2.5"></circle><path d="M7.5 6h6a3 3 0 0 1 3 3v0.5"></path></svg>
+        <h3>Explore the Map</h3>
+        <p>Browse Saving, Debt, and Retirement laid out as a subway-style map — click any stop for what it means and which calculators help.</p>
+      </button>
+    </div>
+  </div>
+
+  <div class="gsc-shell" id="gscShell" hidden>
+    <div class="gsc-cols" id="gscCols">
+      <div class="gsc-main" id="gscMain"></div>
+      <div class="gsc-resizer" id="gscResizer" role="separator" aria-orientation="vertical" aria-label="Resize panels" tabindex="0"></div>
+      <div class="gsc-side" id="gscSide">
+        <button type="button" class="gsc-drawer-close" id="gscDrawerClose" aria-label="Close">&times;</button>
+        <div class="gsc-side-inner" id="gscSideInner"></div>
+      </div>
+    </div>
+  </div>
+  <div class="gsc-backdrop" id="gscBackdrop"></div>
+
+</div>
+
+<footer id="site-footer"></footer>
+
+<script>
+// Fixed, always-in-order question sequence — every answer choice attaches
+// zero or more calculator recommendations (with a plain-English reason) to
+// a running results list, computed fresh from the full answer history at
+// results time so "Back" -> change an earlier answer never double-counts.
+var QUESTIONS = [
+  {
+    text: "Do you currently have any high-interest debt — credit cards, personal loans?",
+    options: [
+      { label: "Yes", recommend: [
+        { id: "debt-snowball", reason: "List your debts and get a month-by-month payoff plan." }
+      ]},
+      { label: "No", recommend: [] }
+    ]
+  },
+  {
+    text: "Do you have an emergency fund — enough saved to cover 3+ months of expenses if you lost your job tomorrow?",
+    options: [
+      { label: "No", recommend: [
+        { id: "emergency-fund", reason: "See how big your safety net should be, and how close you already are." }
+      ]},
+      { label: "Not sure", recommend: [
+        { id: "emergency-fund", reason: "See how big your safety net should be, and how close you already are." }
+      ]},
+      { label: "Yes", recommend: [] }
+    ]
+  },
+  {
+    text: "Do you know your net worth — everything you own minus everything you owe?",
+    options: [
+      { label: "No", recommend: [
+        { id: "net-worth", reason: "Add up your accounts and debts for a real financial baseline." }
+      ]},
+      { label: "Yes", recommend: [] }
+    ]
+  },
+  {
+    text: "What's on your mind right now?",
+    options: [
+      { label: "How many years until I could retire?", recommend: [
+        { id: "time-to-fi", reason: "See how many years every savings rate, from 0% to 100%, actually buys you." }
+      ]},
+      { label: "I'm close to retiring — will my savings actually last?", recommend: [
+        { id: "safe-withdrawal-rate", reason: "Stress-test your withdrawal rate against every real historical market cycle since 1928." },
+        { id: "monte-carlo", reason: "Run thousands of randomized market scenarios for a probability of success." }
+      ]},
+      { label: "I've got a big money decision coming up (car, house, extra debt payment vs. investing)", recommend: [
+        { id: "payoff-or-invest", reason: "Extra debt payoff or investing it instead — see which wins with your own numbers." }
+      ]},
+      { label: "Just exploring, not sure yet", recommend: [
+        { id: "fi-snapshot", reason: "Your whole financial picture at a glance, in one place." }
+      ]}
+    ]
+  }
+];
+
+// title/href/icon for every calculator this page can ever recommend — icon
+// markup matches the same glyph used for that page everywhere else on the
+// site (nav.js's PAGE_ICONS / this page's own homepage card)
+var CALCULATORS = {
+  "debt-snowball": {
+    title: "Debt Snowball", href: "../DebtSnowball/index.html",
+    icon: '<rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line>'
+  },
+  "emergency-fund": {
+    title: "Emergency Fund", href: "../EmergencyFund/index.html",
+    icon: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>'
+  },
+  "net-worth": {
+    title: "Net Worth", href: "../NetWorth/index.html",
+    icon: '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline>'
+  },
+  "time-to-fi": {
+    title: "Time to FI", href: "../TimeToFI/index.html",
+    icon: '<circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>'
+  },
+  "safe-withdrawal-rate": {
+    title: "Safe Withdrawal Rate", href: "../SafeWithdrawalRate/index.html",
+    icon: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><polyline points="9 12 12 15 16 10"></polyline>'
+  },
+  "monte-carlo": {
+    title: "Monte Carlo Simulator", href: "../MonteCarlo/index.html",
+    icon: '<rect x="3" y="3" width="18" height="18" rx="3"></rect><circle cx="8" cy="8" r="1.2"></circle><circle cx="16" cy="8" r="1.2"></circle><circle cx="12" cy="12" r="1.2"></circle><circle cx="8" cy="16" r="1.2"></circle><circle cx="16" cy="16" r="1.2"></circle>'
+  },
+  "payoff-or-invest": {
+    title: "Payoff or Invest", href: "../Payoff-or-Invest/index.html",
+    icon: '<line x1="6" y1="3" x2="6" y2="15"></line><circle cx="18" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><path d="M18 9a9 9 0 0 1-9 9"></path>'
+  },
+  "fi-snapshot": {
+    title: "FI Snapshot", href: "../FISnapshot/index.html",
+    icon: '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>'
+  },
+  "budget-calculator": {
+    title: "Budget Calculator", href: "../BudgetCalculator/index.html",
+    icon: '<path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path>'
+  },
+  "compound-interest": {
+    title: "Compound Interest", href: "../CompoundInterest-WealthMultiplier/index.html",
+    icon: '<line x1="19" y1="5" x2="5" y2="19"></line><circle cx="6.5" cy="6.5" r="2.5"></circle><circle cx="17.5" cy="17.5" r="2.5"></circle>'
+  },
+  "loan-calculator": {
+    title: "Loan Calculator", href: "../LoanCalculator/index.html",
+    icon: '<line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>'
+  },
+  "car-buying": {
+    title: "Car Buying", href: "../CarBuying/index.html",
+    icon: '<path d="M4 15 L5 9 L8 6 L16 6 L19 9 L20 15"></path><rect x="2" y="14" width="20" height="5" rx="1"></rect><circle cx="7" cy="19" r="2.2"></circle><circle cx="17" cy="19" r="2.2"></circle>'
+  },
+  "roth-ladder": {
+    title: "Roth Conversion Ladder", href: "../RothLadder/index.html",
+    icon: '<line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line>'
+  },
+  "rmd": {
+    title: "Required Minimum Distributions", href: "../RMD/index.html",
+    icon: '<polygon points="4 8 12 3 20 8"></polygon><line x1="3" y1="20" x2="21" y2="20"></line><line x1="6" y1="9" x2="6" y2="19"></line><line x1="10" y1="9" x2="10" y2="19"></line><line x1="14" y1="9" x2="14" y2="19"></line><line x1="18" y1="9" x2="18" y2="19"></line>'
+  }
+};
+
+// Three parallel "subway lines," not one connected path — each is its own
+// independent sequence (per the user's spec: Saving/Debt/Retirement each
+// branch on their own). "calculators" is an array of ids into the shared
+// CALCULATORS map above; an empty array is a deliberate, honest gap (e.g.
+// Budgeting) rather than a forced link to something only tangentially
+// related.
+var CONCEPT_LANES = [
+  {
+    id: "saving", label: "Saving", color: "jade",
+    nodes: [
+      {
+        label: "Saving",
+        understand: "This is the foundation everything else builds on — the discipline of spending less than you earn and directing the difference somewhere on purpose, before it disappears into everyday spending.",
+        calculators: ["net-worth", "fi-snapshot"],
+        questions: ["How much should I actually be saving?", "Where does my money even go?"]
+      },
+      {
+        label: "Emergency Fund",
+        understand: "Before investing or paying down extra debt, you want 3–6 months of expenses somewhere safe and boring — a savings account, not the stock market — so a job loss or car repair doesn't force you into debt.",
+        calculators: ["emergency-fund"],
+        questions: ["How much is ‘enough’?", "Where should I actually keep this money?"]
+      },
+      {
+        label: "Budgeting",
+        understand: "Once your safety net exists, budgeting is just deciding where your remaining dollars go on purpose — bills, wants, and savings goals — instead of finding out at the end of the month.",
+        calculators: ["budget-calculator"],
+        questions: ["How much of my income should go to savings vs. spending?", "What's reasonable to spend on rent, food, etc.?"]
+      },
+      {
+        label: "Investing",
+        understand: "With a safety net and a budget in place, investing is how savings actually grow faster than inflation — buying assets (usually index funds) and letting compounding do the work over decades.",
+        calculators: ["compound-interest", "time-to-fi"],
+        questions: ["How much will my money actually grow to?", "How many years until I could retire?"]
+      }
+    ]
+  },
+  {
+    id: "debt", label: "Debt", color: "danger",
+    nodes: [
+      {
+        label: "Debt",
+        understand: "Not all debt is equal — a 4% mortgage and a 24% credit card behave completely differently in the math. The first question is always: what's the rate, and is it costing more than your money could earn elsewhere?",
+        calculators: ["payoff-or-invest"],
+        questions: ["Should I pay this off or invest instead?", "Which debt should I attack first?"]
+      },
+      {
+        label: "Credit Cards",
+        understand: "Almost always the highest-rate debt you'll ever carry (often 20%+) — there's essentially no investment that reliably beats that, so paying these down is usually the best “return” available to you.",
+        calculators: ["debt-snowball"],
+        questions: ["Which card do I pay off first?", "How long until I'm debt-free?"]
+      },
+      {
+        label: "Loans",
+        understand: "Personal loans, auto loans, student loans — each has its own rate and term. Understanding the full amortization (how much of each payment is interest vs. principal) shows whether paying extra actually moves the needle.",
+        calculators: ["loan-calculator", "car-buying"],
+        questions: ["What does this loan actually cost me in total?", "Is refinancing worth it?"]
+      },
+      {
+        label: "Payoff Strategies",
+        understand: "Once you know what you owe and at what rate, the strategy question is order: smallest-balance-first (snowball, for momentum) vs. highest-rate-first (avalanche, for math) — and whether extra payments should go to debt at all.",
+        calculators: ["debt-snowball", "payoff-or-invest"],
+        questions: ["Snowball or avalanche?", "Extra debt payment or invest instead?"]
+      }
+    ]
+  },
+  {
+    id: "retirement", label: "Retirement", color: "target",
+    nodes: [
+      {
+        label: "Retirement",
+        understand: "The big question underneath every other one: how much do you need saved, and for how long does it need to last? Everything below is really just refining the answer to that.",
+        calculators: ["time-to-fi", "fi-snapshot"],
+        questions: ["How many years until I could retire?", "How much do I actually need?"]
+      },
+      {
+        label: "401(k)",
+        understand: "An employer retirement account, usually with tax-deferred growth (and often free matching money). It grows through the same compounding as any other investment — the twist is when and how you're allowed to access it.",
+        calculators: ["compound-interest"],
+        questions: ["How much will my 401(k) actually grow to?", "Can I access this before 59½?"]
+      },
+      {
+        label: "IRA",
+        understand: "An individual account (Traditional or Roth) outside an employer plan, with its own contribution limits and rules. A Roth conversion ladder is how many early retirees bridge the gap between retiring young and turning 59½.",
+        calculators: ["roth-ladder"],
+        questions: ["What's a Roth conversion ladder?", "Traditional or Roth — which is better for me?"]
+      },
+      {
+        label: "Withdrawal Planning",
+        understand: "The last mile — once you stop contributing and start withdrawing, the math flips: now it's about how much you can safely take out each year without running out, accounting for market swings and eventual required withdrawals.",
+        calculators: ["safe-withdrawal-rate", "monte-carlo", "rmd"],
+        questions: ["Will my money actually last?", "What's a safe withdrawal rate?"]
+      }
+    ]
+  }
+];
+
+var gscChooser = document.getElementById("gscChooser");
+var gscShell = document.getElementById("gscShell");
+var gscSwitch = document.getElementById("gscSwitch");
+var gscCols = document.getElementById("gscCols");
+var gscMain = document.getElementById("gscMain");
+var gscResizer = document.getElementById("gscResizer");
+var gscSide = document.getElementById("gscSide");
+var gscSideInner = document.getElementById("gscSideInner");
+var gscBackdrop = document.getElementById("gscBackdrop");
+var currentMode = null;
+var state = { index: 0, answers: [] };
+
+function icon(shapes, size){
+  size = size || 14;
+  return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+    'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + shapes + "</svg>";
+}
+function arrowIcon(){
+  return icon('<line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline>', 13);
+}
+function isMobile(){ return window.innerWidth <= 860; }
+
+// ---------- Mode chooser / shared shell ----------
+function startMode(mode){
+  currentMode = mode;
+  gscChooser.hidden = true;
+  gscShell.hidden = false;
+  gscSwitch.hidden = false;
+  resetSidePlaceholder();
+  if (mode === "quiz") {
+    state = { index: 0, answers: [] };
+    renderQuestion();
+    gscSwitch.innerHTML = "Switch to the map instead " + arrowIcon();
+  } else {
+    renderConceptMap();
+    gscSwitch.innerHTML = "Switch to the quiz instead " + arrowIcon();
+  }
+}
+document.querySelectorAll(".gsc-choice").forEach(function(btn){
+  btn.addEventListener("click", function(){ startMode(btn.getAttribute("data-mode")); });
+});
+gscSwitch.addEventListener("click", function(){
+  startMode(currentMode === "quiz" ? "map" : "quiz");
+});
+
+function resetSidePlaceholder(){
+  gscSideInner.innerHTML = '<p class="gsc-side-placeholder">' + (currentMode === "map"
+    ? "Click any stop on the map to see what it means, which calculators help, and what people usually ask next."
+    : "Your recommended calculators will show up here once you've answered all the questions.") + "</p>";
+  closeSide();
+}
+
+// ---------- Mobile slide-up drawer for the response pane ----------
+function openSideIfMobile(){
+  if (!isMobile()) return;
+  gscSide.classList.add("is-open");
+  gscBackdrop.classList.add("is-open");
+}
+function closeSide(){
+  gscSide.classList.remove("is-open");
+  gscBackdrop.classList.remove("is-open");
+}
+document.getElementById("gscDrawerClose").addEventListener("click", closeSide);
+gscBackdrop.addEventListener("click", closeSide);
+document.addEventListener("keydown", function(e){ if (e.key === "Escape") closeSide(); });
+
+// ---------- Resizable divider (desktop/tablet only — hidden on mobile) ----------
+var resizing = false;
+function onResizerDown(e){
+  resizing = true;
+  gscResizer.classList.add("is-dragging");
+  document.body.style.userSelect = "none";
+  e.preventDefault();
+}
+function onResizerMove(e){
+  if (!resizing) return;
+  var clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  var rect = gscCols.getBoundingClientRect();
+  var maxMain = rect.width - 280 - gscResizer.offsetWidth; // keep the side pane's min-width usable
+  var mainWidth = Math.max(360, Math.min(maxMain, clientX - rect.left));
+  gscMain.style.flex = "0 0 " + mainWidth + "px";
+}
+function onResizerUp(){
+  resizing = false;
+  gscResizer.classList.remove("is-dragging");
+  document.body.style.userSelect = "";
+}
+gscResizer.addEventListener("mousedown", onResizerDown);
+gscResizer.addEventListener("touchstart", onResizerDown, { passive: false });
+document.addEventListener("mousemove", onResizerMove);
+document.addEventListener("touchmove", onResizerMove, { passive: true });
+document.addEventListener("mouseup", onResizerUp);
+document.addEventListener("touchend", onResizerUp);
+
+// ---------- Quiz ----------
+function renderQuestion(){
+  var q = QUESTIONS[state.index];
+  var pct = Math.round((state.index / QUESTIONS.length) * 100);
+  var optionsHtml = q.options.map(function(opt, i){
+    return '<button type="button" class="qz-option" data-opt="' + i + '">' + opt.label + "</button>";
+  }).join("");
+  var backHtml = state.index > 0
+    ? '<button type="button" class="qz-back" id="qzBack">' + icon('<polyline points="15 18 9 12 15 6"></polyline>') + " Back</button>"
+    : "";
+  gscMain.innerHTML =
+    '<div class="qz-progress">' +
+      '<span class="qz-progress-label">Question ' + (state.index + 1) + " of " + QUESTIONS.length + "</span>" +
+      '<span class="qz-progress-track"><span class="qz-progress-fill" style="width:' + pct + '%"></span></span>' +
+    "</div>" +
+    backHtml +
+    '<h2 class="qz-question">' + q.text + "</h2>" +
+    '<div class="qz-options">' + optionsHtml + "</div>";
+
+  if (state.index > 0) {
+    document.getElementById("qzBack").addEventListener("click", goBack);
+  }
+  gscMain.querySelectorAll(".qz-option").forEach(function(btn){
+    btn.addEventListener("click", function(){ selectOption(parseInt(btn.getAttribute("data-opt"), 10)); });
+  });
+}
+
+function selectOption(optIndex){
+  state.answers[state.index] = optIndex;
+  state.index++;
+  if (state.index < QUESTIONS.length) {
+    renderQuestion();
+  } else {
+    renderQuizDone();
+    renderResultsPanel();
+  }
+  gscMain.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function goBack(){
+  if (state.index <= 0) return;
+  state.index--;
+  renderQuestion();
+}
+
+function renderQuizDone(){
+  gscMain.innerHTML =
+    '<div class="qz-progress">' +
+      '<span class="qz-progress-label">Results</span>' +
+      '<span class="qz-progress-track"><span class="qz-progress-fill" style="width:100%"></span></span>' +
+    "</div>" +
+    '<h2 class="qz-question">All done!</h2>' +
+    '<p class="qz-done-text">Check the panel ' + (isMobile() ? "below" : "to the right") + ' for your recommended calculators.</p>' +
+    '<button type="button" class="qz-btn qz-btn-ghost" id="qzRestartMain">' + icon('<polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>') + " Retake the quiz</button>";
+  document.getElementById("qzRestartMain").addEventListener("click", restart);
+}
+
+function computeRecommendations(){
+  var seen = {};
+  var results = [];
+  state.answers.forEach(function(optIndex, qIndex){
+    var opt = QUESTIONS[qIndex].options[optIndex];
+    if (!opt) return;
+    opt.recommend.forEach(function(rec){
+      if (seen[rec.id]) return;
+      seen[rec.id] = true;
+      results.push(rec);
+    });
+  });
+  return results.slice(0, 4);
+}
+
+function renderResultsPanel(){
+  var recs = computeRecommendations();
+  var cardsHtml = recs.map(function(rec){
+    var calc = CALCULATORS[rec.id];
+    return '<a class="qz-result-card" href="' + calc.href + '">' +
+      '<div class="name">' + icon(calc.icon, 18) + calc.title + "</div>" +
+      '<div class="reason">' + rec.reason + "</div>" +
+      '<span class="cta">Open calculator &rarr;</span>' +
+    "</a>";
+  }).join("");
+
+  var introText = recs.length
+    ? "Based on your answers, these are the calculators worth trying first:"
+    : "Sounds like you've already got the fundamentals covered — here's a good calculator to keep building on that:";
+
+  // a genuinely empty result set shouldn't happen (Q4 always recommends
+  // something), but fall back to FI Snapshot as a safe default just in case
+  if (!recs.length) {
+    var fallback = CALCULATORS["fi-snapshot"];
+    cardsHtml = '<a class="qz-result-card" href="' + fallback.href + '">' +
+      '<div class="name">' + icon(fallback.icon, 18) + fallback.title + "</div>" +
+      '<div class="reason">Your whole financial picture at a glance, in one place.</div>' +
+      '<span class="cta">Open calculator &rarr;</span>' +
+    "</a>";
+  }
+
+  gscSideInner.innerHTML =
+    '<div class="qz-results-head">' +
+      "<h2>Here's where to start</h2>" +
+      "<p>" + introText + "</p>" +
+    "</div>" +
+    '<div class="qz-results-grid">' + cardsHtml + "</div>" +
+    '<div class="qz-results-footer">' +
+      '<button type="button" class="qz-btn" id="qzRestart">' + icon('<polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>') + " Retake the quiz</button>" +
+      '<a class="qz-btn qz-btn-ghost" href="../index.html">See all calculators &rarr;</a>' +
+    "</div>";
+
+  document.getElementById("qzRestart").addEventListener("click", restart);
+  openSideIfMobile();
+}
+
+function restart(){
+  state = { index: 0, answers: [] };
+  renderQuestion();
+  resetSidePlaceholder();
+}
+
+// ---------- Financial Concepts Map ----------
+// Builds the three lanes once per visit to map mode, into #gscMain.
+// Clicking any node (from any lane) updates the single shared #gscSideInner
+// panel — mirrors the quiz's own "click -> one panel updates" shape rather
+// than introducing a second, differently-behaved widget on the same page.
+function renderConceptMap(){
+  var lanesHtml = CONCEPT_LANES.map(function(lane){
+    var nodesHtml = lane.nodes.map(function(node, i){
+      return '<button type="button" class="cm-node" data-lane="' + lane.id + '" data-node="' + i + '">' +
+        '<span class="cm-node-dot"></span>' +
+        '<span class="cm-node-label">' + node.label + "</span>" +
+      "</button>";
+    }).join("");
+    return '<div class="cm-lane cm-lane-' + lane.color + '">' +
+      '<div class="cm-lane-label"><span class="cm-lane-dot"></span>' + lane.label + "</div>" +
+      '<div class="cm-track"><div class="cm-track-line"></div><div class="cm-nodes">' + nodesHtml + "</div></div>" +
+    "</div>";
+  }).join("");
+
+  gscMain.innerHTML = lanesHtml;
+
+  gscMain.querySelectorAll(".cm-node").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      selectNode(btn.getAttribute("data-lane"), parseInt(btn.getAttribute("data-node"), 10));
+    });
+  });
+}
+
+function selectNode(laneId, nodeIndex){
+  gscMain.querySelectorAll(".cm-node").forEach(function(btn){
+    var active = btn.getAttribute("data-lane") === laneId && parseInt(btn.getAttribute("data-node"), 10) === nodeIndex;
+    btn.classList.toggle("is-active", active);
+  });
+  var lane = CONCEPT_LANES.filter(function(l){ return l.id === laneId; })[0];
+  var node = lane.nodes[nodeIndex];
+  renderNodeDetail(node);
+}
+
+function renderNodeDetail(node){
+  var calcsHtml = node.calculators.length
+    ? '<div class="cm-detail-calcs">' + node.calculators.map(function(id){
+        var calc = CALCULATORS[id];
+        return '<a class="cm-detail-calc-link" href="' + calc.href + '">' + icon(calc.icon, 14) + calc.title + "</a>";
+      }).join("") + "</div>"
+    : '<p class="cm-detail-none">FireNate doesn’t have a dedicated calculator for this one — it’s the on-ramp to the inputs the other calculators ask for.</p>';
+
+  var questionsHtml = '<ul class="cm-detail-questions">' +
+    node.questions.map(function(q){ return "<li>" + q + "</li>"; }).join("") +
+  "</ul>";
+
+  gscSideInner.innerHTML =
+    '<h3 class="cm-detail-title">' + node.label + "</h3>" +
+    '<div class="cm-detail-block"><h4>Understand first</h4><p>' + node.understand + "</p></div>" +
+    '<div class="cm-detail-block"><h4>Calculators that help</h4>' + calcsHtml + "</div>" +
+    '<div class="cm-detail-block"><h4>What people ask next</h4>' + questionsHtml + "</div>";
+
+  openSideIfMobile();
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script src="../assets/js/theme-init.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FireNate - Car Buying &amp; True Cost of Ownership</title>
+<meta name="description" content="What a car really costs once you fold in the loan, taxes and fees, insurance, fuel, maintenance, and depreciation — plus tips for negotiating with a dealership.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Antonio:wght@400;500;600;700&family=Michroma&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/site.css">
+<link rel="stylesheet" href="../assets/css/timeToFI.css">
+<link rel="stylesheet" href="../assets/css/toolbar.css">
+<script src="../assets/js/theme.js" defer></script>
+<script src="../assets/js/user-profile.js" defer></script>
+<script src="../assets/js/nav.js" defer></script>
+<script src="../assets/js/field-help.js" defer></script>
+<script>
+window.FN_BASE = "../"; window.FN_PAGE = "car-buying";
+window.FN_FIELD_HELP = {
+  "title": "About this Tool",
+  "intro": "This models the true cost of owning a vehicle for the years you'll actually keep it — not just the sticker price.",
+  "sections": [
+    {
+      "heading": "The vehicle",
+      "items": [
+        {
+          "label": "Vehicle Price",
+          "text": "The purchase price before tax, fees, or your down payment."
+        },
+        {
+          "label": "Down Payment / Trade-In",
+          "text": "Cash or trade-in value applied upfront — reduces the amount you finance."
+        },
+        {
+          "label": "Sales Tax",
+          "text": "Your state/local sales tax rate, applied to the purchase price."
+        },
+        {
+          "label": "Title, Doc & Fees",
+          "text": "One-time registration, title, and dealer documentation fees."
+        }
+      ]
+    },
+    {
+      "heading": "The loan",
+      "items": [
+        {
+          "label": "Loan APR",
+          "text": "The annual interest rate on the auto loan financing whatever isn't covered by your down payment."
+        },
+        {
+          "label": "Loan Term",
+          "text": "How many months you'll be paying off the loan."
+        }
+      ]
+    },
+    {
+      "heading": "Ongoing costs",
+      "items": [
+        {
+          "label": "Insurance / Year",
+          "text": "Estimated annual insurance premium for this vehicle."
+        },
+        {
+          "label": "Maintenance / Year",
+          "text": "Estimated annual maintenance and repairs."
+        },
+        {
+          "label": "Fuel / Charging / Year",
+          "text": "Estimated annual fuel or electricity cost."
+        }
+      ]
+    },
+    {
+      "heading": "Ownership horizon",
+      "items": [
+        {
+          "label": "Years You'll Keep It",
+          "text": "How long you plan to own the vehicle before selling or trading it in — spreads the loan and ownership costs over this window."
+        },
+        {
+          "label": "Est. Value When You Sell",
+          "text": "What you expect the vehicle to be worth at the end of that ownership window."
+        }
+      ]
+    }
+  ]
+};
+</script>
+<style>
+
+  /* ---------- COST BREAKDOWN BAR ---------- */
+  .cb-breakdown-card{
+    background:var(--surface); border:1px solid var(--line); border-top:4px solid var(--target);
+    border-radius:var(--radius); padding:24px 26px;
+  }
+  .cb-bar-track{
+    display:flex; width:100%; height:34px; border-radius:8px; overflow:hidden;
+    background:var(--surface-2); border:1px solid var(--line);
+  }
+  .cb-bar-seg{ height:100%; min-width:2px; transition:opacity .15s ease; }
+  .cb-bar-seg:hover{ opacity:0.8; }
+  .cb-bar-seg.gold{ background:var(--gold); }
+  .cb-bar-seg.rust{ background:var(--danger); }
+  .cb-bar-seg.plum{ background:var(--plum); }
+  .cb-bar-seg.target{ background:var(--target); }
+  .cb-bar-seg.jade{ background:var(--jade); }
+
+  .cb-breakdown-rows{ margin-top:18px; display:flex; flex-direction:column; gap:2px; }
+  .cb-breakdown-row{
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    padding:10px 0; border-bottom:1px solid var(--line-soft); font-size:13.5px;
+  }
+  .cb-breakdown-row:last-child{ border-bottom:none; }
+  .cb-breakdown-row .label{ display:flex; align-items:center; gap:10px; color:var(--ink-dim); }
+  .cb-breakdown-row .dot{ width:10px; height:10px; border-radius:3px; flex:none; }
+  .cb-breakdown-row .dot.gold{ background:var(--gold); }
+  .cb-breakdown-row .dot.rust{ background:var(--danger); }
+  .cb-breakdown-row .dot.plum{ background:var(--plum); }
+  .cb-breakdown-row .dot.target{ background:var(--target); }
+  .cb-breakdown-row .dot.jade{ background:var(--jade); }
+  .cb-breakdown-row .amt{ font-family:var(--mono); font-variant-numeric:tabular-nums; color:var(--ink); font-weight:600; }
+  .cb-breakdown-row .amt.credit{ color:var(--jade); }
+  .cb-breakdown-row.total{ margin-top:6px; padding-top:14px; border-top:2px solid var(--line); }
+  .cb-breakdown-row.total .label{ color:var(--ink); font-weight:700; }
+  [data-theme="lcars"] .cb-breakdown-row.total .amt{ font-family:var(--mono); font-variant-numeric:tabular-nums; }
+  .cb-breakdown-row.total .amt{ font-family:var(--serif); font-size:19px; }
+
+  /* ---------- TIPS ---------- */
+  .cb-tips{
+    display:flex; flex-direction:column; gap:16px; margin-top:8px;
+  }
+  .cb-tip{
+    background:var(--surface); border:1px solid var(--line); border-top:4px solid var(--gold);
+    border-radius:var(--radius); padding:24px 26px;
+  }
+  .cb-tip.jade{ border-top-color:var(--jade); }
+  .cb-tip.plum{ border-top-color:var(--plum); }
+  .cb-tip.target{ border-top-color:var(--target); }
+  .cb-tip-head{ display:flex; align-items:flex-start; gap:16px; margin-bottom:12px; }
+  .cb-tip-num{
+    flex:none; width:34px; height:34px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--mono); font-size:13px; font-weight:700;
+    background:var(--surface-2); border:1px solid var(--line); color:var(--ink-dim);
+  }
+  [data-theme="lcars"] .cb-tip h3{ font-family:var(--display); letter-spacing:.02em; }
+  .cb-tip h3{ font-family:var(--serif); font-size:19px; font-weight:500; margin:4px 0 0; color:var(--ink); }
+  .cb-tip ul{ margin:0; padding-left:20px; color:var(--ink-dim); font-size:14px; line-height:1.7; }
+  .cb-tip li{ margin-bottom:8px; }
+  .cb-tip li:last-child{ margin-bottom:0; }
+  .cb-tip li strong{ color:var(--ink); }
+
+  .cb-equity-callout{
+    margin-top:14px; padding:12px 16px; border-radius:8px; font-size:13px;
+    background:var(--surface-2); border:1px solid var(--line); color:var(--ink-dim);
+  }
+  .cb-equity-callout strong.neg{ color:var(--danger); }
+  .cb-equity-callout strong.pos{ color:var(--jade); }
+</style>
+</head>
+<body>
+<div id="fn-site-nav"></div>
+
+<div class="cb-inputs" id="cbInputs">
+  <div class="wrap cb-summary-row" style="position:relative">
+    <div class="cb-summary" id="cbSummary">&mdash;</div>
+    <button type="button" class="fn-help-btn" style="position:absolute; right:20px; top:50%; transform:translateY(-50%)" aria-label="What do these inputs mean?">?</button>
+  </div>
+  <div class="cb-content" id="cbContent">
+    <div class="wrap cb-inner">
+      <div class="cb-fields">
+        <div class="cb-field">
+          <label for="vehiclePrice">Vehicle Price</label>
+          <div class="cb-input-row"><span class="cb-prefix">$</span><input type="text" inputmode="decimal" pattern="[0-9,.]*" id="vehiclePrice" value="35,000.00"></div>
+        </div>
+        <div class="cb-field">
+          <label for="downPayment">Down Payment / Trade-In</label>
+          <div class="cb-input-row"><span class="cb-prefix">$</span><input type="text" inputmode="decimal" pattern="[0-9,.]*" id="downPayment" value="5,000.00"></div>
+        </div>
+        <div class="cb-field">
+          <label for="taxRate">Sales Tax</label>
+          <div class="cb-input-row"><input class="cb-narrow" type="number" id="taxRate" value="7" min="0" max="15" step="0.1"><span class="cb-suffix">%</span></div>
+        </div>
+        <div class="cb-field">
+          <label for="fees">Title, Doc &amp; Fees</label>
+          <div class="cb-input-row"><span class="cb-prefix">$</span><input class="cb-narrow" type="text" inputmode="decimal" pattern="[0-9,.]*" id="fees" value="600.00"></div>
+        </div>
+        <div class="cb-field">
+          <label for="apr">Loan APR</label>
+          <div class="cb-input-row"><input class="cb-narrow" type="number" id="apr" value="7.5" min="0" max="30" step="0.1"><span class="cb-suffix">%</span></div>
+        </div>
+        <div class="cb-field">
+          <label for="termMonths">Loan Term</label>
+          <div class="cb-input-row"><input class="cb-narrow" type="number" id="termMonths" value="60" min="6" max="96" step="1"><span class="cb-suffix">mo</span></div>
+        </div>
+        <div class="cb-field">
+          <label for="insurance">Insurance / Year</label>
+          <div class="cb-input-row"><span class="cb-prefix">$</span><input type="text" inputmode="decimal" pattern="[0-9,.]*" id="insurance" value="1,400.00"></div>
+        </div>
+        <div class="cb-field">
+          <label for="maintenance">Maintenance / Year</label>
+          <div class="cb-input-row"><span class="cb-prefix">$</span><input type="text" inputmode="decimal" pattern="[0-9,.]*" id="maintenance" value="900.00"></div>
+        </div>
+        <div class="cb-field">
+          <label for="fuel">Fuel / Charging / Year</label>
+          <div class="cb-input-row"><span class="cb-prefix">$</span><input type="text" inputmode="decimal" pattern="[0-9,.]*" id="fuel" value="1,800.00"></div>
+        </div>
+        <div class="cb-field">
+          <label for="horizonYears">Years You'll Keep It</label>
+          <div class="cb-input-row"><input class="cb-narrow" type="number" id="horizonYears" value="5" min="1" max="15" step="1"><span class="cb-suffix">yrs</span></div>
+        </div>
+        <div class="cb-field">
+          <label for="resaleValue">Est. Value When You Sell</label>
+          <div class="cb-input-row"><span class="cb-prefix">$</span><input type="text" inputmode="decimal" pattern="[0-9,.]*" id="resaleValue" value="14,000.00"></div>
+        </div>
+      </div>
+      <div class="cb-save">
+        <span class="save-status" id="cbSaveStatus">Not saved yet</span>
+        <button type="button" id="resetBtn" class="reset-btn">Reset to defaults</button>
+      </div>
+    </div>
+  </div>
+  <div class="wrap cb-toggle-row">
+    <button id="cbToggle" type="button" class="cb-toggle" aria-expanded="true" aria-controls="cbContent">
+      <svg class="cb-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+      <span id="cbToggleLabel">Hide inputs</span>
+    </button>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">FIRE Nate - Car Buying</p>
+    <h1 id="pageTitleHeader">What this car <em>really</em> costs you.</h1>
+    <p class="lede">The sticker price is just the opening number. Fold in the loan, taxes and fees, insurance, fuel, and maintenance — minus what you'll get back when you sell it — and you get the number that actually matters: your true monthly cost of ownership.</p>
+  </header>
+
+  <h2 class="ledger-title" style="margin-top: 40px; margin-bottom: 4px;">Summary</h2>
+  <div class="status" id="statusStrip"></div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h2>Where the money goes</h2>
+      <span class="sub" id="breakdownSub">OVER YOUR OWNERSHIP HORIZON</span>
+    </div>
+    <div class="cb-breakdown-card">
+      <div class="cb-bar-track" id="cbBarTrack"></div>
+      <div class="cb-breakdown-rows" id="cbBreakdownRows"></div>
+      <div class="cb-equity-callout" id="cbEquityCallout"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h2>Loan details</h2>
+      <span class="sub">FULL AMORTIZATION, IF KEPT THE ENTIRE TERM</span>
+    </div>
+    <div class="table-card">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th style="text-align:left;">Figure</th>
+              <th>Amount</th>
+            </tr>
+          </thead>
+          <tbody id="loanTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="ledger-title" style="margin-top:48px; margin-bottom:4px;">Working with a dealership</h2>
+  <p class="lede" style="margin-bottom:16px;">General guidance, not a script — every dealership and every deal is different, but these habits tend to hold up.</p>
+
+  <div class="cb-tips">
+    <div class="cb-tip gold">
+      <div class="cb-tip-head">
+        <div class="cb-tip-num">01</div>
+        <h3>Before you go</h3>
+      </div>
+      <ul>
+        <li><strong>Know the fair price first.</strong> Check a couple of independent sources (KBB, Edmunds, TrueCar, manufacturer invoice pricing) so you recognize a fair number when you see one.</li>
+        <li><strong>Get pre-approved financing</strong> from your own bank or credit union before you go. Even if you end up financing through the dealer, having your own rate in hand gives you something real to compare against.</li>
+        <li><strong>Set your out-the-door budget in advance</strong> — one number that already includes tax, title, and fees, not just "the payment."</li>
+      </ul>
+    </div>
+
+    <div class="cb-tip jade">
+      <div class="cb-tip-head">
+        <div class="cb-tip-num">02</div>
+        <h3>At the dealership</h3>
+      </div>
+      <ul>
+        <li><strong>Negotiate the out-the-door price, not the monthly payment.</strong> A lower payment can just mean a longer loan or a worse rate — the total price is what actually matters.</li>
+        <li><strong>Keep price, trade-in, and financing as three separate conversations.</strong> Bundling them together makes it easy to lose track of whether any one of them is actually a good deal.</li>
+        <li><strong>You're allowed to leave.</strong> A "today only" price, a long wait meant to wear you down, or pressure to decide on the spot are common tactics — a good deal is still good tomorrow.</li>
+      </ul>
+    </div>
+
+    <div class="cb-tip plum">
+      <div class="cb-tip-head">
+        <div class="cb-tip-num">03</div>
+        <h3>Financing &amp; the paperwork</h3>
+      </div>
+      <ul>
+        <li><strong>A longer loan term lowers the payment but usually costs more overall</strong> in interest, and it takes longer before you owe less than the car is worth.</li>
+        <li><strong>Watch for "yo-yo financing"</strong> — driving off before financing is fully finalized, then getting a call days later asking you to sign a worse deal. If the financing isn't final, the deal isn't final.</li>
+        <li><strong>Read every line before you sign.</strong> Extended warranties, gap insurance, paint protection, and other add-ons are often pre-checked or bundled in, and can usually be declined or negotiated on their own.</li>
+      </ul>
+    </div>
+
+    <div class="cb-tip target">
+      <div class="cb-tip-head">
+        <div class="cb-tip-num">04</div>
+        <h3>Total cost of ownership</h3>
+      </div>
+      <ul>
+        <li><strong>The sticker price is just the start.</strong> Insurance, fuel, and maintenance over a few years often add up to more than the loan itself — that's what the "True Monthly Cost" above tries to capture.</li>
+        <li><strong>Get an insurance quote before you buy, not after.</strong> Premiums vary a lot by make and model, and a great deal on the car can be erased by a higher-than-expected insurance bill.</li>
+        <li><strong>For a used car, an independent pre-purchase inspection</strong> — from a mechanic you chose, not the seller's — is one of the cheapest ways to avoid a costly surprise.</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+<footer id="site-footer"></footer>
+
+<script src="../assets/js/calc-utils.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const fmtUSD = n => n.toLocaleString('en-US', {style:'currency', currency:'USD', maximumFractionDigits:0});
+const fmtUSD2 = n => n.toLocaleString('en-US', {style:'currency', currency:'USD', maximumFractionDigits:2});
+const fmtNum = n => n.toLocaleString('en-US', {maximumFractionDigits:1});
+const formatCurrencyField = id => {
+  const raw = parseCurrency(id);
+  $(id).value = raw.toLocaleString('en-US', {maximumFractionDigits:2});
+};
+function sanitizeCurrencyInput(id){
+  const el = $(id);
+  const before = el.value;
+  const cursorFromEnd = before.length - (el.selectionStart ?? before.length);
+
+  // keep only digits, commas, and a single decimal point
+  let cleaned = before.replace(/[^0-9.,]/g, '');
+  const parts = cleaned.split('.');
+  if (parts.length > 2){
+    cleaned = parts[0] + '.' + parts.slice(1).join('');
+  }
+
+  if (cleaned !== before){
+    el.value = cleaned;
+    const newPos = Math.max(0, cleaned.length - cursorFromEnd);
+    el.setSelectionRange(newPos, newPos);
+  }
+}
+
+// ---------- loan math ----------
+function monthlyPaymentFor(principal, aprPct, termMonths){
+  const r = (aprPct / 100) / 12;
+  if (principal <= 0 || termMonths <= 0) return 0;
+  if (Math.abs(r) < 1e-9) return principal / termMonths;
+  const factor = Math.pow(1 + r, termMonths);
+  return principal * r * factor / (factor - 1);
+}
+function remainingBalanceAfter(principal, aprPct, termMonths, paymentsMade, payment){
+  const r = (aprPct / 100) / 12;
+  const k = Math.min(paymentsMade, termMonths);
+  if (k >= termMonths) return 0;
+  if (Math.abs(r) < 1e-9) return Math.max(0, principal - payment * k);
+  const balance = principal * Math.pow(1 + r, k) - payment * (Math.pow(1 + r, k) - 1) / r;
+  return Math.max(0, balance);
+}
+
+// ---------- sticky, collapsible input toolbar ----------
+const COLLAPSE_KEY = 'car-buying-inputs-collapsed';
+const cbInputsEl = $('cbInputs');
+const cbToggle = $('cbToggle');
+const cbToggleLabel = $('cbToggleLabel');
+const cbSummary = $('cbSummary');
+const cbSaveStatus = $('cbSaveStatus');
+
+let inputsCollapsed = false;
+function setInputsCollapsed(collapsed){
+  inputsCollapsed = collapsed;
+  if (cbInputsEl) cbInputsEl.classList.toggle('collapsed', collapsed);
+  if (cbToggle) cbToggle.setAttribute('aria-expanded', String(!collapsed));
+  if (cbToggleLabel) cbToggleLabel.textContent = collapsed ? 'Show inputs' : 'Hide inputs';
+  try { localStorage.setItem(COLLAPSE_KEY, collapsed ? '1' : '0'); } catch(e) {}
+}
+if (cbToggle){
+  cbToggle.addEventListener('click', () => setInputsCollapsed(!inputsCollapsed));
+}
+
+function pad2(n){ return String(n).padStart(2, '0'); }
+function updateSaveStatus(){
+  if (!cbSaveStatus) return;
+  const d = new Date();
+  cbSaveStatus.textContent = `Last saved: ${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
+}
+
+function updateCbSummary(m){
+  if (!cbSummary) return;
+  cbSummary.textContent = `Price: ${fmtUSD(m.vehiclePrice)}  |  Payment: ${fmtUSD2(m.payment)}/mo  |  True cost: ${fmtUSD2(m.trueMonthlyCost)}/mo over ${m.horizonYears} yrs`;
+}
+
+// ---------- compute ----------
+function compute(){
+  const vehiclePrice = parseCurrency('vehiclePrice');
+  const downPayment = parseCurrency('downPayment');
+  const taxRate = parseFloat($('taxRate').value) || 0;
+  const fees = parseCurrency('fees');
+  const apr = parseFloat($('apr').value) || 0;
+  const termMonths = Math.max(1, parseInt($('termMonths').value, 10) || 1);
+  const insurance = parseCurrency('insurance');
+  const maintenance = parseCurrency('maintenance');
+  const fuel = parseCurrency('fuel');
+  const horizonYears = Math.max(1, parseInt($('horizonYears').value, 10) || 1);
+  const resaleValue = parseCurrency('resaleValue');
+
+  const salesTax = vehiclePrice * (taxRate / 100);
+  const otdPrice = vehiclePrice + salesTax + fees;
+  const amountFinanced = Math.max(0, otdPrice - downPayment);
+
+  const payment = monthlyPaymentFor(amountFinanced, apr, termMonths);
+  const totalOfPayments = payment * termMonths;
+  const totalInterestFullTerm = Math.max(0, totalOfPayments - amountFinanced);
+
+  const horizonMonths = horizonYears * 12;
+  const paymentsMadeInHorizon = Math.min(horizonMonths, termMonths);
+  const loanCostDuringHorizon = payment * paymentsMadeInHorizon;
+  const remainingBalance = remainingBalanceAfter(amountFinanced, apr, termMonths, horizonMonths, payment);
+
+  // interestPaidDuringHorizon derived so the breakdown always sums exactly —
+  // see the comment on netCostOfOwnership below for why this identity holds
+  const interestPaidDuringHorizon = Math.max(0, loanCostDuringHorizon - amountFinanced + remainingBalance);
+
+  const runningCostsPerYear = insurance + maintenance + fuel;
+  const runningCostsTotal = runningCostsPerYear * horizonYears;
+
+  // netCostOfOwnership = OTD price + interest paid during horizon − resale value + running costs.
+  // (down payment + principal paid during horizon collapses to "OTD price", since
+  // downPayment + amountFinanced === otdPrice, and principal paid + remaining
+  // balance === amountFinanced — the remaining-balance liability cancels out
+  // algebraically, so it never needs to be tracked as its own cost line.)
+  const netCostOfOwnership = otdPrice + interestPaidDuringHorizon - resaleValue + runningCostsTotal;
+  const trueMonthlyCost = netCostOfOwnership / horizonMonths;
+
+  const equityAtSale = resaleValue - remainingBalance;
+
+  return {
+    vehiclePrice, downPayment, taxRate, fees, apr, termMonths, insurance, maintenance, fuel, horizonYears, resaleValue,
+    salesTax, otdPrice, amountFinanced, payment, totalOfPayments, totalInterestFullTerm,
+    horizonMonths, paymentsMadeInHorizon, loanCostDuringHorizon, remainingBalance,
+    interestPaidDuringHorizon, runningCostsPerYear, runningCostsTotal, netCostOfOwnership, trueMonthlyCost, equityAtSale
+  };
+}
+
+// ---------- render ----------
+function render(){
+  const m = compute();
+
+  // status strip
+  const strip = $('statusStrip');
+  strip.innerHTML = '';
+  const add = (k, v, cls) => {
+    const div = document.createElement('div');
+    div.className = 'stat';
+    div.innerHTML = `<div class="k">${k}</div><div class="v ${cls||''}">${v}</div>`;
+    strip.appendChild(div);
+  };
+  add('True monthly cost', fmtUSD2(m.trueMonthlyCost) + '/mo', 'target');
+  add('Loan payment', fmtUSD2(m.payment) + '/mo');
+  add('Out-the-door price', fmtUSD(m.otdPrice));
+  add('Amount financed', fmtUSD(m.amountFinanced));
+  add(`Net cost over ${m.horizonYears} yrs`, fmtUSD(m.netCostOfOwnership), 'jade');
+
+  const breakdownSub = $('breakdownSub');
+  if (breakdownSub) breakdownSub.textContent = `OVER YOUR ${m.horizonYears}-YEAR OWNERSHIP HORIZON`;
+
+  // breakdown bar + rows
+  const segments = [
+    { label: 'Out-the-door price (vehicle + tax + fees)', value: m.otdPrice, cls: 'gold' },
+    { label: `Loan interest paid over ${m.horizonYears} yrs`, value: m.interestPaidDuringHorizon, cls: 'rust' },
+    { label: `Insurance (${m.horizonYears} yrs)`, value: m.insurance * m.horizonYears, cls: 'plum' },
+    { label: `Maintenance (${m.horizonYears} yrs)`, value: m.maintenance * m.horizonYears, cls: 'target' },
+    { label: `Fuel / charging (${m.horizonYears} yrs)`, value: m.fuel * m.horizonYears, cls: 'jade' }
+  ];
+  const grossTotal = segments.reduce((s, seg) => s + Math.max(0, seg.value), 0);
+
+  const track = $('cbBarTrack');
+  track.innerHTML = '';
+  segments.forEach(seg => {
+    if (seg.value <= 0) return;
+    const pct = grossTotal > 0 ? (seg.value / grossTotal) * 100 : 0;
+    const div = document.createElement('div');
+    div.className = 'cb-bar-seg ' + seg.cls;
+    div.style.width = pct + '%';
+    div.title = `${seg.label}: ${fmtUSD(seg.value)}`;
+    track.appendChild(div);
+  });
+
+  const rowsHost = $('cbBreakdownRows');
+  rowsHost.innerHTML = '';
+  const addRow = (label, dotCls, amount, isCredit, isTotal) => {
+    const row = document.createElement('div');
+    row.className = 'cb-breakdown-row' + (isTotal ? ' total' : '');
+    row.innerHTML = `
+      <span class="label">${dotCls ? `<span class="dot ${dotCls}"></span>` : ''}${label}</span>
+      <span class="amt${isCredit ? ' credit' : ''}">${isCredit ? '−' : ''}${fmtUSD(Math.abs(amount))}</span>
+    `;
+    rowsHost.appendChild(row);
+  };
+  segments.forEach(seg => { if (seg.value > 0) addRow(seg.label, seg.cls, seg.value, false, false); });
+  addRow('Value recovered when you sell it', null, m.resaleValue, true, false);
+  addRow(`Net total cost of ownership (${m.horizonYears} yrs)`, null, m.netCostOfOwnership, false, true);
+
+  // equity callout
+  const equityEl = $('cbEquityCallout');
+  if (m.remainingBalance > 0.5){
+    const posOrNeg = m.equityAtSale >= 0 ? 'pos' : 'neg';
+    equityEl.innerHTML = `If you sell after ${m.horizonYears} year${m.horizonYears === 1 ? '' : 's'}, you'll still owe <strong>${fmtUSD(m.remainingBalance)}</strong> on the loan. ` +
+      (m.equityAtSale >= 0
+        ? `At your estimated resale value, you'd walk away with about <strong class="pos">${fmtUSD(m.equityAtSale)}</strong> after paying off the loan.`
+        : `At your estimated resale value, you'd still owe about <strong class="neg">${fmtUSD(Math.abs(m.equityAtSale))}</strong> even after selling it — you'd need to bring cash to close out the loan.`);
+  } else {
+    equityEl.innerHTML = `Your loan is fully paid off by the time you sell — the full <strong class="pos">${fmtUSD(m.resaleValue)}</strong> resale value is yours.`;
+  }
+
+  // loan details table
+  const loanBody = $('loanTableBody');
+  loanBody.innerHTML = '';
+  const addLoanRow = (label, value) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td style="text-align:left;">${label}</td><td>${value}</td>`;
+    loanBody.appendChild(tr);
+  };
+  addLoanRow('Amount financed', fmtUSD(m.amountFinanced));
+  addLoanRow('Monthly payment', fmtUSD2(m.payment));
+  addLoanRow('Loan term', `${m.termMonths} months`);
+  addLoanRow('Total of all payments', fmtUSD(m.totalOfPayments));
+  addLoanRow('Total interest (full term)', fmtUSD(m.totalInterestFullTerm));
+
+  updateCbSummary(m);
+}
+
+// ---------- persistence ----------
+const STORAGE_KEY = 'carBuyingInputs';
+const DEFAULTS = {
+  vehiclePrice: '35000', downPayment: '5000', taxRate: '7', fees: '600', apr: '7.5', termMonths: '60',
+  insurance: '1400', maintenance: '900', fuel: '1800', horizonYears: '5', resaleValue: '14000'
+};
+const CURRENCY_FIELDS = ['vehiclePrice', 'downPayment', 'fees', 'insurance', 'maintenance', 'fuel', 'resaleValue'];
+const ALL_FIELDS = ['vehiclePrice', 'downPayment', 'taxRate', 'fees', 'apr', 'termMonths', 'insurance', 'maintenance', 'fuel', 'horizonYears', 'resaleValue'];
+
+function saveInputs(){
+  const vals = {};
+  ALL_FIELDS.forEach(id => { vals[id] = $(id).value; });
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(vals)); } catch(e) { /* storage unavailable, ignore */ }
+  updateSaveStatus();
+}
+function loadInputs(){
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const vals = JSON.parse(raw);
+    Object.keys(vals).forEach(id => { if ($(id)) $(id).value = vals[id]; });
+  } catch(e) { /* storage unavailable or corrupt, ignore */ }
+}
+
+ALL_FIELDS.forEach(id => {
+  if (CURRENCY_FIELDS.includes(id)) return; // wired separately below with sanitization
+  $(id).addEventListener('input', () => { saveInputs(); render(); });
+});
+CURRENCY_FIELDS.forEach(id => {
+  $(id).addEventListener('input', () => { sanitizeCurrencyInput(id); saveInputs(); render(); });
+  $(id).addEventListener('blur', () => { formatCurrencyField(id); saveInputs(); });
+});
+
+$('resetBtn').addEventListener('click', () => {
+  Object.keys(DEFAULTS).forEach(id => { $(id).value = DEFAULTS[id]; });
+  CURRENCY_FIELDS.forEach(formatCurrencyField);
+  saveInputs();
+  render();
+});
+
+loadInputs();
+CURRENCY_FIELDS.forEach(formatCurrencyField);
+try { setInputsCollapsed(localStorage.getItem(COLLAPSE_KEY) === '1'); } catch(e) { setInputsCollapsed(false); }
+render();
+</script>
+</body>
+</html>

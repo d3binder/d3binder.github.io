@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script src="../assets/js/theme-init.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FireNate - Required Minimum Distributions</title>
+<meta name="description" content="Project your Required Minimum Distributions (RMDs) from traditional retirement accounts year by year, using the IRS Uniform Lifetime Table, plus an estimated tax bill on each withdrawal.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Antonio:wght@400;500;600;700&family=Michroma&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/site.css">
+<link rel="stylesheet" href="../assets/css/timeToFI.css">
+<link rel="stylesheet" href="../assets/css/toolbar.css">
+<script src="../assets/js/theme.js" defer></script>
+<script src="../assets/js/user-profile.js" defer></script>
+<script src="../assets/js/nav.js" defer></script>
+<script src="../assets/js/profile-autofill.js" defer></script>
+<script src="../assets/js/field-help.js" defer></script>
+<script>
+window.FN_BASE = "../"; window.FN_PAGE = "rmd";
+window.FN_FIELD_HELP = {
+  "title": "About this Tool",
+  "intro": "Required Minimum Distributions are the amounts the IRS forces you to withdraw each year from traditional retirement accounts, starting at a set age — whether you need the money or not.",
+  "sections": [
+    {
+      "heading": "Inputs",
+      "items": [
+        {
+          "label": "Current Age",
+          "text": "Your age right now."
+        },
+        {
+          "label": "Traditional Balance",
+          "text": "Your combined balance across traditional 401(k)/IRA accounts — the accounts RMDs apply to."
+        },
+        {
+          "label": "Annual Return Rate",
+          "text": "The average annual investment growth rate you expect on this balance."
+        },
+        {
+          "label": "RMD Start Age",
+          "text": "The age your first required distribution kicks in under current law."
+        },
+        {
+          "label": "Marginal Tax Rate",
+          "text": "The tax rate applied to each RMD, since traditional withdrawals count as ordinary income."
+        },
+        {
+          "label": "Project To Age",
+          "text": "How far out to run the projection of balances and required withdrawals."
+        }
+      ]
+    }
+  ]
+};
+window.FN_PROFILE_FIELDS = {
+  currentAge: "#currentAge",
+  expectedReturn: "#returnPct"
+};
+window.FN_PROFILE_LEGACY_KEY = "rmdInputs";
+</script>
+<style>
+
+  /* ---------- EXPLAINER ---------- */
+  .rmd-explainer{
+    background:var(--surface); border:1px solid var(--line); border-top:4px solid var(--target);
+    border-radius:var(--radius); padding:22px 24px; margin-top:4px;
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:20px;
+  }
+  .rmd-explainer-step .tag{
+    font-family:var(--mono); font-size:10.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+    margin-bottom:6px; display:block;
+  }
+  .rmd-explainer-step.s1 .tag{ color:var(--gold); }
+  .rmd-explainer-step.s2 .tag{ color:var(--target); }
+  .rmd-explainer-step.s3 .tag{ color:var(--jade); }
+  .rmd-explainer-step p{ margin:0; font-size:13.5px; color:var(--ink-dim); line-height:1.6; }
+  .rmd-explainer-step strong{ color:var(--ink); }
+  .rmd-explainer-note{
+    grid-column:1/-1; margin-top:2px; padding-top:14px; border-top:1px dashed var(--line-soft);
+    font-size:12px; color:var(--ink-faint); line-height:1.6;
+  }
+
+  /* ---------- inline SVG bar chart (no external chart library) ---------- */
+  #rmdChart{ width:100%; height:auto; display:block; overflow:visible; }
+  .rmd-bar{ fill:var(--gold); transition:opacity .15s ease; cursor:pointer; }
+  .rmd-bar-group:hover rect{ opacity:0.75; }
+  .rmd-grid-line{ stroke:var(--line); stroke-width:1; }
+  .rmd-grid-label, .rmd-axis-label{ font-family:var(--mono); font-size:10px; fill:var(--ink-faint); }
+  #rmdTooltip{
+    position:fixed; pointer-events:none; background:var(--surface); border:1px solid var(--line);
+    border-radius:10px; padding:9px 13px; font-family:var(--mono); font-size:12px; color:var(--ink);
+    opacity:0; transform:translate(-50%,-115%); transition:opacity .12s; z-index:50;
+    white-space:nowrap; box-shadow:0 8px 24px -10px rgba(0,0,0,0.45);
+  }
+  #rmdTooltip .yr{ color:var(--ink-faint); margin-bottom:3px; }
+  [data-theme="neon"] #rmdTooltip .yr{ color:var(--ink-dim); }
+  #rmdTooltip .row{ display:flex; justify-content:space-between; gap:14px; }
+
+  /* ---------- TABLE ---------- */
+  td.rmd-zero{ color:var(--ink-faint); }
+  tbody tr.rmd-active td:first-child{ color:var(--gold); font-weight:600; }
+</style>
+</head>
+<body>
+<div id="fn-site-nav"></div>
+
+<div class="rmd-inputs" id="rmdInputs">
+  <div class="wrap rmd-summary-row" style="position:relative">
+    <div class="rmd-summary" id="rmdSummary">&mdash;</div>
+    <button type="button" class="fn-help-btn" style="position:absolute; right:20px; top:50%; transform:translateY(-50%)" aria-label="What do these inputs mean?">?</button>
+  </div>
+  <div class="rmd-content" id="rmdContent">
+    <div class="wrap rmd-inner">
+      <div class="rmd-fields">
+        <div class="rmd-field">
+          <label for="currentAge">Current Age</label>
+          <div class="rmd-input-row"><input class="rmd-narrow" type="number" id="currentAge" value="65" min="0" max="100" step="0.5"></div>
+        </div>
+        <div class="rmd-field">
+          <label for="currentBalance">Traditional Balance</label>
+          <div class="rmd-input-row"><span class="rmd-prefix">$</span><input type="text" inputmode="decimal" pattern="[0-9,.]*" id="currentBalance" value="800,000.00"></div>
+        </div>
+        <div class="rmd-field">
+          <label for="returnPct">Annual Return Rate</label>
+          <div class="rmd-input-row"><input class="rmd-narrow" type="number" id="returnPct" value="6" min="-20" max="30" step="0.1"><span class="rmd-suffix">%</span></div>
+        </div>
+        <div class="rmd-field">
+          <label for="rmdStartAge">RMD Start Age</label>
+          <div class="rmd-input-row"><input class="rmd-narrow" type="number" id="rmdStartAge" value="73" min="70" max="80" step="1"></div>
+        </div>
+        <div class="rmd-field">
+          <label for="taxRatePct">Marginal Tax Rate</label>
+          <div class="rmd-input-row"><input class="rmd-narrow" type="number" id="taxRatePct" value="22" min="0" max="50" step="0.5"><span class="rmd-suffix">%</span></div>
+        </div>
+        <div class="rmd-field">
+          <label for="horizonAge">Project To Age</label>
+          <div class="rmd-input-row"><input class="rmd-narrow" type="number" id="horizonAge" value="95" min="71" max="120" step="1"></div>
+        </div>
+      </div>
+      <div class="rmd-save">
+        <span class="save-status" id="rmdSaveStatus">Not saved yet</span>
+        <button type="button" id="resetBtn" class="reset-btn">Reset to defaults</button>
+      </div>
+    </div>
+  </div>
+  <div class="wrap rmd-toggle-row">
+    <button id="rmdToggle" type="button" class="rmd-toggle" aria-expanded="true" aria-controls="rmdContent">
+      <svg class="rmd-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+      <span id="rmdToggleLabel">Hide inputs</span>
+    </button>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">FIRE Nate - Required Minimum Distributions</p>
+    <h1 id="pageTitleHeader">The IRS eventually wants <em>its cut</em>.</h1>
+    <p class="lede">Traditional 401(k)s and IRAs let you defer taxes for decades &mdash; but starting at age 73, the IRS forces you to withdraw (and pay tax on) a minimum slice of the balance every year, whether you need the cash or not. This projects those forced withdrawals using the IRS Uniform Lifetime Table.</p>
+  </header>
+
+  <div class="rmd-explainer">
+    <div class="rmd-explainer-step s1">
+      <span class="tag">The rule</span>
+      <p>Starting at your RMD start age, you must withdraw <strong>last year's Dec 31 balance divided by a life-expectancy factor</strong> that shrinks every year &mdash; forcing a larger percentage out as you age.</p>
+    </div>
+    <div class="rmd-explainer-step s2">
+      <span class="tag">It's taxable</span>
+      <p>Every dollar of an RMD from a traditional account counts as <strong>ordinary taxable income</strong> for that year — missing one, or taking too little, triggers an IRS penalty on the shortfall.</p>
+    </div>
+    <div class="rmd-explainer-step s3">
+      <span class="tag">Why it matters for FIRE</span>
+      <p>A big traditional balance left alone for decades can produce <strong>surprisingly large forced withdrawals</strong> later in life — often a reason early retirees run Roth conversion ladders well before RMD age even kicks in.</p>
+    </div>
+    <div class="rmd-explainer-note">
+      Factors are from the IRS Uniform Lifetime Table (used by most account owners). If your sole beneficiary is a spouse more than 10 years younger, the IRS Joint Life and Last Survivor Table applies instead and isn't modeled here. RMD start age is 73 for those reaching 72 after 2022, moving to 75 in 2033 — this is an estimate, not tax advice; confirm your own start age and factors with a tax professional or IRS Publication 590-B.
+    </div>
+  </div>
+
+  <h2 class="ledger-title" style="margin-top: 40px; margin-bottom: 4px;">Summary</h2>
+  <div class="status" id="statusStrip"></div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h2>Required withdrawal by age</h2>
+      <span class="sub">FORCED DISTRIBUTION AMOUNT, BEFORE TAX</span>
+    </div>
+    <div class="chart-card">
+      <svg id="rmdChart" viewBox="0 0 1120 340"></svg>
+      <div id="rmdTooltip"></div>
+      <div class="legend-row">
+        <span class="legend-dot gold"></span> Required minimum distribution
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h2>Year-by-year detail</h2>
+      <span class="sub">STARTING BALANCE, LIFE-EXPECTANCY FACTOR, RMD, AND ESTIMATED TAX</span>
+    </div>
+    <div class="table-card">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th style="text-align:left;">Age</th>
+              <th>Starting Balance</th>
+              <th>Factor</th>
+              <th>RMD</th>
+              <th>Est. Tax</th>
+              <th>Balance After</th>
+            </tr>
+          </thead>
+          <tbody id="rmdTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+<footer id="site-footer"></footer>
+
+</div>
+
+<script src="../assets/js/calc-utils.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const fmtUSD = n => n.toLocaleString('en-US', {style:'currency', currency:'USD', maximumFractionDigits:0});
+const fmtNum = n => n.toLocaleString('en-US', {maximumFractionDigits:1});
+const formatCurrencyField = id => {
+  const raw = parseCurrency(id);
+  $(id).value = raw.toLocaleString('en-US', {maximumFractionDigits:2});
+};
+function sanitizeCurrencyInput(id){
+  const el = $(id);
+  const before = el.value;
+  const cursorFromEnd = before.length - (el.selectionStart ?? before.length);
+  let cleaned = before.replace(/[^0-9.,]/g, '');
+  const parts = cleaned.split('.');
+  if (parts.length > 2){
+    cleaned = parts[0] + '.' + parts.slice(1).join('');
+  }
+  if (cleaned !== before){
+    el.value = cleaned;
+    const newPos = Math.max(0, cleaned.length - cursorFromEnd);
+    el.setSelectionRange(newPos, newPos);
+  }
+}
+
+// ---------- sticky, collapsible input toolbar ----------
+const COLLAPSE_KEY = 'rmd-inputs-collapsed';
+const rmdInputsEl = $('rmdInputs');
+const rmdToggle = $('rmdToggle');
+const rmdToggleLabel = $('rmdToggleLabel');
+const rmdSummary = $('rmdSummary');
+const rmdSaveStatus = $('rmdSaveStatus');
+
+let inputsCollapsed = false;
+function setInputsCollapsed(collapsed){
+  inputsCollapsed = collapsed;
+  if (rmdInputsEl) rmdInputsEl.classList.toggle('collapsed', collapsed);
+  if (rmdToggle) rmdToggle.setAttribute('aria-expanded', String(!collapsed));
+  if (rmdToggleLabel) rmdToggleLabel.textContent = collapsed ? 'Show inputs' : 'Hide inputs';
+  try { localStorage.setItem(COLLAPSE_KEY, collapsed ? '1' : '0'); } catch(e) {}
+}
+if (rmdToggle){
+  rmdToggle.addEventListener('click', () => setInputsCollapsed(!inputsCollapsed));
+}
+
+function pad2(n){ return String(n).padStart(2, '0'); }
+function updateSaveStatus(){
+  if (!rmdSaveStatus) return;
+  const d = new Date();
+  rmdSaveStatus.textContent = `Last saved: ${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
+}
+function updateRmdSummary(m){
+  if (!rmdSummary) return;
+  const first = m.rows.find(r => r.rmd > 0);
+  rmdSummary.textContent = first
+    ? `First RMD at age ${fmtNum(first.age)}: ${fmtUSD(first.rmd)}  |  Peak RMD: ${fmtUSD(m.peakRmd)} at age ${fmtNum(m.peakAge)}`
+    : `No RMD required within this projection window.`;
+}
+
+// ---------- IRS Uniform Lifetime Table (most account owners; 2022+ update) ----------
+const LIFE_EXPECTANCY_TABLE = {
+  72:27.4, 73:26.5, 74:25.5, 75:24.6, 76:23.7, 77:22.9, 78:22.0, 79:21.1, 80:20.2,
+  81:19.4, 82:18.5, 83:17.7, 84:16.8, 85:16.0, 86:15.2, 87:14.4, 88:13.7, 89:12.9,
+  90:12.2, 91:11.5, 92:10.8, 93:10.1, 94:9.5, 95:8.9, 96:8.4, 97:7.8, 98:7.3, 99:6.8,
+  100:6.4, 101:6.0, 102:5.6, 103:5.2, 104:4.9, 105:4.6, 106:4.3, 107:4.1, 108:3.9,
+  109:3.7, 110:3.5, 111:3.4, 112:3.3, 113:3.1, 114:3.0, 115:2.9, 116:2.8, 117:2.7,
+  118:2.5, 119:2.3, 120:2.0
+};
+function lifeExpectancyFactor(age){
+  const a = Math.round(age);
+  if (LIFE_EXPECTANCY_TABLE[a] !== undefined) return LIFE_EXPECTANCY_TABLE[a];
+  return a > 120 ? 2.0 : 27.4; // clamp outside the published table range
+}
+
+// ---------- RMD projection ----------
+function compute(){
+  const currentAge = parseFloat($('currentAge').value) || 0;
+  const currentBalance = parseCurrency('currentBalance');
+  const returnPct = parseFloat($('returnPct').value) || 0;
+  const rmdStartAge = Math.max(1, parseInt($('rmdStartAge').value, 10) || 73);
+  const taxRatePct = parseFloat($('taxRatePct').value) || 0;
+  const horizonAge = Math.max(currentAge, parseInt($('horizonAge').value, 10) || currentAge);
+
+  const r = returnPct / 100;
+  const taxRate = taxRatePct / 100;
+
+  let balance = currentBalance;
+  const rows = [];
+  const startAge = Math.round(currentAge);
+  const endAge = Math.round(horizonAge);
+
+  for (let age = startAge; age <= endAge; age++){
+    const active = age >= rmdStartAge;
+    const factor = active ? lifeExpectancyFactor(age) : null;
+    const rmd = active ? balance / factor : 0;
+    const tax = rmd * taxRate;
+    const afterWithdrawal = Math.max(0, balance - rmd);
+
+    rows.push({ age, startBalance: balance, factor, rmd, tax, afterWithdrawal, active });
+
+    balance = afterWithdrawal * (1 + r);
+  }
+
+  const activeRows = rows.filter(r => r.active);
+  let peakRmd = 0, peakAge = null;
+  activeRows.forEach(r => { if (r.rmd > peakRmd){ peakRmd = r.rmd; peakAge = r.age; } });
+  const totalRmd = activeRows.reduce((s, r) => s + r.rmd, 0);
+  const totalTax = activeRows.reduce((s, r) => s + r.tax, 0);
+
+  return { currentAge, rmdStartAge, rows, peakRmd, peakAge, totalRmd, totalTax };
+}
+
+// ---------- render ----------
+function render(){
+  const m = compute();
+
+  // status strip
+  const strip = $('statusStrip');
+  strip.innerHTML = '';
+  const add = (k, v, cls) => {
+    const div = document.createElement('div');
+    div.className = 'stat';
+    div.innerHTML = `<div class="k">${k}</div><div class="v ${cls||''}">${v}</div>`;
+    strip.appendChild(div);
+  };
+  const first = m.rows.find(r => r.active);
+  add('RMD start age', fmtNum(m.rmdStartAge));
+  add('First RMD', first ? fmtUSD(first.rmd) : '—', 'target');
+  add('Peak RMD', m.peakAge !== null ? fmtUSD(m.peakRmd) : '—', 'gold');
+  add('Total RMDs projected', fmtUSD(m.totalRmd));
+  add('Total estimated tax', fmtUSD(m.totalTax), 'target');
+
+  // table
+  const tbody = $('rmdTableBody');
+  tbody.innerHTML = '';
+  m.rows.forEach(row => {
+    const tr = document.createElement('tr');
+    if (row.active) tr.classList.add('rmd-active');
+    tr.innerHTML = `
+      <td style="text-align:left;">${row.age}</td>
+      <td>${fmtUSD(row.startBalance)}</td>
+      <td>${row.factor !== null ? fmtNum(row.factor) : '<span class="rmd-zero">&mdash;</span>'}</td>
+      <td>${row.rmd > 0.5 ? fmtUSD(row.rmd) : '<span class="rmd-zero">&mdash;</span>'}</td>
+      <td>${row.tax > 0.5 ? fmtUSD(row.tax) : '<span class="rmd-zero">&mdash;</span>'}</td>
+      <td>${fmtUSD(row.afterWithdrawal)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  updateRmdSummary(m);
+  renderChart(m);
+}
+
+// ---------- inline SVG bar chart (no external chart library) ----------
+const rmdSvgNS = 'http://www.w3.org/2000/svg';
+const rmdChartSvg = $('rmdChart');
+const rmdTooltip = $('rmdTooltip');
+
+function rmdNiceCeil(v){
+  if (v <= 0) return 1;
+  const mag = Math.pow(10, Math.floor(Math.log10(v)));
+  const norm = v / mag;
+  let step;
+  if (norm <= 1) step = 1; else if (norm <= 2) step = 2; else if (norm <= 5) step = 5; else step = 10;
+  return step * mag;
+}
+
+function renderChart(m){
+  const rows = m.rows.filter(r => r.active);
+  const W = 1120, H = 340;
+  const padL = 70, padR = 20, padT = 20, padB = 34;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+
+  rmdChartSvg.innerHTML = '';
+  if (!rows.length) return;
+
+  const niceMax = rmdNiceCeil(Math.max(...rows.map(r => r.rmd), 1) * 1.08);
+
+  const steps = 5;
+  for (let i = 0; i <= steps; i++){
+    const val = niceMax * i / steps;
+    const y = padT + plotH - (val / niceMax) * plotH;
+    const line = document.createElementNS(rmdSvgNS, 'line');
+    line.setAttribute('x1', padL); line.setAttribute('x2', W - padR);
+    line.setAttribute('y1', y); line.setAttribute('y2', y);
+    line.setAttribute('class', 'rmd-grid-line');
+    rmdChartSvg.appendChild(line);
+
+    const label = document.createElementNS(rmdSvgNS, 'text');
+    label.setAttribute('x', padL - 8); label.setAttribute('y', y + 4);
+    label.setAttribute('text-anchor', 'end'); label.setAttribute('class', 'rmd-grid-label');
+    label.textContent = fmtUSD(val);
+    rmdChartSvg.appendChild(label);
+  }
+
+  const n = rows.length;
+  const barGap = n > 25 ? 3 : n > 15 ? 6 : 10;
+  const barW = Math.max((plotW / n) - barGap, 1);
+  const baseY = padT + plotH;
+  const maxLabels = 20;
+  const labelStep = Math.max(1, Math.ceil(n / maxLabels));
+
+  rows.forEach((row, i) => {
+    const x = padL + i * (barW + barGap);
+    const h = Math.max((row.rmd / niceMax) * plotH, row.rmd > 0 ? 1 : 0);
+    const group = document.createElementNS(rmdSvgNS, 'g');
+    group.setAttribute('class', 'rmd-bar-group');
+
+    const rect = document.createElementNS(rmdSvgNS, 'rect');
+    rect.setAttribute('class', 'rmd-bar');
+    rect.setAttribute('x', x); rect.setAttribute('y', baseY - h);
+    rect.setAttribute('width', barW); rect.setAttribute('height', h);
+    group.appendChild(rect);
+
+    if (i % labelStep === 0 || i === n - 1){
+      const label = document.createElementNS(rmdSvgNS, 'text');
+      label.setAttribute('x', x + barW / 2); label.setAttribute('y', baseY + 16);
+      label.setAttribute('text-anchor', 'middle'); label.setAttribute('class', 'rmd-axis-label');
+      label.textContent = 'Age ' + row.age;
+      rmdChartSvg.appendChild(label);
+    }
+
+    group.addEventListener('mousemove', (e) => {
+      rmdTooltip.style.opacity = 1;
+      rmdTooltip.style.left = e.clientX + 'px';
+      rmdTooltip.style.top = e.clientY + 'px';
+      rmdTooltip.innerHTML = `<div class="yr">Age ${row.age}</div>` +
+        `<div class="row">RMD <b>${fmtUSD(row.rmd)}</b></div>` +
+        `<div class="row">Est. tax <b>${fmtUSD(row.tax)}</b></div>`;
+    });
+    group.addEventListener('mouseleave', () => { rmdTooltip.style.opacity = 0; });
+
+    rmdChartSvg.appendChild(group);
+  });
+}
+
+// ---------- persistence ----------
+const STORAGE_KEY = 'rmdInputs';
+const DEFAULTS = {
+  currentAge: '65', currentBalance: '800000', returnPct: '6', rmdStartAge: '73',
+  taxRatePct: '22', horizonAge: '95'
+};
+const CURRENCY_FIELDS = ['currentBalance'];
+const ALL_FIELDS = Object.keys(DEFAULTS);
+
+function saveInputs(){
+  const vals = {};
+  ALL_FIELDS.forEach(id => { vals[id] = $(id).value; });
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(vals)); } catch(e) { /* storage unavailable, ignore */ }
+  updateSaveStatus();
+}
+function loadInputs(){
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const vals = JSON.parse(raw);
+    Object.keys(vals).forEach(id => { if ($(id)) $(id).value = vals[id]; });
+  } catch(e) { /* storage unavailable or corrupt, ignore */ }
+}
+
+ALL_FIELDS.forEach(id => {
+  if (CURRENCY_FIELDS.includes(id)) return; // wired separately below with sanitization
+  $(id).addEventListener('input', () => { saveInputs(); render(); });
+});
+CURRENCY_FIELDS.forEach(id => {
+  $(id).addEventListener('input', () => { sanitizeCurrencyInput(id); saveInputs(); render(); });
+  $(id).addEventListener('blur', () => { formatCurrencyField(id); saveInputs(); });
+});
+
+$('resetBtn').addEventListener('click', () => {
+  Object.keys(DEFAULTS).forEach(id => { $(id).value = DEFAULTS[id]; });
+  if (window.FNProfileAutofill) window.FNProfileAutofill.apply(true);
+  CURRENCY_FIELDS.forEach(formatCurrencyField);
+  saveInputs();
+  render();
+});
+
+loadInputs();
+CURRENCY_FIELDS.forEach(formatCurrencyField);
+try { setInputsCollapsed(localStorage.getItem(COLLAPSE_KEY) === '1'); } catch(e) { setInputsCollapsed(false); }
+render();
+</script>
+</body>
+</html>
