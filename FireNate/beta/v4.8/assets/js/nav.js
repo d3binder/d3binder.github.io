@@ -57,7 +57,7 @@
     { id: "home", label: "Home", href: BASE + "index.html" },
 
     { id: "getting-started", label: "Using This Site", href: BASE + "GettingStarted/index.html", group: "Getting Started" },
-    { id: "getting-started-calculators", label: "Picking Calculators", href: BASE + "GettingStartedCalculators/index.html", group: "Getting Started" },
+    { id: "getting-started-calculators", label: "Calculator Picker", href: BASE + "GettingStartedCalculators/index.html", group: "Getting Started" },
 
     { id: "fi-snapshot", label: "FI Snapshot", href: BASE + "FISnapshot/index.html", group: "Basics" },
     { id: "net-worth", label: "Net Worth", href: BASE + "NetWorth/index.html", group: "Basics" },
@@ -125,7 +125,10 @@
     "monteCarloInputs",           // MonteCarlo
     "cashOutOrHoldInputs",        // CashOutOrHold
     "budgetCalculatorInputs",     // BudgetCalculator (current field values)
-    "budgetHistory"               // BudgetCalculator (logged dated snapshots)
+    "budgetHistory",              // BudgetCalculator (logged dated snapshots)
+    "compoundCalcState",          // CompoundInterest-WealthMultiplier
+    "loanCalculatorInputs",       // LoanCalculator
+    "realEstateVsStocksInputs"    // RealEstateVsStocks
   ];
 
   // friendly page name for each key above — same labels used in the nav
@@ -153,7 +156,10 @@
     "monteCarloInputs": "Monte Carlo Simulator",
     "cashOutOrHoldInputs": "Cash Out or Hold",
     "budgetCalculatorInputs": "Budget Calculator",
-    "budgetHistory": "Budget Calculator (history)"
+    "budgetHistory": "Budget Calculator (history)",
+    "compoundCalcState": "Compound Interest & Wealth Multiplier",
+    "loanCalculatorInputs": "Loan Calculator",
+    "realEstateVsStocksInputs": "Homes vs. Stocks"
   };
 
   function escapeHtml(s) {

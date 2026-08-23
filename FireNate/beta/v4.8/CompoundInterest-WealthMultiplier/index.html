@@ -1223,7 +1223,7 @@ window.FN_PROFILE_FIELDS = {
     inputsCollapsed: false
   };
 
-  const COOKIE_NAME = 'compoundCalcState';
+  const STORAGE_KEY = 'compoundCalcState';
 
   const FREQ_LABELS = {
     365: { period:'day',   plural:'days',   every:'Day'   },
@@ -1235,20 +1235,6 @@ window.FN_PROFILE_FIELDS = {
     2:   { period:'half-year', plural:'half-years', every:'Half-year' },
     1:   { period:'year',  plural:'years',  every:'Year'  }
   };
-
-  // ---------- cookies: persist user inputs between visits ----------
-  function setCookie(name, value, days){
-    const d = new Date();
-    d.setTime(d.getTime() + days*24*60*60*1000);
-    document.cookie = `${name}=${encodeURIComponent(value)};expires=${d.toUTCString()};path=/;SameSite=Lax`;
-  }
-  function getCookie(name){
-    const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
-    return match ? decodeURIComponent(match[1]) : null;
-  }
-  function deleteCookie(name){
-    document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;SameSite=Lax`;
-  }
 
   function pad2(n){ return String(n).padStart(2,'0'); }
   function formatTimestamp(d){
@@ -1286,14 +1272,14 @@ window.FN_PROFILE_FIELDS = {
     const state = collectState();
     state.savedAt = new Date().toISOString();
     try{
-      setCookie(COOKIE_NAME, JSON.stringify(state), 365);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       lastSavedEl.textContent = `Last saved: ${formatTimestamp(new Date(state.savedAt))}`;
-    }catch(e){ /* cookies unavailable — fail quietly */ }
+    }catch(e){ /* storage unavailable — fail quietly */ }
   }
 
   function loadState(){
     let raw = null;
-    try{ raw = getCookie(COOKIE_NAME); }catch(e){ raw = null; }
+    try{ raw = localStorage.getItem(STORAGE_KEY); }catch(e){ raw = null; }
     if(raw){
       try{
         const state = JSON.parse(raw);
@@ -1308,7 +1294,7 @@ window.FN_PROFILE_FIELDS = {
   }
 
   function resetState(){
-    try{ deleteCookie(COOKIE_NAME); }catch(e){ /* ignore */ }
+    try{ localStorage.removeItem(STORAGE_KEY); }catch(e){ /* ignore */ }
     applyState(DEFAULTS);
     if (window.FNProfileAutofill) window.FNProfileAutofill.apply(true);
     lastSavedEl.textContent = 'Not saved yet';

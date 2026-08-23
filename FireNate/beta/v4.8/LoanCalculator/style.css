@@ -237,6 +237,20 @@ html, body {
   margin-bottom: 6px;
 }
 
+.save-status {
+  position: absolute;
+  left: 20px;
+  bottom: 14px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: .02em;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+@media (max-width: 560px) {
+  .save-status { position: static; display: block; margin-top: 18px; }
+}
+
 .field-label-row {
   display: flex;
   align-items: center;

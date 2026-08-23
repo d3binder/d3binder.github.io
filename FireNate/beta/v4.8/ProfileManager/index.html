@@ -319,6 +319,15 @@ window.FN_BASE = "../"; window.FN_PAGE = "profile-manager";
       Create example data snapshot
     </button>
   </div>
+
+  <div class="pm-raw-export-section">
+    <h2 class="ledger-title" style="margin-top:48px; margin-bottom:4px;">Full raw backup</h2>
+    <p class="lede" style="margin-bottom:16px;">Downloads every single key FireNate has saved in this browser — your profile, every calculator's inputs, saved profiles, your theme choice, and every small on-page preference — exactly as stored, with no processing. This is a raw debugging/backup copy, not the same file "Export profiles" makes above — use that one (and "Import profiles") for actually moving your data to another device.</p>
+    <button type="button" class="pm-btn pm-btn-ghost" id="pmRawExportBtn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>
+      Export raw local storage
+    </button>
+  </div>
 </div>
 
 <footer id="site-footer"></footer>
@@ -953,8 +962,10 @@ function buildExampleData(){
     pageData: {
       'fi-runway-inputs': JSON.stringify({income:'90000', goal:'1500000', savings:'80000', age:'30', returnPct:'7', lifespan:'79', targetAge:'45'}),
       'payoffOrInvestInputs': JSON.stringify({excess:'500', loanBalance:'342000', loanRate:'2.75', loanPayment:'1880', investBalance:'342000', investReturn:'10'}),
+      'cashOutOrHoldInputs': JSON.stringify({debtBalance:'15000', debtRate:'22', withdrawal:'15000', gainsPct:'35', gainsDollar:'5250', taxRate:'15', investReturn:'8', years:'10', gainsMode:'pct', holdingPeriod:'long'}),
       'emergencyFundInputs': JSON.stringify({monthlyExpenses:'3000', targetMonths:'6', currentEfSavings:'0', monthlyContribution:'200', apy:'4.5'}),
       'crossoverPointInputs': JSON.stringify({goal:'3000000', currentSavings:'0', age:'24', targetAge:'60', returnPct:'11'}),
+      'compoundCalcState': JSON.stringify({amount:'750', rate:'9.5', frequency:'12', years:'25', ageHighlight:'36', targetAmount:'1,200,000', targetAge:'55', savedAmount:'25,000', inputsCollapsed:false, savedAt:new Date().toISOString()}),
       'swrInputs': JSON.stringify({startPortfolio:'1000000', withdrawRate:'4', retireLength:'30', feeRate:'0.10'}),
       'firenate_fi_calculator_v1': JSON.stringify({
         savedAt: Date.now(), birthday: '1990-06-15', retireAge: '55', currentSavings: 100000, ssIncome: 0,
@@ -988,6 +999,8 @@ function buildExampleData(){
         { date: monthsAgo(0), assets: 518000, liabilities: 219000, netWorth: 299000 }
       ]),
       'rentVsBuyInputs': JSON.stringify({homePrice:'400000', downPct:'20', mortgageRate:'6.5', termYears:'30', propTaxPct:'1.1', insuranceAnnual:'1800', maintenancePct:'1', hoaMonthly:'0', closingPct:'3', sellingPct:'6', appreciationPct:'3.5', monthlyRent:'2200', rentGrowthPct:'3', renterInsuranceAnnual:'200', investReturnPct:'7', horizonYears:'10'}),
+      'loanCalculatorInputs': JSON.stringify({loanAmountStr:'420,000', rate:'6.25', termUnit:'years', termValue:30, startDate:'2024-06-01'}),
+      'realEstateVsStocksInputs': JSON.stringify({price:'750,000', down:'150,000', rate:'6.75%', escrow:'1.10%', appreciation:'4.00%', stockreturn:'8.50%', rentalincome:'0', termYears:30, isRental:false}),
       'coastFireInputs': JSON.stringify({currentAge:'30', retireAge:'55', currentSavings:'60000', goalAmount:'1000000', returnPct:'7', currentContribMonthly:'1500', baristaStartAge:'40', baristaContribMonthly:'200'}),
       'rmdInputs': JSON.stringify({currentAge:'65', currentBalance:'800000', returnPct:'6', rmdStartAge:'73', taxRatePct:'22', horizonAge:'95'}),
       'monteCarloInputs': JSON.stringify({startPortfolio:'1000000', withdrawRate:'4', retireLength:'30', feeRate:'0.10', numTrials:'2000'}),
@@ -1057,6 +1070,47 @@ $('pmExportBtn').addEventListener('click', () => {
   URL.revokeObjectURL(url);
   const hasLiveState = profileComplete(profile) || Object.keys(pageData).length > 0;
   showPmStatus(`Exported ${scenarios.length} saved profile${scenarios.length === 1 ? '' : 's'}${hasLiveState ? ' + your live profile and calculator inputs' : ''}.`);
+});
+
+// unlike "Export profiles" above (a curated payload built from
+// FN_PAGE_DATA_KEYS + the profile + scenarios), this walks every single key
+// actually sitting in localStorage right now — theme choice, dismissed-hint
+// flags, collapsed-toolbar states, anything — with no filtering or
+// processing. A raw debug/backup copy, not meant to round-trip through
+// "Import profiles" (that one only ever reads the curated shape above).
+$('pmRawExportBtn').addEventListener('click', () => {
+  const raw = {};
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    raw[key] = localStorage.getItem(key);
+  }
+  const keyCount = Object.keys(raw).length;
+  const payload = {
+    app: 'FireNate',
+    kind: 'raw-localstorage-dump',
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    origin: window.location.origin,
+    data: raw
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const now = new Date();
+  const pad2 = n => String(n).padStart(2, '0');
+  const stamp = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}-` +
+    `${pad2(now.getHours())}-${pad2(now.getMinutes())}-${pad2(now.getSeconds())}`;
+  a.download = `FireNate-RawLocalStorage-${stamp}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  if (keyCount === 0) {
+    showPmStatus('Nothing in local storage to export yet.');
+  } else {
+    showPmStatus(`Exported ${keyCount} raw local storage key${keyCount === 1 ? '' : 's'}.`);
+  }
 });
 
 // mirrors nav.js's own "Backup " safety net ahead of "Clear my info" —

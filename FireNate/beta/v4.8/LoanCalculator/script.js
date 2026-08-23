@@ -56,6 +56,43 @@
     tableOpen: false,
   };
 
+  // ---------- persistence ----------
+  const LC_STORAGE_KEY = "loanCalculatorInputs";
+
+  function loadLcInputs() {
+    try {
+      const raw = localStorage.getItem(LC_STORAGE_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw);
+      if (saved.loanAmountStr !== undefined) state.loanAmountStr = saved.loanAmountStr;
+      if (saved.rate !== undefined) state.rate = saved.rate;
+      if (saved.termUnit !== undefined) state.termUnit = saved.termUnit;
+      if (saved.termValue !== undefined) state.termValue = saved.termValue;
+      if (saved.startDate !== undefined) state.startDate = saved.startDate;
+    } catch (e) { /* storage unavailable or corrupt — fall back to defaults */ }
+  }
+
+  function lcPad2(n) { return String(n).padStart(2, "0"); }
+  function updateLcSaveStatus() {
+    const status = document.getElementById("lcSaveStatus");
+    if (!status) return;
+    const d = new Date();
+    status.textContent = `Last saved: ${lcPad2(d.getHours())}:${lcPad2(d.getMinutes())}:${lcPad2(d.getSeconds())}`;
+  }
+
+  function saveLcInputs() {
+    try {
+      localStorage.setItem(LC_STORAGE_KEY, JSON.stringify({
+        loanAmountStr: state.loanAmountStr,
+        rate: state.rate,
+        termUnit: state.termUnit,
+        termValue: state.termValue,
+        startDate: state.startDate,
+      }));
+      updateLcSaveStatus();
+    } catch (e) { /* storage unavailable, ignore */ }
+  }
+
   function termYears() {
     return state.termUnit === "years" ? Number(state.termValue) || 0 : (Number(state.termValue) || 0) / 12;
   }
@@ -402,21 +439,25 @@
     state.loanAmountStr = formatNumberInput(e.target.value);
     e.target.value = state.loanAmountStr;
     render();
+    saveLcInputs();
   });
 
   el.rateInput.addEventListener("input", (e) => {
     state.rate = e.target.value;
     render();
+    saveLcInputs();
   });
 
   el.termInput.addEventListener("input", (e) => {
     state.termValue = e.target.value;
     render();
+    saveLcInputs();
   });
 
   el.startDateInput.addEventListener("input", (e) => {
     state.startDate = e.target.value;
     render();
+    saveLcInputs();
   });
 
   el.termToggle.addEventListener("click", (e) => {
@@ -429,6 +470,7 @@
     state.termUnit = unit;
     syncTermUI();
     render();
+    saveLcInputs();
   });
 
   el.ledgerToggle.addEventListener("click", () => {
@@ -449,6 +491,7 @@
 
   // ---------- init ----------
   function init() {
+    loadLcInputs();
     el.loanAmountInput.value = state.loanAmountStr;
     el.rateInput.value = state.rate;
     el.startDateInput.value = state.startDate;

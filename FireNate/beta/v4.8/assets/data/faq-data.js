@@ -20,7 +20,7 @@ window.FN_FAQ = [
     id: "which-calculators",
     category: "About this Site",
     question: "How do I know what calculators and tools to use?",
-    answer: "Not sure where to start? <a href=\"../GettingStartedCalculators/index.html\">Picking Calculators</a> asks a few quick questions and points you to the two or three tools that actually fit your situation — or lets you browse every calculator laid out as a subway-style map instead. If you're brand new to the site in general, <a href=\"../GettingStarted/index.html\">Using This Site</a> is a fuller walkthrough of profile setup, saving snapshots, and everything else the site does."
+    answer: "Not sure where to start? <a href=\"../GettingStartedCalculators/index.html\">Calculator Picker</a> asks a few quick questions and points you to the two or three tools that actually fit your situation — or lets you browse every calculator laid out as a subway-style map instead. If you're brand new to the site in general, <a href=\"../GettingStarted/index.html\">Using This Site</a> is a fuller walkthrough of profile setup, saving snapshots, and everything else the site does."
   },
   {
     id: "where-does-my-info-go",

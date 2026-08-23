@@ -110,30 +110,88 @@
 
   .version-card {
     display: flex;
-    align-items: center;
-    gap: 18px;
-    padding: 20px 22px;
+    align-items: stretch;
     background: var(--card);
     border: 1px solid var(--border-color);
     border-radius: 16px;
+    overflow: hidden;
+    transition: border-color 0.2s ease, transform 0.2s ease, background 0.2s ease;
+  }
+
+  .vc-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 20px 22px;
+  }
+
+  .vc-main-row {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+  }
+
+  /* the actual navigable region — a distinct colored zone on the card's
+     right edge, structurally outside the Change Log toggle (a sibling
+     inside .vc-main, not an ancestor) so a click anywhere in the
+     changelog — the toggle button or its expanded notes — can never
+     bubble into the card's own navigation, on any browser. Nesting
+     <details>/<summary> inside <a> is invalid content to begin with, so
+     rather than keep suppressing default navigation with preventDefault,
+     there's simply no ancestor link to suppress — and confining the click
+     target to this zone (rather than the whole card) makes it visually
+     obvious which part actually navigates. */
+  .vc-link {
+    flex-shrink: 0;
+    width: 132px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 20px 16px;
+    text-align: center;
     text-decoration: none;
     color: inherit;
-    transition: border-color 0.2s ease, transform 0.2s ease, background 0.2s ease;
+    position: relative;
+    /* cast onto .vc-main to its left, so the colored zone reads as a
+       raised button sitting slightly above the rest of the card */
+    box-shadow: -7px 0 16px -3px rgba(0, 0, 0, 0.45);
+    transition: box-shadow 0.2s ease;
   }
 
   .version-card.is-active {
     position: relative;
-    cursor: pointer;
     border-color: rgba(var(--live-rgb), 0.4);
     box-shadow: 0 4px 18px rgba(var(--live-rgb), 0.1);
     animation: live-pulse 2.6s ease-in-out infinite;
     transition: border-color 0.25s ease, background 0.25s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease;
   }
 
+  .version-card.is-active .vc-link {
+    cursor: pointer;
+    background: var(--live);
+    color: #0a2417;
+    transition: filter 0.15s ease, box-shadow 0.2s ease;
+  }
+
+  .version-card.is-active:has(.vc-link:hover) .vc-link {
+    filter: brightness(1.08);
+    box-shadow: -9px 0 22px -2px rgba(0, 0, 0, 0.55);
+  }
+
+  /* pressed flat — completes the "raised button" feel from the resting
+     shadow above */
+  .version-card.is-active:has(.vc-link:active) .vc-link {
+    box-shadow: -2px 0 6px -2px rgba(0, 0, 0, 0.3);
+  }
+
   /* per-card accent overrides — same .is-active structure/animation, different color */
   .version-card.is-live-blue { --live-rgb: 61, 132, 220; --live: var(--blue); --live-bright: var(--blue-bright); }
   .version-card.is-live-green { --live-rgb: 61, 220, 132; --live: var(--green); --live-bright: var(--green-bright); }
-  
+
   .version-card.is-live-orange { --live-rgb: 255, 179, 71; --live: var(--accent-2); --live-bright: #ffcf85; }
   .version-card.is-live-red { --live-rgb: 255, 92, 92; --live: var(--red); --live-bright: #ff8a8a; }
 
@@ -142,41 +200,37 @@
     50% { box-shadow: 0 4px 18px rgba(var(--live-rgb), 0.16), 0 0 0 7px rgba(var(--live-rgb), 0); }
   }
 
-  .version-card.is-active::after {
+  .version-card.is-active .vc-link::after {
     content: "→";
-    flex-shrink: 0;
-    font-size: 22px;
+    font-size: 20px;
     font-weight: 700;
-    color: var(--live-bright);
-    margin-left: 2px;
     transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
-  .version-card.is-active:hover {
+  /* :has() so the lift/glow reacts only to hovering the actual link (the
+     colored zone that navigates), not the rest of the card */
+  .version-card.is-active:has(.vc-link:hover) {
     animation-play-state: paused;
     border-color: rgba(var(--live-rgb), 0.7);
-    background: var(--card-hover);
     transform: translateY(-4px) scale(1.02) rotate(-0.5deg);
     box-shadow: 0 14px 32px rgba(var(--live-rgb), 0.22);
   }
 
-  .version-card.is-active:hover::after {
+  .version-card.is-active:has(.vc-link:hover) .vc-link::after {
     transform: translateX(6px);
   }
 
-  .version-card.is-active:active {
+  .version-card.is-active:has(.vc-link:active) {
     transform: translateY(-1px) scale(0.99) rotate(0deg);
   }
 
   .cta-hint {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    font-size: 12.5px;
-    font-weight: 700;
-    color: var(--live-bright);
-    margin: 6px 0 0;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: inherit;
+    opacity: 0.8;
+    margin: 0;
   }
 
   .version-card.is-disabled,
@@ -187,15 +241,17 @@
 
   .version-card.is-disabled {
     opacity: 0.55;
-    cursor: not-allowed;
   }
 
   .version-card.is-deleted {
     opacity: 0.4;
-    cursor: not-allowed;
   }
 
-  .version-card.is-soon {
+  .version-card.is-disabled .vc-link,
+  .version-card.is-deleted .vc-link,
+  .version-card.is-soon .vc-link {
+    background: var(--card-hover);
+    color: var(--text-dim);
     cursor: not-allowed;
   }
 
@@ -218,19 +274,13 @@
   }
 
   .is-active .version-icon {
-    background: linear-gradient(135deg, #ff7a3d, #c23616);
-    box-shadow: 0 6px 18px rgba(194, 54, 22, 0.35);
-    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    background: linear-gradient(135deg, var(--live), color-mix(in srgb, var(--live) 55%, black));
+    box-shadow: 0 6px 18px rgba(var(--live-rgb), 0.35);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
-  .version-card.is-active:hover .version-icon {
-    transform: rotate(-8deg) scale(1.1);
-    animation: flame-wiggle 0.6s ease-in-out infinite;
-  }
-
-  @keyframes flame-wiggle {
-    0%, 100% { transform: rotate(-8deg) scale(1.1); }
-    50% { transform: rotate(6deg) scale(1.15); }
+  .version-card.is-active:has(.vc-link:hover) .version-icon {
+    transform: scale(1.12);
   }
 
   .is-disabled .version-icon,
@@ -263,7 +313,7 @@
     color: var(--text-dim);
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     opacity: 0.75;
-    margin: 4px 0 10px;
+    margin: 4px 0 0;
   }
 
   .status-pill {
@@ -278,42 +328,13 @@
     white-space: nowrap;
   }
 
-  .status-pill.active {
-    background: rgba(var(--live-rgb), 0.12);
-    color: var(--live-bright);
-    border: 1px solid rgba(var(--live-rgb), 0.35);
-    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
-  }
-
-  .version-card.is-active:hover .status-pill.active {
-    background: var(--live);
-    color: #0a2417;
-    border-color: var(--live);
-    transform: scale(1.08);
-  }
-
-  .status-pill.disabled {
-    background: rgba(154, 165, 184, 0.08);
-    color: var(--text-dim);
-    border: 1px solid var(--border-color);
-  }
-
-  .status-pill.deleted {
-    background: rgba(255, 92, 92, 0.1);
-    color: var(--red);
-    border: 1px solid rgba(255, 92, 92, 0.3);
-  }
-
-  .status-pill.soon {
-    background: rgba(255, 179, 71, 0.1);
-    color: var(--accent-2);
-    border: 1px solid rgba(255, 179, 71, 0.3);
-  }
-
- .status-pill.planning {
-    background: rgba(70, 179, 255, 0.1);
-    color: var(--accent-3);
-    border: 1px solid rgba(70, 179, 255, 0.3);
+  /* status pills only ever live inside the colored .vc-link zone now — a
+     translucent dark chip riding on top of the zone's own solid color,
+     rather than each status having its own bordered-on-dark-card look */
+  .vc-link .status-pill {
+    background: rgba(10, 20, 15, 0.2);
+    color: inherit;
+    border: 1px solid rgba(255, 255, 255, 0.22);
   }
 
   .section-divider {
@@ -325,6 +346,207 @@
     color: var(--text-dim);
     opacity: 0.55;
     margin: 34px 0 14px;
+  }
+
+  .archive-toggle {
+    margin: 34px 0 0;
+  }
+  .archive-toggle summary {
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    opacity: 0.7;
+    padding: 10px 0;
+    transition: opacity 0.15s ease;
+  }
+  .archive-toggle summary:hover {
+    opacity: 1;
+  }
+  .archive-toggle summary::-webkit-details-marker {
+    display: none;
+  }
+  .archive-toggle summary::before {
+    content: '';
+    flex-shrink: 0;
+    width: 7px;
+    height: 7px;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: rotate(-45deg);
+    transition: transform 0.15s ease;
+  }
+  .archive-toggle[open] summary::before {
+    transform: rotate(45deg);
+  }
+  .archive-count {
+    opacity: 0.7;
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: normal;
+  }
+  .archive-toggle .versions,
+  .archive-toggle .future-panel {
+    margin-top: 14px;
+  }
+
+  .changelog-toggle {
+    margin: 8px 0 0;
+  }
+  .changelog-toggle summary {
+    cursor: pointer;
+    list-style: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: normal;
+    color: var(--text-dim);
+    background: var(--card-hover);
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    padding: 6px 14px 6px 12px;
+    transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  }
+  .changelog-toggle summary:hover {
+    color: var(--text-main);
+    border-color: var(--text-dim);
+  }
+  .changelog-toggle summary::-webkit-details-marker {
+    display: none;
+  }
+  .changelog-toggle summary::before {
+    content: '';
+    flex-shrink: 0;
+    width: 6px;
+    height: 6px;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: rotate(-45deg);
+    transition: transform 0.15s ease;
+  }
+  .changelog-toggle[open] summary::before {
+    transform: rotate(45deg);
+  }
+  .changelog-toggle .notes-wrap {
+    position: relative;
+    margin-top: 8px;
+  }
+
+  .changelog-toggle .notes {
+    padding: 14px 16px;
+    max-height: min(340px, 45vh);
+    overflow-y: auto;
+    background: #131924;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: inset 0 3px 12px rgba(0, 0, 0, 0.5), inset 0 -1px 0 rgba(255, 255, 255, 0.02);
+  }
+
+  /* fade + chevron hinting that there's more changelog text to scroll to
+     in that direction — shown/hidden by JS based on actual scroll
+     position, since a pure-CSS scroll shadow can't also carry an arrow */
+  .notes-scroll-arrow {
+    position: absolute;
+    left: 1px;
+    right: 1px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease, color 0.15s ease;
+    color: var(--text-dim);
+  }
+
+  .notes-scroll-arrow.is-visible {
+    opacity: 1;
+    pointer-events: auto;
+    cursor: pointer;
+  }
+
+  .notes-scroll-arrow.is-visible:hover {
+    color: var(--text-main);
+  }
+
+  .notes-scroll-arrow.is-visible:hover::before {
+    animation-play-state: paused;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .notes-scroll-arrow-top.is-visible::before,
+    .notes-scroll-arrow-bottom.is-visible::before {
+      animation: none;
+    }
+  }
+
+  .notes-scroll-arrow::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+  }
+
+  .notes-scroll-arrow-top {
+    top: 1px;
+    border-radius: 11px 11px 0 0;
+    background: linear-gradient(to bottom, #131924 35%, transparent);
+    padding-bottom: 6px;
+  }
+
+  .notes-scroll-arrow-top::before {
+    transform: rotate(-135deg);
+    margin-top: 4px;
+  }
+
+  .notes-scroll-arrow-top.is-visible::before {
+    animation: notes-arrow-throb-top 1.6s ease-in-out infinite;
+  }
+
+  @keyframes notes-arrow-throb-top {
+    0%, 100% { transform: rotate(-135deg) scale(0.85); }
+    50% { transform: rotate(-135deg) scale(1.3); }
+  }
+
+  .notes-scroll-arrow-bottom {
+    bottom: 1px;
+    border-radius: 0 0 11px 11px;
+    background: linear-gradient(to top, #131924 35%, transparent);
+    padding-top: 6px;
+  }
+
+  .notes-scroll-arrow-bottom::before {
+    transform: rotate(45deg);
+    margin-bottom: 4px;
+  }
+
+  .notes-scroll-arrow-bottom.is-visible::before {
+    animation: notes-arrow-throb-bottom 1.6s ease-in-out infinite;
+  }
+
+  @keyframes notes-arrow-throb-bottom {
+    0%, 100% { transform: rotate(45deg) scale(0.85); }
+    50% { transform: rotate(45deg) scale(1.3); }
+  }
+
+  .changelog-toggle .notes ul {
+    margin: 0;
+    padding-left: 18px;
+  }
+
+  .changelog-toggle .notes li + li {
+    margin-top: 6px;
   }
 
   .future-panel {
@@ -419,13 +641,40 @@
 
     <div class="versions">
 
-      <a class="version-card is-active is-live-blue" href="v4.8/index.html">
-        <div class="version-icon">B.4.8</div>
-        <div class="version-info">
-          <p class="name">Beta 4.8</p>
-          <p class="path">/beta/v4.8</p>
-          <p class="version-dates">Initial Creation: 2026-08-21 20:48:26<br>Last Update: 2026-08-23 14:31:32</p>
-          <p class="notes"><ul>
+      <div class="version-card is-disabled">
+        <div class="vc-main">
+          <div class="vc-main-row">
+            <div class="version-icon">B.4.9</div>
+            <div class="version-info">
+              <p class="name">Beta 4.9</p>
+              <p class="path">/beta/v4.9</p>
+              <p class="version-dates">Created: &lt;Not Recorded&gt;<br>Updated: &lt;Not Recorded&gt;</p>
+            </div>
+          </div>
+          <details class="changelog-toggle" onclick="toggleChangeLog(event)">
+            <summary>Show Change Log</summary>
+            <div class="notes">In Development.</div>
+          </details>
+        </div>
+        <a class="vc-link" href="#" aria-disabled="true" tabindex="-1" onclick="return false;">
+          <span class="status-pill planning">🚧 In Development</span>
+            <p class="cta-hint">Not available yet</p>
+        </a>
+      </div>
+
+      <div class="version-card is-active is-live-green">
+        <div class="vc-main">
+          <div class="vc-main-row">
+            <div class="version-icon">B.4.8</div>
+            <div class="version-info">
+              <p class="name">Beta 4.8 — Current</p>
+              <p class="path">/beta/v4.8</p>
+              <p class="version-dates">Created: 2026-08-21 20:48:26<br>Updated: 2026-08-23 16:03:35</p>
+            </div>
+          </div>
+          <details class="changelog-toggle" onclick="toggleChangeLog(event)">
+            <summary>Show Change Log</summary>
+            <div class="notes"><ul>
             <li>Branched from v4.7</li>
             <li>Homepage nav bar and hamburger menu section labels shortened: "Basics", "Independence", "Retirement", "Daily Decisions"</li>
             <li>New first-visit welcome modal on the homepage — choose to learn the site, get a guided calculator pick, or skip, with a highlight on the Getting Started section if you skip (just a scroll and a highlight pulse — no page dimming)</li>
@@ -440,22 +689,42 @@
             <li>New "System" theme option that automatically matches your device's light/dark setting (light &rarr; Sunshine, dark &rarr; Neon) — now the default for new visitors, alongside the previous five themes</li>
             <li>New F.A.Q. page — the same searchable, sortable, collapsible browsing as the Glossary, seeded with about 20 questions across five topics, plus a first-visit reminder to consult a licensed professional</li>
             <li>Footer's version number now links back to this version picker (styled like plain text, not an obvious link), and a bit more breathing room added above the footer on every page</li>
-            <li>Nav bar now casts a soft shadow/glow along its bottom edge, tuned to each theme</li>
+            <li>Nav bar now casts a soft effect along its bottom edge, brightest at center and tapering toward the sides, projecting onto the page below rather than into the nav itself — a plain neutral shadow on Light and Sunshine, a warm/violet accent glow on Dark and Neon</li>
             <li>Fixed a contrast bug where Neon and Sunshine's icon buttons and category pills washed out against their own translucent panels on the Glossary and F.A.Q. pages</li>
-            <li>More still to come</li>
-          </ul></p>
-          <p class="cta-hint">Click to open the in-progress build</p>
+            <li>F.A.Q. page: "Other Common Topics &amp; Questions" category renamed to "Other Topics," and a new "Will FireNate always be free?" question added</li>
+            <li>Glossary: merged two overlapping categories ("Early access to retirement funds" and "Early retirement gaps") into a single "Early Retirement" section</li>
+            <li>Renamed "Picking Calculators" to "Calculator Picker" site-wide (homepage, hamburger menu, Getting Started, and the F.A.Q.)</li>
+            <li>Moved Compound Interest &amp; Wealth Multiplier's saved inputs off a cookie and onto localStorage, and gave Loan Calculator and Homes vs. Stocks their own localStorage persistence (with a "Last saved" indicator) — both previously reset every time you reloaded</li>
+            <li>Registered all three of the above in the shared saved-data list, and filled in the last gaps in Profile Manager's example-data generator (it was missing sample data for Cash Out or Hold, Compound Interest, Loan Calculator, and Homes vs. Stocks)</li>
+            <li>Profile Manager: new "Full raw backup" button that exports every single key saved in local storage, exactly as stored — a debugging/backup copy separate from the curated profile export</li>
+          </ul></div>
+          </details>
         </div>
-        <span class="status-pill planning">🚧 In Progress</span>
-      </a>
+        <a class="vc-link" href="v4.8/index.html">
+          <span class="status-pill active">✔ Current</span>
+            <p class="cta-hint">Click to open the current build</p>
+        </a>
+      </div>
 
-      <a class="version-card is-active is-live-green" href="v4.7/index.html">
-        <div class="version-icon">B.4.7</div>
-        <div class="version-info">
-          <p class="name">Beta 4.7 — Current</p>
-          <p class="path">/beta/v4.7</p>
-          <p class="version-dates">Initial Creation: 2026-08-20 17:56:20<br>Last Update: 2026-08-21 20:13:25</p>
-          <p class="notes"><ul>
+    </div>
+
+    <details class="archive-toggle">
+      <summary>Archive <span class="archive-count">(v4.7 and earlier)</span></summary>
+      <div class="versions">
+
+      <div class="version-card is-active is-live-orange">
+        <div class="vc-main">
+          <div class="vc-main-row">
+            <div class="version-icon">B.4.7</div>
+            <div class="version-info">
+              <p class="name">Beta 4.7</p>
+              <p class="path">/beta/v4.7</p>
+              <p class="version-dates">Created: 2026-08-20 17:56:20<br>Updated: 2026-08-21 20:13:25</p>
+            </div>
+          </div>
+          <details class="changelog-toggle" onclick="toggleChangeLog(event)">
+            <summary>Show Change Log</summary>
+            <div class="notes"><ul>
             <li>Branched from v4.6</li>
             <li>Every calculator's "?" help window now lists every single input field individually (Net Worth's was condensed into 4 summary bullets for its 30 fields — now all 30 are listed by name)</li>
             <li>Service worker cache bumped so this version doesn't share a cache with v4.6</li>
@@ -468,19 +737,28 @@
             <li>Renamed "First Steps" to "The Basics" and "Your Path to FI" to "Financial Independence" site-wide, and retitled the calculator-picker entry to "Picking Calculators" with a new map icon</li>
             <li>Added a "Feedback &amp; communications" section to Terms, Conditions &amp; Copyright, clarifying that submissions aren't guaranteed a response and become FireNate's property</li>
             <li>Added 19 new regression tests covering Budget Calculator's math and history logic — full suite now at 195 checks, all passing</li>
-         </ul></p>
-          <p class="cta-hint">Click to open the current build</p>
+         </ul></div>
+          </details>
         </div>
-        <span class="status-pill active">✔ Current</span>
-      </a>
+        <a class="vc-link" href="v4.7/index.html">
+          <span class="status-pill active">View</span>
+            <p class="cta-hint">Click to open </p>
+        </a>
+      </div>
 
-      <a class="version-card is-active is-live-orange" href="v4.6/index.html">
-        <div class="version-icon">B.4.6</div>
-        <div class="version-info">
-          <p class="name">Beta 4.6</p>
-          <p class="path">/beta/v4.6</p>
-          <p class="version-dates">Initial Creation: 2026-08-16 20:21:38<br>Last Update: 2026-08-20 16:55:20</p>
-          <p class="notes"><ul>
+      <div class="version-card is-active is-live-orange">
+        <div class="vc-main">
+          <div class="vc-main-row">
+            <div class="version-icon">B.4.6</div>
+            <div class="version-info">
+              <p class="name">Beta 4.6</p>
+              <p class="path">/beta/v4.6</p>
+              <p class="version-dates">Created: 2026-08-16 20:21:38<br>Updated: 2026-08-20 16:55:20</p>
+            </div>
+          </div>
+          <details class="changelog-toggle" onclick="toggleChangeLog(event)">
+            <summary>Show Change Log</summary>
+            <div class="notes"><ul>
             <li>New calculator: Cash Out or Hold — decide whether to sell investments to pay off debt or stay invested, accounting for capital gains tax and short/long-term holding period</li>
             <li>New "Neon" and "Sunshine" glass themes — a 4-option theme selector (Light, Dark, Neon, Sunshine) replacing the old dark-mode toggle, rolled out site-wide</li>
             <li>Every calculator page now has a "?" help icon explaining what each input means, with auto-scroll hints for long lists and a floating close button</li>
@@ -493,19 +771,28 @@
             <li>Fixed a broken link, a service-worker cache collision with v4.5, and removed stray backup files from the live site</li>
             <li>Added meta descriptions and a robots.txt ahead of publishing</li>
             <li>Consolidated duplicated toolbar CSS and JS across 14 calculator pages into shared files, for easier maintenance going forward</li>
-         </ul></p>
-          <p class="cta-hint">Click to open </p>
+         </ul></div>
+          </details>
         </div>
-        <span class="status-pill active">View</span>
-      </a>
+        <a class="vc-link" href="v4.6/index.html">
+          <span class="status-pill active">View</span>
+            <p class="cta-hint">Click to open </p>
+        </a>
+      </div>
 
-      <a class="version-card is-active is-live-orange" href="v4.5/index.html">
-        <div class="version-icon">B.4.5</div>
-        <div class="version-info">
-          <p class="name">Beta 4.5</p>
-          <p class="path">/beta/v4.5</p>
-          <p class="version-dates">Initial Creation: 2026-08-16 17:00:18<br>Last Update: 2026-08-16 20:21:38</p>
-          <p class="notes"><ul>
+      <div class="version-card is-active is-live-orange">
+        <div class="vc-main">
+          <div class="vc-main-row">
+            <div class="version-icon">B.4.5</div>
+            <div class="version-info">
+              <p class="name">Beta 4.5</p>
+              <p class="path">/beta/v4.5</p>
+              <p class="version-dates">Created: 2026-08-16 17:00:18<br>Updated: 2026-08-16 20:21:38</p>
+            </div>
+          </div>
+          <details class="changelog-toggle" onclick="toggleChangeLog(event)">
+            <summary>Show Change Log</summary>
+            <div class="notes"><ul>
             <li>Icons, added lots of icons</li>
             <li>Fixed a real bug: the Net Worth calculator was saving to a cookie instead of localStorage, invisible to Profile Manager, snapshots, and export</li>
             <li>Net Worth is now a history tracker — log dated snapshots and watch a net-worth trend chart over time</li>
@@ -519,35 +806,53 @@
             <li>Rent vs. Buy: grouped inputs into "Owning" and "Renting" sections</li>
             <li>Moved the "how FireNate got its name" video clip from the Files page to the About page</li>
             <li>Fixed a mislabeled "Traditional Retirement Age" field on FIRE Milestones</li>
-         </ul></p>
-          <p class="cta-hint">Click to open </p>
+         </ul></div>
+          </details>
         </div>
-        <span class="status-pill active">View</span>
-      </a>
+        <a class="vc-link" href="v4.5/index.html">
+          <span class="status-pill active">View</span>
+            <p class="cta-hint">Click to open </p>
+        </a>
+      </div>
 
 
-        <a class="version-card is-disabled" href="v4.4/index.html" aria-disabled="true" tabindex="-1" onclick="return false;">
-        <div class="version-icon">B.4.4</div>
-        <div class="version-info">
-          <p class="name">Beta 4.4</p>
-          <p class="path">/beta/v4.4</p>
-          <p class="version-dates">Initial Creation: 2026-08-15 21:45:42<br>Last Update: 2026-08-15 23:21:23</p>
-          <p class="notes"><ul>
+        <div class="version-card is-disabled">
+        <div class="vc-main">
+          <div class="vc-main-row">
+            <div class="version-icon">B.4.4</div>
+            <div class="version-info">
+              <p class="name">Beta 4.4</p>
+              <p class="path">/beta/v4.4</p>
+              <p class="version-dates">Created: 2026-08-15 21:45:42<br>Updated: 2026-08-15 23:21:23</p>
+            </div>
+          </div>
+          <details class="changelog-toggle" onclick="toggleChangeLog(event)">
+            <summary>Show Change Log</summary>
+            <div class="notes"><ul>
             <li>Profile Manager: share a saved snapshot as a plain text string (and import one someone shares with you) — not just a URL</li>
             <li>Profile Manager: one-click "Quick snapshot" that captures your live profile and every calculator's inputs with an auto-generated name, no typing required</li>
-         </ul></p>
-          <p class="cta-hint">Click to open </p>
+         </ul></div>
+          </details>
         </div>
-        <span class="status-pill disabled">⛔ Disabled</span>
-      </a>
+        <a class="vc-link" href="v4.4/index.html" aria-disabled="true" tabindex="-1" onclick="return false;">
+          <span class="status-pill disabled">⛔ Disabled</span>
+            <p class="cta-hint">Click to open </p>
+        </a>
+      </div>
 
-      <a class="version-card is-active is-live-orange" href="v4.3/index.html">
-        <div class="version-icon">B.4.3</div>
-        <div class="version-info">
-          <p class="name">Beta 4.3</p>
-          <p class="path">/beta/v4.3</p>
-          <p class="version-dates">Initial Creation: 2026-08-15 09:46:45<br>Last Update: 2026-08-15 18:49:24</p>
-          <p class="notes"><ul>
+      <div class="version-card is-active is-live-orange">
+        <div class="vc-main">
+          <div class="vc-main-row">
+            <div class="version-icon">B.4.3</div>
+            <div class="version-info">
+              <p class="name">Beta 4.3</p>
+              <p class="path">/beta/v4.3</p>
+              <p class="version-dates">Created: 2026-08-15 09:46:45<br>Updated: 2026-08-15 18:49:24</p>
+            </div>
+          </div>
+          <details class="changelog-toggle" onclick="toggleChangeLog(event)">
+            <summary>Show Change Log</summary>
+            <div class="notes"><ul>
             <li>New calculators: Debt Snowball, Social Security &amp; Pension Bridge, Roth Conversion Ladder, Variable Withdrawal Rate (Guyton-Klinger guardrails + cash buffer), and Healthcare &amp; ACA Bridge (with a subsidy-cliff visualizer)</li>
             <li>Homepage reorganized into grouped sections with a sticky "jump to section" bar and a live search/filter across every calculator</li>
             <li>Hamburger menu reworked into grouped, collapsible sections with its own search</li>
@@ -558,74 +863,110 @@
             <li>Fixed three real calculation bugs (debt snowball payoff rollover, withdrawal-rate growth order, profile autofill mapping) and added a regression test suite to guard them</li>
             <li>Fixed path handling so the site works correctly when hosted in a subfolder</li>
             <li>Contact Us Page</li>
-         </ul></p>
-          <p class="cta-hint">Click to open </p>
+         </ul></div>
+          </details>
         </div>
-        <span class="status-pill active">View</span>
-      </a>
+        <a class="vc-link" href="v4.3/index.html">
+          <span class="status-pill active">View</span>
+            <p class="cta-hint">Click to open </p>
+        </a>
+      </div>
 
-      <a class="version-card is-active is-live-orange" href="v4.2/index.html">
-        <div class="version-icon">B.4.2</div>
-        <div class="version-info">
-          <p class="name">Beta 4.2</p>
-          <p class="path">/beta/v4.2</p>
-          <p class="version-dates">Initial Creation: 2026-08-14 17:52:21<br>Last Update: 2026-08-15 09:34:48</p>
-          <p class="notes"><ul>
+      <div class="version-card is-active is-live-orange">
+        <div class="vc-main">
+          <div class="vc-main-row">
+            <div class="version-icon">B.4.2</div>
+            <div class="version-info">
+              <p class="name">Beta 4.2</p>
+              <p class="path">/beta/v4.2</p>
+              <p class="version-dates">Created: 2026-08-14 17:52:21<br>Updated: 2026-08-15 09:34:48</p>
+            </div>
+          </div>
+          <details class="changelog-toggle" onclick="toggleChangeLog(event)">
+            <summary>Show Change Log</summary>
+            <div class="notes"><ul>
             <li>Bug Fixes</li>
             <li>New pages</li>
             <li>Home Page changes</li>
-         </ul></p>
-          <p class="cta-hint">Click to open </p>
+         </ul></div>
+          </details>
         </div>
-        <span class="status-pill active">View</span>
-      </a>
+        <a class="vc-link" href="v4.2/index.html">
+          <span class="status-pill active">View</span>
+            <p class="cta-hint">Click to open </p>
+        </a>
+      </div>
 
 
 
-      <a class="version-card is-active is-live-orange" href="v4.1/index.html">
-        <div class="version-icon">B.4.1</div>
-        <div class="version-info">
-          <p class="name">Beta 4.1 </p>
-          <p class="path">/beta/v4.1</p>
-          <p class="version-dates">Initial Creation: 2026-08-14 04:50:38<br>Last Update: 2026-08-14 16:51:42</p>
-          <p class="notes"><ul>
+      <div class="version-card is-active is-live-orange">
+        <div class="vc-main">
+          <div class="vc-main-row">
+            <div class="version-icon">B.4.1</div>
+            <div class="version-info">
+              <p class="name">Beta 4.1 </p>
+              <p class="path">/beta/v4.1</p>
+              <p class="version-dates">Created: 2026-08-14 04:50:38<br>Updated: 2026-08-14 16:51:42</p>
+            </div>
+          </div>
+          <details class="changelog-toggle" onclick="toggleChangeLog(event)">
+            <summary>Show Change Log</summary>
+            <div class="notes"><ul>
             <li>Full "Your info" profile panel — quick snapshot via camera icon, an automatic safety backup before "Clear my info", and a hover/tap quick-load menu for saved profiles</li>
             <li>New Profile Manager page — save, load, delete, and compare named snapshots of your plan side by side</li>
             <li>Snapshots, backups, exports, and imports now capture every calculator's own saved inputs too, not just your shared profile — one save covers your whole plan across the site</li>
             <li>Export your saved profiles to a JSON file and import them back in, with an automatic backup made before any import that would overwrite your live data</li>
             <li>Fun, unmistakable confirmation animations for taking a snapshot, loading a profile, and clearing your data</li>
             <li>Hamburger menu and quick-load flyout both cap their height with scroll fades and hover-to-auto-scroll</li>
-          </ul></p>
-          <p class="cta-hint">Click to open </p>
+          </ul></div>
+          </details>
         </div>
-        <span class="status-pill active">View</span>
-      </a>
+        <a class="vc-link" href="v4.1/index.html">
+          <span class="status-pill active">View</span>
+            <p class="cta-hint">Click to open </p>
+        </a>
+      </div>
 
-      <a class="version-card is-active is-live-orange" href="v4.0/index.html">
-        <div class="version-icon">B.4.0</div>
-        <div class="version-info">
-          <p class="name">Version 4.0</p>
-          <p class="path">/beta/v4.0</p>
-          <p class="version-dates">Initial Creation: 2026-08-13 05:38:14<br>Last Update: 2026-08-13 18:53:47</p>
-          <p class="notes"><ul>
+      <div class="version-card is-active is-live-orange">
+        <div class="vc-main">
+          <div class="vc-main-row">
+            <div class="version-icon">B.4.0</div>
+            <div class="version-info">
+              <p class="name">Version 4.0</p>
+              <p class="path">/beta/v4.0</p>
+              <p class="version-dates">Created: 2026-08-13 05:38:14<br>Updated: 2026-08-13 18:53:47</p>
+            </div>
+          </div>
+          <details class="changelog-toggle" onclick="toggleChangeLog(event)">
+            <summary>Show Change Log</summary>
+            <div class="notes"><ul>
             <li>FI Snapshot dashboard — age, savings, and goal progress pulled straight from your saved profile</li>
             <li>Coast-FI status, with saved what-if scenarios you can compare, load, or delete</li>
             <li>Safe Withdrawal Rate stress test against every real historical market cycle since 1928</li>
             <li>Emergency Fund calculator — coverage targets, funded progress, and payoff projection</li>
             <li>"New!" ribbons on the homepage, reordered to lead with the FI Snapshot dashboard</li>
-          </ul></p>
-          <p class="cta-hint">Click to open </p>
+          </ul></div>
+          </details>
         </div>
-        <span class="status-pill active">View</span>
-      </a>
+        <a class="vc-link" href="v4.0/index.html">
+          <span class="status-pill active">View</span>
+            <p class="cta-hint">Click to open </p>
+        </a>
+      </div>
 
-      <a class="version-card is-active is-live-orange" href="v3.1/index.html">
-        <div class="version-icon">B.3.1</div>
-        <div class="version-info">
-          <p class="name">Beta 3.1</p>
-          <p class="path">/beta/v3.1</p>
-          <p class="version-dates">Initial Creation: 2026-08-09 20:18:50<br>Last Update: 2026-08-13 05:33:14</p>
-          <p class="notes"><ul>
+      <div class="version-card is-active is-live-orange">
+        <div class="vc-main">
+          <div class="vc-main-row">
+            <div class="version-icon">B.3.1</div>
+            <div class="version-info">
+              <p class="name">Beta 3.1</p>
+              <p class="path">/beta/v3.1</p>
+              <p class="version-dates">Created: 2026-08-09 20:18:50<br>Updated: 2026-08-13 05:33:14</p>
+            </div>
+          </div>
+          <details class="changelog-toggle" onclick="toggleChangeLog(event)">
+            <summary>Show Change Log</summary>
+            <div class="notes"><ul>
             <li>Unified styles</li>
              <li>Dark and light modes</li>
               <li>persistent user settings/Defaults - flow into page defaults for inputs</li>
@@ -634,54 +975,84 @@
                  <li>clean up footers</li>
                   <li>code clean up - external JS & CSS files</li>
                    <li>Additional Pages (Net Worth, General Info, Files, Crossover)</li>
-          </ul></p>
-          <p class="cta-hint">Click to open </p>
+          </ul></div>
+          </details>
         </div>
-        <span class="status-pill active">View</span>
-      </a>
+        <a class="vc-link" href="v3.1/index.html">
+          <span class="status-pill active">View</span>
+            <p class="cta-hint">Click to open </p>
+        </a>
+      </div>
 
 
 
-      <a class="version-card is-active is-live-red" href="v3/index.html">
-        <div class="version-icon">B.3.0</div>
-        <div class="version-info">
-          <p class="name">Beta 3.0</p>
-          <p class="path">/beta/v3</p>
-          <p class="version-dates">Initial Creation: 2026-08-09 20:18:50<br>Last Update: 2026-08-11 18:58:20</p>
-          <p class="notes">Unify pages into a cohesive site</p>
-          <p class="cta-hint">Click to open </p>
+      <div class="version-card is-active is-live-red">
+        <div class="vc-main">
+          <div class="vc-main-row">
+            <div class="version-icon">B.3.0</div>
+            <div class="version-info">
+              <p class="name">Beta 3.0</p>
+              <p class="path">/beta/v3</p>
+              <p class="version-dates">Created: 2026-08-09 20:18:50<br>Updated: 2026-08-11 18:58:20</p>
+            </div>
+          </div>
+          <details class="changelog-toggle" onclick="toggleChangeLog(event)">
+            <summary>Show Change Log</summary>
+            <div class="notes">Unify pages into a cohesive site</div>
+          </details>
         </div>
-        <span class="status-pill active">View</span>
-      </a>
+        <a class="vc-link" href="v3/index.html">
+          <span class="status-pill active">View</span>
+            <p class="cta-hint">Click to open </p>
+        </a>
+      </div>
 
-      <a class="version-card is-disabled" href="v2/index.html" aria-disabled="true" tabindex="-1" onclick="return false;">
-        <div class="version-icon">B.2</div>
-        <div class="version-info">
-          <p class="name">Beta 2.0</p>
-          <p class="path">/beta/v2</p>
-          <p class="version-dates">Initial Creation: 2026-08-09 20:20:58<br>Last Update: 2026-08-09 22:31:13</p>
-          <p class="notes">Add additional calculators</p>
+      <div class="version-card is-disabled">
+        <div class="vc-main">
+          <div class="vc-main-row">
+            <div class="version-icon">B.2</div>
+            <div class="version-info">
+              <p class="name">Beta 2.0</p>
+              <p class="path">/beta/v2</p>
+              <p class="version-dates">Created: 2026-08-09 20:20:58<br>Updated: 2026-08-09 22:31:13</p>
+            </div>
+          </div>
+          <details class="changelog-toggle" onclick="toggleChangeLog(event)">
+            <summary>Show Change Log</summary>
+            <div class="notes">Add additional calculators</div>
+          </details>
         </div>
-        <span class="status-pill disabled">⛔ Disabled</span>
-      </a>
+        <a class="vc-link" href="v2/index.html" aria-disabled="true" tabindex="-1" onclick="return false;">
+          <span class="status-pill disabled">⛔ Disabled</span>
+        </a>
+      </div>
 
-      <a class="version-card is-deleted" href="v1/index.html" aria-disabled="true" tabindex="-1" onclick="return false;">
-        <div class="version-icon">A.1</div>
-        <div class="version-info">
-          <p class="name">Alpha 1.0</p>
-          <p class="path">/beta/v1</p>
-          <p class="version-dates">Initial Creation: 2026-08-08 20:37:52<br>Last Update: 2026-08-09 20:20:56</p>
-          <p class="notes">Initial Time-To-FI Calculator P.O.C.</p>
+      <div class="version-card is-deleted">
+        <div class="vc-main">
+          <div class="vc-main-row">
+            <div class="version-icon">A.1</div>
+            <div class="version-info">
+              <p class="name">Alpha 1.0</p>
+              <p class="path">/beta/v1</p>
+              <p class="version-dates">Created: 2026-08-08 20:37:52<br>Updated: 2026-08-09 20:20:56</p>
+            </div>
+          </div>
+          <details class="changelog-toggle" onclick="toggleChangeLog(event)">
+            <summary>Show Change Log</summary>
+            <div class="notes">Initial Time-To-FI Calculator P.O.C.</div>
+          </details>
         </div>
-        <span class="status-pill deleted">🗑 Deleted</span>
-      </a>
+        <a class="vc-link" href="v1/index.html" aria-disabled="true" tabindex="-1" onclick="return false;">
+          <span class="status-pill deleted">🗑 Deleted</span>
+        </a>
+      </div>
 
-      
-    </div>
+      </div>
+    </details>
 
-    <div class="section-divider">Roadmap Notes</div>
-
-    <div class="future-panel">
+    <details class="archive-toggle">
+      <summary>Roadmap Notes <span class="archive-count">(Future Considerations)</span></summary>
+      <div class="future-panel">
       <div class="future-panel-header">
         <div class="future-icon">X.Y</div>
         <div class="future-heading">
@@ -716,7 +1087,8 @@
           <li>Additional inatructions, guides, tips</li>
         </ul>
       </div>
-    </div>
+      </div>
+    </details>
     <p></p>
 
 
@@ -732,5 +1104,95 @@
       </ul>
       </footer>
   </div>
+  <script>
+    // every version card is itself a link (an <a>) to that build — any click
+    // inside the "Change Log" <details>, including on the expanded notes
+    // text (not just the summary), would otherwise bubble up and follow
+    // that link. The handler lives on <details> itself (not just <summary>)
+    // so it catches those clicks too; preventDefault stops the card's own
+    // navigation (and the summary's native toggle, so we do the toggle by
+    // hand only when the click actually landed on the summary).
+    function toggleChangeLog(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (e.target.closest("summary")) {
+        var details = e.currentTarget;
+        details.open = !details.open;
+        details.querySelector("summary").textContent = details.open ? "Hide Change Log" : "Show Change Log";
+        if (details.open) {
+          var notes = details.querySelector(".notes");
+          if (notes) updateScrollArrows(notes);
+        }
+      }
+    }
+
+    // wraps every changelog's .notes in a positioning context and adds a
+    // top/bottom fade+arrow pair, toggled by updateScrollArrows() below
+    // based on actual scroll position — so it only ever shows in the
+    // direction there's really more text to see.
+    document.querySelectorAll(".changelog-toggle .notes").forEach(function (notes) {
+      var wrap = document.createElement("div");
+      wrap.className = "notes-wrap";
+      notes.parentNode.insertBefore(wrap, notes);
+      wrap.appendChild(notes);
+
+      var top = document.createElement("div");
+      top.className = "notes-scroll-arrow notes-scroll-arrow-top";
+      var bottom = document.createElement("div");
+      bottom.className = "notes-scroll-arrow notes-scroll-arrow-bottom";
+      wrap.appendChild(top);
+      wrap.appendChild(bottom);
+
+      notes.addEventListener("scroll", function () {
+        updateScrollArrows(notes);
+      });
+
+      wireScrollArrow(top, notes, -1);
+      wireScrollArrow(bottom, notes, 1);
+    });
+
+    function updateScrollArrows(notes) {
+      var wrap = notes.parentElement;
+      var top = wrap.querySelector(".notes-scroll-arrow-top");
+      var bottom = wrap.querySelector(".notes-scroll-arrow-bottom");
+      var canScroll = notes.scrollHeight > notes.clientHeight + 1;
+      top.classList.toggle("is-visible", canScroll && notes.scrollTop > 4);
+      bottom.classList.toggle("is-visible", canScroll && notes.scrollTop < notes.scrollHeight - notes.clientHeight - 4);
+    }
+
+    // hovering, holding a touch on, or clicking an arrow scrolls the
+    // changelog text in that direction — held (hover/touch) scrolls
+    // continuously, a plain click/tap nudges by about one screenful.
+    var arrowScrollTimer = null;
+    function stopArrowAutoScroll() {
+      if (arrowScrollTimer) {
+        clearInterval(arrowScrollTimer);
+        arrowScrollTimer = null;
+      }
+    }
+    function wireScrollArrow(arrow, notes, direction) {
+      arrow.addEventListener("mouseenter", function () {
+        stopArrowAutoScroll();
+        arrowScrollTimer = setInterval(function () {
+          notes.scrollTop += direction * 10;
+        }, 16);
+      });
+      arrow.addEventListener("mouseleave", stopArrowAutoScroll);
+      arrow.addEventListener("touchstart", function (e) {
+        e.preventDefault();
+        stopArrowAutoScroll();
+        arrowScrollTimer = setInterval(function () {
+          notes.scrollTop += direction * 10;
+        }, 16);
+      }, { passive: false });
+      arrow.addEventListener("touchend", stopArrowAutoScroll);
+      arrow.addEventListener("touchcancel", stopArrowAutoScroll);
+      arrow.addEventListener("click", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        notes.scrollBy({ top: direction * notes.clientHeight * 0.7, behavior: "smooth" });
+      });
+    }
+  </script>
 </body>
 </html>

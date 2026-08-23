@@ -296,6 +296,13 @@ window.FN_PROFILE_FIELDS = {
     font-family:'Antonio', 'Arial Narrow', sans-serif; letter-spacing:.02em;
   }
   .panel-head .note{ font-size:11px; color: var(--text-faint); font-family:'JetBrains Mono', monospace; }
+  .save-status{
+    padding:8px 20px 0;
+    font-size:11px;
+    font-family:'JetBrains Mono', monospace;
+    color: var(--text-faint);
+    text-align:right;
+  }
 
   /* ---------- LEDGER (inputs) ---------- */
   .ledger{ padding: 6px 0; }
@@ -482,6 +489,7 @@ window.FN_PROFILE_FIELDS = {
           <button type="button" class="fn-help-btn" aria-label="What do these inputs mean?">?</button>
         </div>
       </div>
+      <div class="save-status" id="revsSaveStatus">Not saved yet</div>
       <div class="ledger">
         <div class="field">
           <label for="price">Current market price of home</label>
@@ -601,12 +609,12 @@ window.FN_PROFILE_FIELDS = {
   // input formatting on blur
   function attachMoneyField(id){
     const el = $(id);
-    el.addEventListener('blur', () => { el.value = Math.round(parseNum(el.value)).toLocaleString('en-US'); calc(); });
+    el.addEventListener('blur', () => { el.value = Math.round(parseNum(el.value)).toLocaleString('en-US'); calc(); saveRevsInputs(); });
     el.addEventListener('keydown', (e) => { if(e.key === 'Enter'){ el.blur(); } });
   }
   function attachPctField(id){
     const el = $(id);
-    el.addEventListener('blur', () => { el.value = parsePct(el.value).toFixed(2) + '%'; calc(); });
+    el.addEventListener('blur', () => { el.value = parsePct(el.value).toFixed(2) + '%'; calc(); saveRevsInputs(); });
     el.addEventListener('keydown', (e) => { if(e.key === 'Enter'){ el.blur(); } });
   }
   ['price','down','rentalincome'].forEach(attachMoneyField);
@@ -621,6 +629,7 @@ window.FN_PROFILE_FIELDS = {
       btn.classList.add('active');
       termYears = parseInt(btn.dataset.term, 10);
       calc();
+      saveRevsInputs();
     });
   });
   document.querySelectorAll('[data-rental]').forEach(btn => {
@@ -630,8 +639,50 @@ window.FN_PROFILE_FIELDS = {
       isRental = btn.dataset.rental === 'yes';
       document.querySelector('.rental-income').classList.toggle('show', isRental);
       calc();
+      saveRevsInputs();
     });
   });
+
+  // ---------- persistence ----------
+  const REVS_STORAGE_KEY = 'realEstateVsStocksInputs';
+  const REVS_FIELD_IDS = ['price','down','rate','escrow','appreciation','stockreturn','rentalincome'];
+
+  function revsPad2(n){ return String(n).padStart(2, '0'); }
+  function updateRevsSaveStatus(){
+    const status = $('revsSaveStatus');
+    if (!status) return;
+    const d = new Date();
+    status.textContent = `Last saved: ${revsPad2(d.getHours())}:${revsPad2(d.getMinutes())}:${revsPad2(d.getSeconds())}`;
+  }
+
+  function saveRevsInputs(){
+    try{
+      const vals = {};
+      REVS_FIELD_IDS.forEach(id => { vals[id] = $(id).value; });
+      vals.termYears = termYears;
+      vals.isRental = isRental;
+      localStorage.setItem(REVS_STORAGE_KEY, JSON.stringify(vals));
+      updateRevsSaveStatus();
+    }catch(e){ /* storage unavailable, ignore */ }
+  }
+
+  function loadRevsInputs(){
+    try{
+      const raw = localStorage.getItem(REVS_STORAGE_KEY);
+      if(!raw) return;
+      const vals = JSON.parse(raw);
+      REVS_FIELD_IDS.forEach(id => { if(vals[id] !== undefined) $(id).value = vals[id]; });
+      if (vals.termYears !== undefined){
+        termYears = vals.termYears;
+        document.querySelectorAll('[data-term]').forEach(b => b.classList.toggle('active', parseInt(b.dataset.term, 10) === termYears));
+      }
+      if (vals.isRental !== undefined){
+        isRental = vals.isRental;
+        document.querySelectorAll('[data-rental]').forEach(b => b.classList.toggle('active', (b.dataset.rental === 'yes') === isRental));
+        document.querySelector('.rental-income').classList.toggle('show', isRental);
+      }
+    }catch(e){ /* storage unavailable or corrupt — fall back to defaults */ }
+  }
 
   function series(){
     const price = parseNum($('price').value);
@@ -805,6 +856,7 @@ window.FN_PROFILE_FIELDS = {
     });
   }
 
+  loadRevsInputs();
   calc();
 })();
 </script>
