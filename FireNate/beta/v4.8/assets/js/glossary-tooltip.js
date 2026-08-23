@@ -3,7 +3,7 @@
    Opt-in: wrap a term in a page's own body copy with
    <span class="fn-term" data-term="coast-fire">Coast FIRE</span> and this
    script turns it into a click/tap/keyboard-activated popover, sourced from
-   the shared glossary data (assets/js/glossary-data.js — load that first).
+   the shared glossary data (assets/data/glossary-data.js — load that first).
    Pages must set window.FN_BASE before this script, same as nav.js.
    ========================================================================= */
 (function () {

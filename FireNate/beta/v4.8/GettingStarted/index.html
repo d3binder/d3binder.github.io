@@ -13,7 +13,7 @@
 <script src="../assets/js/theme.js" defer></script>
 <script src="../assets/js/user-profile.js" defer></script>
 <script src="../assets/js/nav.js" defer></script>
-<script src="../assets/js/glossary-data.js"></script>
+<script src="../assets/data/glossary-data.js"></script>
 <script src="../assets/js/glossary-tooltip.js" defer></script>
 <script src="../assets/js/field-help.js" defer></script>
 <script>
@@ -83,6 +83,9 @@ window.FN_FIELD_HELP = {
   .gs-pick .name{ display:flex; align-items:center; gap:7px; font-weight:700; color:var(--ink); font-size:14px; margin-bottom:4px; }
   .gs-pick .name svg{ flex-shrink:0; color:var(--gold-dim); }
   .gs-pick .desc{ font-size:12.5px; color:var(--ink-faint); line-height:1.5; }
+
+  .gs-step ul.gs-theme-list{ margin:0 0 4px; padding-left:20px; color:var(--ink-dim); font-size:14.5px; line-height:1.7; }
+  .gs-step ul.gs-theme-list li strong{ color:var(--ink); }
 
   .gs-tips{
     background:var(--surface); border:1px solid var(--line); border-top:4px solid var(--jade);
@@ -292,6 +295,28 @@ window.FN_FIELD_HELP = {
       </button>
     </div>
 
+    <div class="gs-step jade">
+      <div class="gs-step-head">
+        <div class="gs-step-num">07</div>
+        <h2>Pick a look that fits you</h2>
+      </div>
+      <p class="gs-step-body">
+        The same <strong>gear icon</strong> also holds a theme picker — six ways to view the site:
+      </p>
+      <ul class="gs-theme-list">
+        <li><strong>System</strong> &mdash; matches your device automatically: a light device gets Sunshine, a dark device gets Neon. This is the default for new visitors.</li>
+        <li><strong>Light</strong> &mdash; the original, clean daytime look.</li>
+        <li><strong>Sunshine</strong> &mdash; a brighter, warmer alternative to Light.</li>
+        <li><strong>Dark</strong> &mdash; easy on the eyes at night.</li>
+        <li><strong>Neon</strong> &mdash; a vivid dark theme with glowing purple-and-pink accents.</li>
+        <li><strong>LCARS</strong> &mdash; a flat, Star-Trek-console-inspired look with bold, solid accent-color panels.</li>
+      </ul>
+      <button type="button" class="gs-btn gs-btn-ghost" id="gsShowThemeBtn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        Show me where to switch themes
+      </button>
+    </div>
+
   </div>
 
   <div class="gs-tips">
@@ -375,6 +400,7 @@ function openSettingsPanelWithAttention(e, extraSelector){
   if (extraSelector) pulseAttention(document.querySelector(extraSelector));
 }
 document.getElementById('gsShowResetBtn').addEventListener('click', function(e){ openSettingsPanelWithAttention(e, '.fn-reset-all'); });
+document.getElementById('gsShowThemeBtn').addEventListener('click', function(e){ openSettingsPanelWithAttention(e, '.fn-theme-select'); });
 
 // opens the hamburger menu, force-expands whichever group the target link
 // lives in (a user may have collapsed "Resources" earlier), scrolls to it,

@@ -13,11 +13,63 @@
 <script src="../assets/js/theme.js" defer></script>
 <script src="../assets/js/user-profile.js" defer></script>
 <script src="../assets/js/nav.js" defer></script>
-<script src="../assets/js/glossary-data.js"></script>
+<script src="../assets/data/glossary-data.js"></script>
 <script>window.FN_BASE = "../"; window.FN_PAGE = "glossary";</script>
 <style>
   @media (prefers-reduced-motion: no-preference){
     html{ scroll-behavior:smooth; }
+  }
+
+  /* ---------- TWO-COLUMN LAYOUT (wide screens only) ----------
+     .gl-sidebar is display:none by default — the icon-triggered flyout
+     panel below is the only "jump to a category" affordance on narrow/
+     mobile screens, same as before this was added. Past the breakpoint, a
+     persistent sidebar tree appears alongside the content as a second,
+     always-visible way to browse — it doesn't replace the flyout panel
+     (search and sort still need their own panels regardless of width), it
+     just adds a browse-while-reading option that suits a reference page
+     better than a panel you have to reopen after every scroll. */
+  .gl-layout{ display:flex; align-items:flex-start; gap:36px; }
+  .gl-main{ flex:1; min-width:0; }
+  .gl-sidebar{ display:none; }
+  @media (min-width:1000px){
+    .gl-sidebar{
+      display:block; flex:none; width:230px;
+      position:sticky; top:76px;
+      max-height:calc(100vh - 96px);
+      overflow-y:auto;
+    }
+    .gl-sidebar-title{
+      font-family:var(--mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase;
+      color:var(--ink-faint); margin:0 0 14px;
+    }
+    .gl-sidebar-tree{ display:flex; flex-direction:column; gap:2px; }
+    .gl-sidebar-parent{ margin-bottom:6px; }
+    .gl-sidebar-parent > summary{
+      list-style:none; cursor:pointer;
+      display:flex; align-items:center; gap:7px;
+      padding:5px 0;
+      font-family:var(--serif); font-size:14.5px; font-weight:600; color:var(--ink);
+    }
+    .gl-sidebar-parent > summary::-webkit-details-marker{ display:none; }
+    .gl-sidebar-parent > summary::before{
+      content:''; flex:none; width:7px; height:7px;
+      border-right:2px solid var(--gold); border-bottom:2px solid var(--gold);
+      transform:rotate(45deg); transition:transform .15s ease;
+    }
+    .gl-sidebar-parent[open] > summary::before{ transform:rotate(-135deg); margin-top:3px; }
+    .gl-sidebar-children{
+      display:flex; flex-direction:column;
+      border-left:2px solid var(--line); margin-left:3px; padding-left:16px;
+    }
+    .gl-sidebar-tree a{
+      font-family:var(--sans); font-size:13px; color:var(--ink-dim); text-decoration:none;
+      padding:5px 0; border-radius:4px;
+      transition:color .15s ease;
+    }
+    .gl-sidebar-tree a:hover{ color:var(--gold); }
+    .gl-sidebar-tree a.active{ color:var(--gold); font-weight:700; }
+    [data-theme="lcars"] .gl-sidebar-parent > summary{ font-family:var(--display); letter-spacing:.02em; }
   }
 
   /* ---------- STICKY "BROWSE / SEARCH" ICON ROW ----------
@@ -81,6 +133,17 @@
     color:#201205;
     box-shadow:0 6px 16px -6px rgba(217,132,15,0.55);
   }
+  /* groups the child-category pills under their parent's name when the
+     panel is showing the nested "By Category" tree — flex-basis:100% forces
+     each label onto its own line within the wrapping pill container,
+     without needing a separate layout structure just for this */
+  .gl-quicklinks-group-label{
+    flex-basis:100%;
+    font-family:var(--mono); font-size:10.5px; letter-spacing:.09em; text-transform:uppercase;
+    color:var(--ink-faint);
+    margin:10px 6px -2px;
+  }
+  .gl-quicklinks-group-label:first-child{ margin-top:2px; }
 
   .gl-search-panel{ margin-top:8px; }
   .gl-search-panel[hidden]{ display:none; }
@@ -114,14 +177,90 @@
   .gl-status[hidden]{ display:none; }
   .gl-status.no-results{ color:var(--danger); }
 
+  /* .gl-icon-btn / .gl-quicklinks-inner / .gl-search-panel-inner's "gradient
+     border" is 2 stacked background-images — an opaque padding-box layer
+     masks a border-box gradient so only a thin ring shows through. --surface
+     is intentionally near-transparent for neon/sunshine's glass look
+     elsewhere, which would let that gradient bleed across the whole shape
+     instead of staying a ring (and wash out the icon color sitting on top)
+     — so these get their own more-opaque interior fill instead of
+     inheriting --surface directly. Same fix as the homepage's
+     .hp-quicklinks-inner. */
+  html[data-theme="neon"] .gl-icon-btn,
+  html[data-theme="neon"] .gl-quicklinks-inner,
+  html[data-theme="neon"] .gl-search-panel-inner{
+    background-image:
+      linear-gradient(rgba(15,23,42,0.85), rgba(15,23,42,0.85)),
+      linear-gradient(90deg, var(--gold), var(--danger));
+  }
+  html[data-theme="sunshine"] .gl-icon-btn,
+  html[data-theme="sunshine"] .gl-quicklinks-inner,
+  html[data-theme="sunshine"] .gl-search-panel-inner{
+    background-image:
+      linear-gradient(rgba(255,252,245,0.88), rgba(255,252,245,0.88)),
+      linear-gradient(90deg, var(--gold), var(--danger));
+  }
+
+  /* top-level "parent" groups (Foundational Concepts, Retirement, Banking,
+     Investing, Debt & Loans — see window.FN_GLOSSARY_GROUPS in
+     glossary-data.js) — only used in "By Category" mode; alphabetical mode
+     never nests, so these elements simply don't get created there. Same
+     native-<details> pattern as .gl-category below, just visually heavier
+     (bigger title, accent-colored bottom rule) to read as the outer level
+     of a two-level tree, with .gl-parent-body's left border giving a
+     lightweight indent guide for the nested categories inside. */
+  .gl-parent{ margin-top:48px; scroll-margin-top:130px; }
+  .gl-parent:first-child{ margin-top:0; }
+  .gl-parent > summary{
+    list-style:none; cursor:pointer;
+    display:flex; align-items:center; gap:12px;
+    padding-bottom:14px; border-bottom:2px solid var(--gold);
+  }
+  .gl-parent > summary::-webkit-details-marker{ display:none; }
+  .gl-parent > summary::before{
+    content:''; flex:none; width:11px; height:11px;
+    border-right:3px solid var(--gold); border-bottom:3px solid var(--gold);
+    transform:rotate(45deg); transition:transform .15s ease;
+    margin-left:2px;
+  }
+  .gl-parent[open] > summary::before{ transform:rotate(-135deg); margin-top:5px; }
+  [data-theme="lcars"] .gl-parent-title{ font-family:var(--display); letter-spacing:.02em; }
+  .gl-parent-title{ font-family:var(--serif); font-size:27px; font-weight:600; color:var(--ink); }
+  .gl-parent-count{ font-family:var(--mono); font-size:12px; color:var(--ink-faint); }
+  .gl-parent-body{ border-left:2px solid var(--line); margin-left:7px; padding-left:22px; }
+  .gl-parent-body > .gl-category:first-child{ margin-top:22px; }
+
+  /* category sections are native <details> elements, same collapsible
+     pattern as the FAQ page's own sections — free keyboard/a11y support,
+     no open/closed state to track by hand. Default open (skimmable on
+     arrival), same as FAQ. */
   .gl-category{ margin-top:36px; scroll-margin-top:130px; }
+  .gl-category > summary{
+    list-style:none; cursor:pointer;
+    display:flex; align-items:center; gap:10px;
+    margin-bottom:16px;
+  }
+  .gl-category > summary::-webkit-details-marker{ display:none; }
+  .gl-category > summary::before{
+    content:''; flex:none; width:9px; height:9px;
+    border-right:2px solid var(--ink-faint); border-bottom:2px solid var(--ink-faint);
+    transform:rotate(45deg); transition:transform .15s ease;
+    margin-left:2px;
+  }
+  .gl-category[open] > summary::before{ transform:rotate(-135deg); margin-top:4px; }
   [data-theme="lcars"] .gl-category-title{ font-family:var(--display); letter-spacing:.02em; }
-  .gl-category-title{ font-family:var(--serif); font-size:22px; font-weight:500; margin:0 0 16px; color:var(--ink); }
+  .gl-category-title{ font-family:var(--serif); font-size:22px; font-weight:500; color:var(--ink); }
+  .gl-category-count{ font-family:var(--mono); font-size:11.5px; color:var(--ink-faint); }
   .gl-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:14px; }
   .gl-card{
     background:var(--surface); border:1px solid var(--line); border-top:4px solid var(--gold);
     border-radius:var(--radius); padding:20px 22px; scroll-margin-top:100px;
-    transition:border-color .3s, box-shadow .3s;
+    transition:border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+  }
+  .gl-card:hover{
+    border-color:var(--gold);
+    box-shadow:0 0 0 3px rgba(217,132,15,0.18), 0 12px 28px -14px rgba(0,0,0,0.4);
+    transform:translateY(-2px);
   }
   .gl-card.flash{ border-color:var(--gold); box-shadow:0 0 0 3px rgba(217,132,15,0.25); }
   [data-theme="lcars"] .gl-card h3{ font-family:var(--display); letter-spacing:.02em; }
@@ -143,57 +282,68 @@
     <p class="lede">Every term used across this site's calculators, defined in one place — click any dotted-underlined term on a calculator page to jump straight to its entry here.</p>
   </header>
 
-  <nav class="gl-quicklinks" id="glQuicklinks" aria-label="Browse the glossary">
-    <div class="gl-quicklinks-row">
-      <button type="button" class="gl-icon-btn" id="glCategoriesToggle" aria-expanded="false" aria-controls="glCategoriesPanel" aria-label="Jump to a section">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <line x1="8" y1="6" x2="21" y2="6"></line>
-          <line x1="8" y1="12" x2="21" y2="12"></line>
-          <line x1="8" y1="18" x2="21" y2="18"></line>
-          <line x1="3" y1="6" x2="3.01" y2="6"></line>
-          <line x1="3" y1="12" x2="3.01" y2="12"></line>
-          <line x1="3" y1="18" x2="3.01" y2="18"></line>
-        </svg>
-      </button>
-      <button type="button" class="gl-icon-btn" id="glSortToggle" aria-expanded="false" aria-controls="glSortPanel" aria-label="Sort terms">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M3 8l4-4 4 4"></path>
-          <path d="M7 4v10"></path>
-          <path d="M21 16l-4 4-4-4"></path>
-          <path d="M17 20V10"></path>
-        </svg>
-      </button>
-      <button type="button" class="gl-icon-btn" id="glSearchToggle" aria-expanded="false" aria-controls="glSearchPanel" aria-label="Search glossary">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <circle cx="11" cy="11" r="8"></circle>
-          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-        </svg>
-      </button>
-    </div>
-    <div class="gl-categories-panel" id="glCategoriesPanel" hidden>
-      <div class="gl-quicklinks-inner" id="glQuicklinksInner"></div>
-    </div>
-    <div class="gl-categories-panel" id="glSortPanel" hidden>
-      <div class="gl-quicklinks-inner" id="glSortOptions">
-        <button type="button" data-sort="category" class="active">By Category</button>
-        <button type="button" data-sort="alphabetical">Alphabetical (A&ndash;Z)</button>
+  <div class="gl-layout">
+    <nav class="gl-sidebar" id="glSidebar" aria-label="Glossary categories">
+      <div class="gl-sidebar-inner">
+        <div class="gl-sidebar-title">Browse</div>
+        <div class="gl-sidebar-tree" id="glSidebarTree"></div>
       </div>
-    </div>
-    <div class="gl-search-panel" id="glSearchPanel" hidden>
-      <div class="gl-search-panel-inner">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <circle cx="11" cy="11" r="8"></circle>
-          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-        </svg>
-        <input type="search" id="glSearch" placeholder="Search terms&hellip;" aria-label="Search glossary">
-        <button type="button" class="gl-search-clear" id="glSearchClear" aria-label="Clear search" hidden>&times;</button>
-      </div>
-      <p class="gl-status" id="glStatus" hidden></p>
-    </div>
-  </nav>
+    </nav>
 
-  <div id="glCategories"></div>
-  <p class="gl-empty" id="glEmpty">No terms match your search.</p>
+    <div class="gl-main">
+      <nav class="gl-quicklinks" id="glQuicklinks" aria-label="Browse the glossary">
+        <div class="gl-quicklinks-row">
+          <button type="button" class="gl-icon-btn" id="glCategoriesToggle" aria-expanded="false" aria-controls="glCategoriesPanel" aria-label="Jump to a section">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="8" y1="6" x2="21" y2="6"></line>
+              <line x1="8" y1="12" x2="21" y2="12"></line>
+              <line x1="8" y1="18" x2="21" y2="18"></line>
+              <line x1="3" y1="6" x2="3.01" y2="6"></line>
+              <line x1="3" y1="12" x2="3.01" y2="12"></line>
+              <line x1="3" y1="18" x2="3.01" y2="18"></line>
+            </svg>
+          </button>
+          <button type="button" class="gl-icon-btn" id="glSortToggle" aria-expanded="false" aria-controls="glSortPanel" aria-label="Sort terms">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M3 8l4-4 4 4"></path>
+              <path d="M7 4v10"></path>
+              <path d="M21 16l-4 4-4-4"></path>
+              <path d="M17 20V10"></path>
+            </svg>
+          </button>
+          <button type="button" class="gl-icon-btn" id="glSearchToggle" aria-expanded="false" aria-controls="glSearchPanel" aria-label="Search glossary">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+          </button>
+        </div>
+        <div class="gl-categories-panel" id="glCategoriesPanel" hidden>
+          <div class="gl-quicklinks-inner" id="glQuicklinksInner"></div>
+        </div>
+        <div class="gl-categories-panel" id="glSortPanel" hidden>
+          <div class="gl-quicklinks-inner" id="glSortOptions">
+            <button type="button" data-sort="category" class="active">By Category</button>
+            <button type="button" data-sort="alphabetical">Alphabetical (A&ndash;Z)</button>
+          </div>
+        </div>
+        <div class="gl-search-panel" id="glSearchPanel" hidden>
+          <div class="gl-search-panel-inner">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="search" id="glSearch" placeholder="Search terms&hellip;" aria-label="Search glossary">
+            <button type="button" class="gl-search-clear" id="glSearchClear" aria-label="Clear search" hidden>&times;</button>
+          </div>
+          <p class="gl-status" id="glStatus" hidden></p>
+        </div>
+      </nav>
+
+      <div id="glCategories"></div>
+      <p class="gl-empty" id="glEmpty">No terms match your search.</p>
+    </div>
+  </div>
 
   <footer id="site-footer"></footer>
 </div>
@@ -238,6 +388,43 @@ function buildGroups(glossary){
   return { groupOrder, byGroup };
 }
 
+function buildCard(t){
+  const card = document.createElement('div');
+  card.className = 'gl-card';
+  card.id = 'term-' + t.id;
+  card.dataset.searchText = (t.term + ' ' + t.short).toLowerCase();
+  card.innerHTML = `
+    <h3>${t.term}</h3>
+    <p>${t.short}</p>
+    ${t.relatedHref ? `<a class="related" href="..${t.relatedHref}">${t.relatedIcon ? `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${t.relatedIcon}</svg>` : ''}${t.relatedLabel || 'Open calculator'} &rarr;</a>` : ''}
+  `;
+  return card;
+}
+
+function buildCategorySection(group, terms){
+  const section = document.createElement('details');
+  section.className = 'gl-category';
+  section.id = 'cat-' + slugify(group);
+  section.open = true;
+
+  const summary = document.createElement('summary');
+  const title = document.createElement('span');
+  title.className = 'gl-category-title';
+  title.textContent = group;
+  const count = document.createElement('span');
+  count.className = 'gl-category-count';
+  count.textContent = terms.length + (terms.length === 1 ? ' term' : ' terms');
+  summary.appendChild(title);
+  summary.appendChild(count);
+  section.appendChild(summary);
+
+  const grid = document.createElement('div');
+  grid.className = 'gl-grid';
+  terms.forEach(t => grid.appendChild(buildCard(t)));
+  section.appendChild(grid);
+  return section;
+}
+
 function render(){
   const glossary = window.FN_GLOSSARY || [];
   const host = $('glCategories');
@@ -247,39 +434,113 @@ function render(){
 
   const quicklinksHost = $('glQuicklinksInner');
   quicklinksHost.innerHTML = '';
+  const sidebarHost = $('glSidebarTree');
+  if (sidebarHost) sidebarHost.innerHTML = '';
 
-  groupOrder.forEach(group => {
-    const groupId = 'cat-' + slugify(group);
-
+  function addQuicklink(group){
     const link = document.createElement('a');
-    link.href = '#' + groupId;
+    link.href = '#cat-' + slugify(group);
     link.textContent = group;
     quicklinksHost.appendChild(link);
+  }
 
-    const section = document.createElement('div');
-    section.className = 'gl-category';
-    section.id = groupId;
-    const title = document.createElement('h2');
-    title.className = 'gl-category-title';
-    title.textContent = group;
-    section.appendChild(title);
+  // same category → subcategory link as the flyout panel's own pills, just
+  // appended into a given sidebar container instead — a plain top-level
+  // leaf when there's no parent to nest it under, or one more link inside
+  // a parent's .gl-sidebar-children otherwise
+  function addSidebarLeaf(container, group){
+    if (!sidebarHost) return;
+    const link = document.createElement('a');
+    link.href = '#cat-' + slugify(group);
+    link.textContent = group;
+    container.appendChild(link);
+  }
 
-    const grid = document.createElement('div');
-    grid.className = 'gl-grid';
-    byGroup[group].forEach(t => {
-      const card = document.createElement('div');
-      card.className = 'gl-card';
-      card.id = 'term-' + t.id;
-      card.dataset.searchText = (t.term + ' ' + t.short).toLowerCase();
-      card.innerHTML = `
-        <h3>${t.term}</h3>
-        <p>${t.short}</p>
-        ${t.relatedHref ? `<a class="related" href="..${t.relatedHref}">${t.relatedIcon ? `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${t.relatedIcon}</svg>` : ''}${t.relatedLabel || 'Open calculator'} &rarr;</a>` : ''}
-      `;
-      grid.appendChild(card);
+  // the category → subcategory tree (window.FN_GLOSSARY_GROUPS, defined in
+  // glossary-data.js) only applies in "By Category" mode — alphabetical
+  // mode buckets by the term's own first letter, which these named
+  // categories have nothing to do with, so it always falls through to the
+  // flat branch below (the sidebar just lists every letter-bucket flat,
+  // same as the flyout panel does in this mode)
+  const groups = window.FN_GLOSSARY_GROUPS;
+  const nestingApplies = sortMode === 'category' && Array.isArray(groups) && groups.length;
+
+  if (!nestingApplies){
+    groupOrder.forEach(group => {
+      addQuicklink(group);
+      addSidebarLeaf(sidebarHost, group);
+      host.appendChild(buildCategorySection(group, byGroup[group]));
     });
-    section.appendChild(grid);
-    host.appendChild(section);
+    return;
+  }
+
+  const placed = new Set();
+  groups.forEach(parent => {
+    const childCategories = parent.categories.filter(c => byGroup[c] && byGroup[c].length);
+    if (!childCategories.length) return;
+
+    const parentLabel = document.createElement('span');
+    parentLabel.className = 'gl-quicklinks-group-label';
+    parentLabel.textContent = parent.name;
+    quicklinksHost.appendChild(parentLabel);
+
+    const parentSection = document.createElement('details');
+    parentSection.className = 'gl-parent';
+    parentSection.id = 'group-' + slugify(parent.name);
+    parentSection.open = true;
+
+    const parentSummary = document.createElement('summary');
+    const parentTitle = document.createElement('span');
+    parentTitle.className = 'gl-parent-title';
+    parentTitle.textContent = parent.name;
+    const parentCount = document.createElement('span');
+    parentCount.className = 'gl-parent-count';
+    parentSummary.appendChild(parentTitle);
+    parentSummary.appendChild(parentCount);
+    parentSection.appendChild(parentSummary);
+
+    const body = document.createElement('div');
+    body.className = 'gl-parent-body';
+
+    // sidebar gets the same parent/child nesting as the main content —
+    // its own independent <details>, defaulting open, so collapsing it in
+    // the sidebar doesn't affect (and isn't affected by) the main content
+    let sidebarChildren = null;
+    let sidebarParent = null;
+    if (sidebarHost){
+      sidebarParent = document.createElement('details');
+      sidebarParent.className = 'gl-sidebar-parent';
+      sidebarParent.open = true;
+      const sidebarSummary = document.createElement('summary');
+      sidebarSummary.textContent = parent.name;
+      sidebarParent.appendChild(sidebarSummary);
+      sidebarChildren = document.createElement('div');
+      sidebarChildren.className = 'gl-sidebar-children';
+      sidebarParent.appendChild(sidebarChildren);
+    }
+
+    let totalTerms = 0;
+    childCategories.forEach(group => {
+      addQuicklink(group);
+      if (sidebarChildren) addSidebarLeaf(sidebarChildren, group);
+      body.appendChild(buildCategorySection(group, byGroup[group]));
+      totalTerms += byGroup[group].length;
+      placed.add(group);
+    });
+
+    parentCount.textContent = totalTerms + (totalTerms === 1 ? ' term' : ' terms');
+    parentSection.appendChild(body);
+    host.appendChild(parentSection);
+    if (sidebarParent) sidebarHost.appendChild(sidebarParent);
+  });
+
+  // safety net: a category not covered by FN_GLOSSARY_GROUPS (e.g. a
+  // newly added one nobody's assigned to a parent yet) still renders,
+  // ungrouped, after every mapped parent — so it's never silently dropped
+  groupOrder.filter(group => !placed.has(group)).forEach(group => {
+    addQuicklink(group);
+    addSidebarLeaf(sidebarHost, group);
+    host.appendChild(buildCategorySection(group, byGroup[group]));
   });
 }
 
@@ -295,6 +556,18 @@ function applyFilter(query){
   document.querySelectorAll('.gl-category').forEach(section => {
     const anyVisible = Array.from(section.querySelectorAll('.gl-card')).some(c => c.style.display !== 'none');
     section.style.display = anyVisible ? '' : 'none';
+    // a search match is pointless hidden behind a collapsed section — force
+    // it open so the reader can see it right away. Never auto-closes
+    // anything, including on clear, same reasoning as the FAQ page.
+    if (q && anyVisible) section.open = true;
+  });
+  // same idea one level up — a match nested inside a collapsed parent group
+  // needs that parent open too, or the now-open .gl-category above it is
+  // still invisible
+  document.querySelectorAll('.gl-parent').forEach(parent => {
+    const anyVisible = Array.from(parent.querySelectorAll('.gl-category')).some(c => c.style.display !== 'none');
+    parent.style.display = anyVisible ? '' : 'none';
+    if (q && anyVisible) parent.open = true;
   });
   const status = $('glStatus');
   const empty = $('glEmpty');
@@ -380,11 +653,20 @@ function applyFilter(query){
     });
   }
 
-  // its job (jumping you there) is done once a category link is actually
-  // clicked — close the panel so it doesn't sit open over the section you
-  // just navigated to
+  // clicking a category link should land on an *open* section, even if the
+  // reader had manually collapsed it earlier — its job (jumping you there)
+  // is done once clicked, so also close the panel so it doesn't sit open
+  // over the section you just navigated to
   $('glQuicklinksInner').addEventListener('click', e => {
-    if (e.target.tagName === 'A') closeCategories();
+    if (e.target.tagName !== 'A') return;
+    const id = e.target.getAttribute('href').slice(1);
+    const section = document.getElementById(id);
+    if (section){
+      section.open = true;
+      const parent = section.closest('.gl-parent');
+      if (parent) parent.open = true;
+    }
+    closeCategories();
   });
 
   // switch sort mode, rebuild the listing, re-apply any active search
@@ -404,6 +686,24 @@ function applyFilter(query){
   });
 })();
 
+// the persistent sidebar (wide screens only) needs the same "open the
+// target section (and its parent, if nested) before landing on it" logic
+// as the flyout panel's own category links — no panel to close here, since
+// the sidebar isn't one
+(function(){
+  const sidebarTree = $('glSidebarTree');
+  if (!sidebarTree) return;
+  sidebarTree.addEventListener('click', e => {
+    if (e.target.tagName !== 'A') return;
+    const id = e.target.getAttribute('href').slice(1);
+    const section = document.getElementById(id);
+    if (!section) return;
+    section.open = true;
+    const parent = section.closest('.gl-parent');
+    if (parent) parent.open = true;
+  });
+})();
+
 // highlights whichever category (or letter, in alphabetical mode) is
 // currently in view in the sticky jump bar, matching the homepage's own
 // scroll-spy behavior. Re-runnable — render() rebuilds the jump links (and
@@ -414,10 +714,18 @@ function setupCategoryScrollSpy(){
   if (!('IntersectionObserver' in window)) return;
   if (categoryObserver) categoryObserver.disconnect();
 
-  const links = Array.from(document.querySelectorAll('.gl-quicklinks-inner a'));
-  const sections = links
-    .map(a => document.getElementById(a.getAttribute('href').slice(1)))
-    .filter(Boolean);
+  // both the flyout panel's pills and the persistent sidebar's tree links
+  // (wide screens only — an empty NodeList elsewhere) point at the same
+  // section ids, so both get highlighted together as you scroll
+  const links = Array.from(document.querySelectorAll('.gl-quicklinks-inner a, .gl-sidebar-tree a'));
+  const seen = new Set();
+  const sections = [];
+  links.forEach(a => {
+    const id = a.getAttribute('href').slice(1);
+    if (seen.has(id)) return;
+    const el = document.getElementById(id);
+    if (el){ seen.add(id); sections.push(el); }
+  });
   if (!sections.length) return;
 
   function setActive(id){
@@ -431,12 +739,17 @@ function setupCategoryScrollSpy(){
 setTimeout(setupCategoryScrollSpy, 0);
 
 // deep-link support: a tooltip popover elsewhere on the site links to
-// /Glossary/index.html#term-<id> — scroll to it and briefly highlight it
+// /Glossary/index.html#term-<id> — open its parent section (it may be
+// collapsed), scroll to it, and briefly highlight it
 function focusFromHash(){
   const id = window.location.hash.slice(1);
   if (!id) return;
   const card = document.getElementById(id);
   if (!card) return;
+  const section = card.closest('.gl-category');
+  if (section) section.open = true;
+  const parent = card.closest('.gl-parent');
+  if (parent) parent.open = true;
   card.scrollIntoView({ behavior: 'smooth', block: 'center' });
   card.classList.add('flash');
   setTimeout(() => card.classList.remove('flash'), 1600);

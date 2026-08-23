@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script src="../assets/js/theme-init.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FireNate - F.A.Q.</title>
+<meta name="description" content="Answers to common questions about using FireNate, budgeting, FIRE, and getting started with investing.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Antonio:wght@400;500;600;700&family=Michroma&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/site.css">
+<link rel="stylesheet" href="../assets/css/timeToFI.css">
+<script src="../assets/js/theme.js" defer></script>
+<script src="../assets/js/user-profile.js" defer></script>
+<script src="../assets/js/nav.js" defer></script>
+<script src="../assets/data/faq-data.js"></script>
+<script>window.FN_BASE = "../"; window.FN_PAGE = "faq";</script>
+<style>
+  @media (prefers-reduced-motion: no-preference){
+    html{ scroll-behavior:smooth; }
+  }
+
+  /* ---------- STICKY "BROWSE / SORT / SEARCH" ICON ROW ----------
+     Same icon-triggered-panel pattern as the Glossary page (browse,
+     sort, search), just under an "faq-" prefix since this page's markup
+     is its own copy, not a shared component. */
+  .faq-quicklinks{ position:sticky; top:60px; z-index:38; padding:14px 0 0; margin-bottom:8px; }
+  .faq-quicklinks-row{ display:flex; align-items:center; gap:8px; }
+
+  .faq-icon-btn{
+    flex:none; width:40px; height:40px;
+    display:inline-flex; align-items:center; justify-content:center;
+    border-radius:999px; cursor:pointer;
+    background:var(--surface);
+    border:1px solid transparent;
+    background-image:
+      linear-gradient(var(--surface), var(--surface)),
+      linear-gradient(90deg, var(--gold), var(--danger));
+    background-origin:border-box; background-clip:padding-box, border-box;
+    color:var(--ink-dim);
+    box-shadow:0 14px 32px -14px rgba(0,0,0,0.45);
+    transition:color .15s ease, transform .15s ease;
+  }
+  .faq-icon-btn:hover{ color:var(--gold); transform:translateY(-1px); }
+  .faq-icon-btn.active{
+    background:linear-gradient(90deg, var(--gold), var(--danger));
+    color:#201205;
+    box-shadow:0 6px 16px -6px rgba(217,132,15,0.55);
+  }
+
+  .faq-categories-panel{ margin-top:8px; }
+  .faq-categories-panel[hidden]{ display:none; }
+  .faq-quicklinks-inner{
+    display:flex; flex-wrap:wrap; gap:6px;
+    padding:9px; border-radius:16px;
+    background:var(--surface);
+    border:1px solid transparent;
+    background-image:
+      linear-gradient(var(--surface), var(--surface)),
+      linear-gradient(90deg, var(--gold), var(--danger));
+    background-origin:border-box; background-clip:padding-box, border-box;
+    box-shadow:0 14px 32px -14px rgba(0,0,0,0.45);
+  }
+  .faq-quicklinks-inner a, .faq-quicklinks-inner button{
+    flex:none;
+    font-family:var(--sans); font-size:13px; font-weight:700;
+    color:var(--ink-dim); text-decoration:none;
+    padding:9px 16px; border-radius:999px; white-space:nowrap;
+    background:none; border:none; cursor:pointer;
+    transition:background-color .15s ease, color .15s ease, transform .15s ease;
+  }
+  .faq-quicklinks-inner a:hover, .faq-quicklinks-inner button:hover{ background:rgba(217,132,15,0.12); color:var(--gold); transform:translateY(-1px); }
+  .faq-quicklinks-inner a.active, .faq-quicklinks-inner button.active{
+    background:linear-gradient(90deg, var(--gold), var(--danger));
+    color:#201205;
+    box-shadow:0 6px 16px -6px rgba(217,132,15,0.55);
+  }
+
+  .faq-search-panel{ margin-top:8px; }
+  .faq-search-panel[hidden]{ display:none; }
+  .faq-search-panel-inner{
+    display:flex; align-items:center; gap:10px;
+    padding:11px 16px; border-radius:14px;
+    background:var(--surface);
+    border:1px solid transparent;
+    background-image:
+      linear-gradient(var(--surface), var(--surface)),
+      linear-gradient(90deg, var(--gold), var(--danger));
+    background-origin:border-box; background-clip:padding-box, border-box;
+    box-shadow:0 14px 32px -14px rgba(0,0,0,0.45);
+  }
+  .faq-search-panel-inner svg{ flex:none; color:var(--ink-faint); }
+  #faqSearch{
+    flex:1; min-width:0; background:none; border:none; outline:none;
+    font-family:var(--sans); font-size:14px; color:var(--ink);
+  }
+  #faqSearch::placeholder{ color:var(--ink-faint); }
+  #faqSearch::-webkit-search-cancel-button{ -webkit-appearance:none; appearance:none; }
+  .faq-search-clear{
+    flex:none; width:22px; height:22px; border-radius:999px; border:none;
+    background:rgba(217,132,15,0.12); color:var(--ink-dim); cursor:pointer;
+    display:inline-flex; align-items:center; justify-content:center;
+    font-size:15px; line-height:1;
+  }
+  .faq-search-clear:hover{ color:var(--gold); }
+  .faq-search-clear[hidden]{ display:none; }
+  .faq-status{ margin:10px 2px 0; font-family:var(--mono); font-size:11.5px; letter-spacing:.04em; color:var(--ink-faint); }
+  .faq-status[hidden]{ display:none; }
+  .faq-status.no-results{ color:var(--danger); }
+
+  /* .faq-icon-btn / .faq-quicklinks-inner / .faq-search-panel-inner's
+     "gradient border" is 2 stacked background-images — an opaque
+     padding-box layer masks a border-box gradient so only a thin ring
+     shows through. --surface is intentionally near-transparent for
+     neon/sunshine's glass look elsewhere, which would let that gradient
+     bleed across the whole shape instead of staying a ring (and wash out
+     the icon color sitting on top) — so these get their own more-opaque
+     interior fill instead of inheriting --surface directly. Same fix as
+     the homepage's .hp-quicklinks-inner and the Glossary page's own
+     .gl-icon-btn/.gl-quicklinks-inner/.gl-search-panel-inner. */
+  html[data-theme="neon"] .faq-icon-btn,
+  html[data-theme="neon"] .faq-quicklinks-inner,
+  html[data-theme="neon"] .faq-search-panel-inner{
+    background-image:
+      linear-gradient(rgba(15,23,42,0.85), rgba(15,23,42,0.85)),
+      linear-gradient(90deg, var(--gold), var(--danger));
+  }
+  html[data-theme="sunshine"] .faq-icon-btn,
+  html[data-theme="sunshine"] .faq-quicklinks-inner,
+  html[data-theme="sunshine"] .faq-search-panel-inner{
+    background-image:
+      linear-gradient(rgba(255,252,245,0.88), rgba(255,252,245,0.88)),
+      linear-gradient(90deg, var(--gold), var(--danger));
+  }
+
+  /* ---------- COLLAPSIBLE SECTIONS + QUESTIONS ----------
+     Both the category groups and the individual questions are native
+     <details> elements — free keyboard/a11y support, no open/closed state
+     to track by hand. Categories default open (skimmable on arrival);
+     questions default closed (a proper accordion) and only get forced
+     open by JS when a search match needs revealing. */
+  .faq-category{ margin-top:28px; scroll-margin-top:130px; }
+  .faq-category > summary{
+    list-style:none; cursor:pointer;
+    display:flex; align-items:center; gap:10px;
+    padding-bottom:10px; border-bottom:1px solid var(--line);
+  }
+  .faq-category > summary::-webkit-details-marker{ display:none; }
+  .faq-category > summary::before{
+    content:''; flex:none; width:9px; height:9px;
+    border-right:2px solid var(--ink-faint); border-bottom:2px solid var(--ink-faint);
+    transform:rotate(45deg); transition:transform .15s ease;
+    margin-left:2px;
+  }
+  .faq-category[open] > summary::before{ transform:rotate(-135deg); margin-top:4px; }
+  [data-theme="lcars"] .faq-category-title{ font-family:var(--display); letter-spacing:.02em; }
+  .faq-category-title{ font-family:var(--serif); font-size:22px; font-weight:500; color:var(--ink); }
+  .faq-category-count{ font-family:var(--mono); font-size:11.5px; color:var(--ink-faint); }
+
+  .faq-list{ display:flex; flex-direction:column; gap:12px; margin-top:16px; }
+  .faq-card{
+    background:var(--surface); border:1px solid var(--line); border-left:4px solid var(--gold);
+    border-radius:var(--radius); padding:4px 20px; scroll-margin-top:100px;
+    transition:border-color .3s, box-shadow .3s;
+  }
+  .faq-card.flash{ border-color:var(--gold); box-shadow:0 0 0 3px rgba(217,132,15,0.25); }
+  .faq-card > summary{
+    list-style:none; cursor:pointer;
+    display:flex; align-items:flex-start; gap:12px;
+    padding:16px 0;
+  }
+  .faq-card > summary::-webkit-details-marker{ display:none; }
+  .faq-card > summary::before{
+    content:'+'; flex:none;
+    width:20px; height:20px; margin-top:1px;
+    display:inline-flex; align-items:center; justify-content:center;
+    border-radius:50%; background:var(--surface-2); color:var(--gold);
+    font-family:var(--sans); font-size:14px; font-weight:700; line-height:1;
+    transition:transform .15s ease;
+  }
+  .faq-card[open] > summary::before{ content:'\2212'; transform:rotate(180deg); }
+  [data-theme="lcars"] .faq-question{ font-family:var(--display); letter-spacing:.02em; }
+  .faq-question{ font-family:var(--serif); font-size:16.5px; font-weight:500; color:var(--ink); }
+  .faq-answer{ padding:0 0 18px 32px; font-size:13.5px; line-height:1.65; color:var(--ink-dim); }
+  .faq-answer a{ color:var(--jade); font-weight:600; text-decoration:none; }
+  .faq-answer a:hover{ color:var(--gold); }
+  .faq-empty{ text-align:center; color:var(--ink-faint); padding:48px 0; display:none; }
+
+  /* ---------- NOTICE MODAL ----------
+     Reuses the shared .fn-help-overlay/.fn-help-modal/.fn-help-close/
+     .fn-help-scroll/.fn-help-head/.fn-help-title chrome from site.css (the
+     same "always-dark, works over any page theme" modal field-help.js
+     uses) rather than hand-rolling new modal CSS — only the icon/body/
+     button below are page-specific. */
+  .faq-notice-icon{ color:var(--fn-gold); margin-bottom:10px; }
+  .faq-notice-body p{ font-size:13.5px; line-height:1.6; color:var(--fn-text-dim); margin:0 0 12px; }
+  .faq-notice-body p:last-child{ margin-bottom:0; }
+  .faq-notice-body a{ color:var(--fn-jade); font-weight:600; text-decoration:none; }
+  .faq-notice-body a:hover{ color:var(--fn-gold); }
+  .faq-notice-actions{ display:flex; justify-content:flex-end; margin-top:18px; }
+  .faq-notice-btn{
+    background:var(--fn-gold); color:var(--fn-ink); font-weight:700; font-size:13.5px;
+    padding:10px 22px; border-radius:999px; border:none; cursor:pointer;
+    font-family:var(--fn-sans);
+  }
+  .faq-notice-btn:hover{ opacity:.9; }
+</style>
+</head>
+<body>
+<div id="fn-site-nav"></div>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">FireNate - F.A.Q.</p>
+    <h1>Common questions, answered.</h1>
+    <p class="lede">Quick answers about using the site, budgeting, FIRE, and getting started with investing — search, sort alphabetically, or browse by topic below.</p>
+  </header>
+
+  <nav class="faq-quicklinks" id="faqQuicklinks" aria-label="Browse the F.A.Q.">
+    <div class="faq-quicklinks-row">
+      <button type="button" class="faq-icon-btn" id="faqCategoriesToggle" aria-expanded="false" aria-controls="faqCategoriesPanel" aria-label="Jump to a section">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="8" y1="6" x2="21" y2="6"></line>
+          <line x1="8" y1="12" x2="21" y2="12"></line>
+          <line x1="8" y1="18" x2="21" y2="18"></line>
+          <line x1="3" y1="6" x2="3.01" y2="6"></line>
+          <line x1="3" y1="12" x2="3.01" y2="12"></line>
+          <line x1="3" y1="18" x2="3.01" y2="18"></line>
+        </svg>
+      </button>
+      <button type="button" class="faq-icon-btn" id="faqSortToggle" aria-expanded="false" aria-controls="faqSortPanel" aria-label="Sort questions">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 8l4-4 4 4"></path>
+          <path d="M7 4v10"></path>
+          <path d="M21 16l-4 4-4-4"></path>
+          <path d="M17 20V10"></path>
+        </svg>
+      </button>
+      <button type="button" class="faq-icon-btn" id="faqSearchToggle" aria-expanded="false" aria-controls="faqSearchPanel" aria-label="Search F.A.Q.">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+      </button>
+    </div>
+    <div class="faq-categories-panel" id="faqCategoriesPanel" hidden>
+      <div class="faq-quicklinks-inner" id="faqQuicklinksInner"></div>
+    </div>
+    <div class="faq-categories-panel" id="faqSortPanel" hidden>
+      <div class="faq-quicklinks-inner" id="faqSortOptions">
+        <button type="button" data-sort="category" class="active">By Category</button>
+        <button type="button" data-sort="alphabetical">Alphabetical (A&ndash;Z)</button>
+      </div>
+    </div>
+    <div class="faq-search-panel" id="faqSearchPanel" hidden>
+      <div class="faq-search-panel-inner">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="search" id="faqSearch" placeholder="Search questions&hellip;" aria-label="Search F.A.Q.">
+        <button type="button" class="faq-search-clear" id="faqSearchClear" aria-label="Clear search" hidden>&times;</button>
+      </div>
+      <p class="faq-status" id="faqStatus" hidden></p>
+    </div>
+  </nav>
+
+  <div id="faqCategories"></div>
+  <p class="faq-empty" id="faqEmpty">No questions match your search.</p>
+
+  <footer id="site-footer"></footer>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+function slugify(s){ return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''); }
+
+// 'category' groups questions the way the data itself defines them;
+// 'alphabetical' ignores category entirely and buckets by the question's
+// own first letter
+let sortMode = 'category';
+
+// strips leading punctuation before alphabetizing, same reasoning as the
+// Glossary page's own sortKey — most questions start with a plain letter,
+// but this keeps it robust either way
+function sortKey(question){
+  return question.replace(/^[^a-zA-Z0-9]+/, '');
+}
+
+function buildGroups(faqs){
+  const groupOrder = [];
+  const byGroup = {};
+
+  if (sortMode === 'alphabetical'){
+    const sorted = faqs.slice().sort((a, b) => sortKey(a.question).localeCompare(sortKey(b.question)));
+    sorted.forEach(f => {
+      const first = sortKey(f.question).charAt(0).toUpperCase();
+      const key = /[A-Z]/.test(first) ? first : '0-9';
+      if (!byGroup[key]) { byGroup[key] = []; groupOrder.push(key); }
+      byGroup[key].push(f);
+    });
+    groupOrder.sort((a, b) => (a === '0-9' ? -1 : b === '0-9' ? 1 : a.localeCompare(b)));
+  } else {
+    faqs.forEach(f => {
+      const cat = f.category || 'Other';
+      if (!byGroup[cat]) { byGroup[cat] = []; groupOrder.push(cat); }
+      byGroup[cat].push(f);
+    });
+  }
+
+  return { groupOrder, byGroup };
+}
+
+function render(){
+  const faqs = window.FN_FAQ || [];
+  const host = $('faqCategories');
+  host.innerHTML = '';
+
+  const { groupOrder, byGroup } = buildGroups(faqs);
+
+  const quicklinksHost = $('faqQuicklinksInner');
+  quicklinksHost.innerHTML = '';
+
+  groupOrder.forEach(group => {
+    const groupId = 'cat-' + slugify(group);
+
+    const link = document.createElement('a');
+    link.href = '#' + groupId;
+    link.textContent = group;
+    quicklinksHost.appendChild(link);
+
+    const section = document.createElement('details');
+    section.className = 'faq-category';
+    section.id = groupId;
+    section.open = true;
+
+    const summary = document.createElement('summary');
+    const title = document.createElement('span');
+    title.className = 'faq-category-title';
+    title.textContent = group;
+    const count = document.createElement('span');
+    count.className = 'faq-category-count';
+    count.textContent = byGroup[group].length + (byGroup[group].length === 1 ? ' question' : ' questions');
+    summary.appendChild(title);
+    summary.appendChild(count);
+    section.appendChild(summary);
+
+    const list = document.createElement('div');
+    list.className = 'faq-list';
+    byGroup[group].forEach(f => {
+      const card = document.createElement('details');
+      card.className = 'faq-card';
+      card.id = 'faq-' + f.id;
+      card.dataset.searchText = (f.question + ' ' + f.answer.replace(/<[^>]+>/g, ' ')).toLowerCase();
+      card.innerHTML = `
+        <summary><span class="faq-question">${f.question}</span></summary>
+        <div class="faq-answer">${f.answer}</div>
+      `;
+      list.appendChild(card);
+    });
+    section.appendChild(list);
+    host.appendChild(section);
+  });
+}
+
+function applyFilter(query){
+  const q = query.trim().toLowerCase();
+  const cards = Array.from(document.querySelectorAll('.faq-card'));
+  let visible = 0;
+  cards.forEach(card => {
+    const match = !q || card.dataset.searchText.indexOf(q) > -1;
+    card.style.display = match ? '' : 'none';
+    if (match){
+      visible++;
+      // a search match is pointless hidden behind a collapsed accordion —
+      // force it open so the reader can see why it matched right away.
+      // Never auto-closes anything, including on clear: an item a search
+      // just revealed is harmless left open once you stop searching.
+      if (q) card.open = true;
+    }
+  });
+  document.querySelectorAll('.faq-category').forEach(section => {
+    const anyVisible = Array.from(section.querySelectorAll('.faq-card')).some(c => c.style.display !== 'none');
+    section.style.display = anyVisible ? '' : 'none';
+    if (q && anyVisible) section.open = true;
+  });
+  const status = $('faqStatus');
+  const empty = $('faqEmpty');
+  const clearBtn = $('faqSearchClear');
+  if (clearBtn) clearBtn.hidden = !q;
+  if (!q){
+    status.hidden = true;
+    status.classList.remove('no-results');
+    empty.style.display = 'none';
+  } else if (visible === 0){
+    status.hidden = true;
+    empty.style.display = 'block';
+  } else {
+    status.hidden = false;
+    status.classList.remove('no-results');
+    status.textContent = `Showing ${visible} of ${cards.length} questions.`;
+    empty.style.display = 'none';
+  }
+}
+
+// categories panel + sort panel + search panel — each starts collapsed
+// behind its own icon button and toggles independently, but opening one
+// closes the other two (mutually exclusive), matching the Glossary page
+(function(){
+  const catToggle = $('faqCategoriesToggle');
+  const catPanel = $('faqCategoriesPanel');
+  const sortToggle = $('faqSortToggle');
+  const sortPanel = $('faqSortPanel');
+  const searchToggle = $('faqSearchToggle');
+  const searchPanel = $('faqSearchPanel');
+  const input = $('faqSearch');
+  const clearBtn = $('faqSearchClear');
+  if (!catToggle || !catPanel || !sortToggle || !sortPanel || !searchToggle || !searchPanel || !input) return;
+
+  function openCategories(){
+    closeSort(); closeSearch();
+    catPanel.hidden = false;
+    catToggle.classList.add('active');
+    catToggle.setAttribute('aria-expanded', 'true');
+  }
+  function closeCategories(){
+    catPanel.hidden = true;
+    catToggle.classList.remove('active');
+    catToggle.setAttribute('aria-expanded', 'false');
+  }
+  function openSort(){
+    closeCategories(); closeSearch();
+    sortPanel.hidden = false;
+    sortToggle.classList.add('active');
+    sortToggle.setAttribute('aria-expanded', 'true');
+  }
+  function closeSort(){
+    sortPanel.hidden = true;
+    sortToggle.classList.remove('active');
+    sortToggle.setAttribute('aria-expanded', 'false');
+  }
+  function openSearch(){
+    closeCategories(); closeSort();
+    searchPanel.hidden = false;
+    searchToggle.classList.add('active');
+    searchToggle.setAttribute('aria-expanded', 'true');
+    input.focus();
+  }
+  function closeSearch(){
+    searchPanel.hidden = true;
+    searchToggle.classList.remove('active');
+    searchToggle.setAttribute('aria-expanded', 'false');
+    input.value = '';
+    applyFilter('');
+  }
+
+  catToggle.addEventListener('click', () => { catPanel.hidden ? openCategories() : closeCategories(); });
+  sortToggle.addEventListener('click', () => { sortPanel.hidden ? openSort() : closeSort(); });
+  searchToggle.addEventListener('click', () => { searchPanel.hidden ? openSearch() : closeSearch(); });
+  input.addEventListener('input', () => applyFilter(input.value));
+  input.addEventListener('keydown', e => { if (e.key === 'Escape') closeSearch(); });
+  if (clearBtn){
+    clearBtn.addEventListener('click', () => {
+      input.value = '';
+      applyFilter('');
+      input.focus();
+    });
+  }
+
+  // clicking a category link should land on an *open* section, even if the
+  // reader had manually collapsed it earlier
+  $('faqQuicklinksInner').addEventListener('click', e => {
+    if (e.target.tagName !== 'A') return;
+    const id = e.target.getAttribute('href').slice(1);
+    const section = document.getElementById(id);
+    if (section) section.open = true;
+    closeCategories();
+  });
+
+  // switch sort mode, rebuild the listing, re-apply any active search
+  // filter (render() rebuilds every card from scratch), then close
+  $('faqSortOptions').querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const mode = btn.dataset.sort;
+      $('faqSortOptions').querySelectorAll('button').forEach(b => b.classList.toggle('active', b === btn));
+      if (mode !== sortMode){
+        sortMode = mode;
+        render();
+        applyFilter(input.value);
+        setupCategoryScrollSpy();
+      }
+      closeSort();
+    });
+  });
+})();
+
+// highlights whichever category (or letter, in alphabetical mode) is
+// currently in view in the sticky jump bar. Re-runnable — render() rebuilds
+// the jump links (and their target section ids) from scratch on every
+// sort-mode switch, which would otherwise leave a stale observer watching
+// detached elements
+let categoryObserver = null;
+function setupCategoryScrollSpy(){
+  if (!('IntersectionObserver' in window)) return;
+  if (categoryObserver) categoryObserver.disconnect();
+
+  const links = Array.from(document.querySelectorAll('.faq-quicklinks-inner a'));
+  const sections = links
+    .map(a => document.getElementById(a.getAttribute('href').slice(1)))
+    .filter(Boolean);
+  if (!sections.length) return;
+
+  function setActive(id){
+    links.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + id));
+  }
+  categoryObserver = new IntersectionObserver(entries => {
+    entries.forEach(entry => { if (entry.isIntersecting) setActive(entry.target.id); });
+  }, { rootMargin: '-140px 0px -70% 0px', threshold: 0 });
+  sections.forEach(sec => categoryObserver.observe(sec));
+}
+setTimeout(setupCategoryScrollSpy, 0);
+
+// deep-link support: FAQ/index.html#faq-<id> scrolls to that question,
+// opens it (it starts collapsed, so scrolling there alone wouldn't show
+// the answer), opens its parent section too, and briefly flashes it
+function focusFromHash(){
+  const id = window.location.hash.slice(1);
+  if (!id) return;
+  const card = document.getElementById(id);
+  if (!card) return;
+  const section = card.closest('.faq-category');
+  if (section) section.open = true;
+  card.open = true;
+  card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  card.classList.add('flash');
+  setTimeout(() => card.classList.remove('flash'), 1600);
+}
+
+render();
+window.addEventListener('hashchange', focusFromHash);
+setTimeout(focusFromHash, 50);
+
+// ---------- NOTICE MODAL ----------
+// shown only on a visitor's first visit to this page — same
+// localStorage-dismissed-forever pattern as the homepage's welcome modal
+(function(){
+  const NOTICE_KEY = 'fn-faq-notice-dismissed';
+  try {
+    if (localStorage.getItem(NOTICE_KEY)) return;
+  } catch (e) {
+    /* storage unavailable — fall through and show it, same as always */
+  }
+
+  const lastFocused = document.activeElement;
+  const overlay = document.createElement('div');
+  overlay.className = 'fn-help-overlay';
+  overlay.innerHTML =
+    '<div class="fn-help-modal" role="dialog" aria-modal="true" aria-labelledby="faqNoticeTitle" tabindex="-1">' +
+      '<button type="button" class="fn-help-close" aria-label="Close">&times;</button>' +
+      '<div class="fn-help-scroll">' +
+        '<div class="fn-help-head">' +
+          '<svg class="faq-notice-icon" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>' +
+          '<div class="fn-help-title" id="faqNoticeTitle">Before you dive in</div>' +
+        '</div>' +
+        '<div class="faq-notice-body">' +
+          '<p>Recommendations or information on this page are general and educational — they aren\'t personalized financial, tax, or legal advice, and shouldn\'t be followed without consulting a licensed professional who knows your full situation.</p>' +
+          '<p>For more information, please visit our <a href="../Terms/index.html">Terms, Conditions &amp; Copyright</a> page.</p>' +
+        '</div>' +
+        '<div class="faq-notice-actions"><button type="button" class="faq-notice-btn" id="faqNoticeOk">Got it</button></div>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(overlay);
+  document.body.classList.add('fn-help-lock');
+
+  function onKeydown(e){ if (e.key === 'Escape') dismiss(); }
+
+  function dismiss(){
+    try { localStorage.setItem(NOTICE_KEY, '1'); } catch (e) {}
+    if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+    document.body.classList.remove('fn-help-lock');
+    document.removeEventListener('keydown', onKeydown);
+    if (lastFocused && lastFocused.focus) lastFocused.focus();
+  }
+
+  overlay.addEventListener('click', e => { if (e.target === overlay) dismiss(); });
+  overlay.querySelector('.fn-help-close').addEventListener('click', dismiss);
+  overlay.querySelector('#faqNoticeOk').addEventListener('click', dismiss);
+  document.addEventListener('keydown', onKeydown);
+
+  const modal = overlay.querySelector('.fn-help-modal');
+  if (modal) modal.focus();
+})();
+</script>
+</body>
+</html>

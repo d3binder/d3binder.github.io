@@ -40,12 +40,31 @@ example — plain `<button>`-driven question/answer state in an inline
 
 ## Themes
 
-Five themes: `light` (default, no `data-theme` attribute — this preserves
+Five concrete themes: `light` (no `data-theme` attribute — this preserves
 old CSS written before other themes existed), `dark`, `neon`, `sunshine`,
-`lcars`. `assets/js/theme.js` exposes `window.FNTheme = { get, set, toggle,
-THEMES }` and sets `data-theme` on `<html>`; `theme-init.js` applies the
-saved theme before first paint (load it synchronously, first thing in
-`<head>`, to avoid a flash of the wrong theme).
+`lcars`. On top of those, the Settings theme picker also offers a
+**System** option — not a CSS theme of its own, just a *preference* that
+resolves to one of the five via `prefers-color-scheme`: light device →
+`sunshine`, dark device → `neon` (chosen as the closest-in-spirit pair,
+since the site has no plain "auto-dark" theme). `system` is the site's
+default preference for first-time visitors (no `fn-theme` in localStorage
+yet, or `fn-theme` explicitly `"system"`) — `theme-init.js` resolves it and
+sets `data-theme` to the matching concrete theme before first paint, rather
+than relying on the attribute-less state, which stays reserved for a
+visitor who has actively picked `light`.
+
+`assets/js/theme.js` exposes `window.FNTheme = { get, getPreference, set,
+toggle, THEMES, resolveSystemTheme }` — `get()` returns the concrete theme
+currently applied (reads the live `data-theme` attribute), `getPreference()`
+returns the raw stored choice (`"system"` or a concrete name — what the
+Settings UI should check a radio button against), and `set()` accepts
+either. `theme.js` also keeps the applied theme live-synced to the OS
+setting via a `matchMedia` change listener, for any visitor on `"system"`
+who leaves a tab open while their device's light/dark setting changes.
+`theme-init.js` applies the saved (or resolved-system) theme before first
+paint (load it synchronously, first thing in `<head>`, to avoid a flash of
+the wrong theme) — keep its own small `prefers-color-scheme` check in sync
+with `theme.js`'s `resolveSystemTheme()` if that mapping ever changes.
 
 `lcars` is deliberately flat and opaque — solid black, bold accent-color
 blocks, no `backdrop-filter`/blur/translucency anywhere, unlike neon and
@@ -161,14 +180,86 @@ calculator `<script>` at the bottom of `<body>`.
   Profile Manager's snapshot/export/import
 - `parseCurrency(id)` — calc-utils.js, toolbar-family pages only
 
+## Glossary category tree
+
+"By Category" mode (the default) nests the Glossary's ~13 categories under
+5 parent groups — Foundational Concepts, Retirement, Banking, Investing,
+Debt & Loans — defined by `window.FN_GLOSSARY_GROUPS` in
+`assets/data/glossary-data.js`, an ordered array of `{name, categories}`
+(`categories` lists that parent's subcategory names, exact string match
+against the `category` field used in `window.FN_GLOSSARY`). Both the
+`.gl-parent` groups and the `.gl-category` subcategories inside them are
+native `<details>`, default open, same force-open-on-search-match /
+never-auto-close rules as the FAQ page's own sections. Add a new
+subcategory to an existing parent by adding its category name to that
+parent's array; add a whole new parent with a new `{name, categories}`
+entry. A category not listed anywhere in `FN_GLOSSARY_GROUPS` still
+renders — ungrouped, after every mapped parent — rather than silently
+disappearing, so a typo there degrades instead of breaking.
+
+Alphabetical sort mode ignores this tree entirely — it buckets by the
+term's own first letter, ungrouped and unnested, same as before this was
+added.
+
+On screens ≥1000px, this same tree also renders as a persistent sidebar
+(`#glSidebar` / `.gl-sidebar-tree`, built by the same `render()` pass —
+see `addSidebarLeaf()`) alongside the content, `position:sticky` below the
+site nav. It's additive, not a replacement: the icon-triggered flyout panel
+(categories/sort/search) still works at every width, since search and sort
+need their own panels regardless of screen size, and the flyout is the
+*only* browse affordance below 1000px (`.gl-sidebar{ display:none; }` by
+default). The sidebar has its own independent `<details>` open/closed state
+per parent — collapsing a branch there doesn't affect the main content's
+own `.gl-parent`/`.gl-category` state, and vice versa; only *clicking* a
+sidebar leaf link forces the corresponding main-content section (and its
+parent) open, same as the flyout panel's own category links. Scroll-spy
+(`setupCategoryScrollSpy()`) highlights matching links in both places at
+once by querying `.gl-quicklinks-inner a, .gl-sidebar-tree a` together.
+
 ## Glossary tooltips
 
 Opt-in, unrelated to field help. Wrap a term in body copy with
 `<span class="fn-term" data-term="coast-fire">Coast FIRE</span>` and load
-`assets/js/glossary-data.js` + `assets/js/glossary-tooltip.js` — it turns
+`assets/data/glossary-data.js` + `assets/js/glossary-tooltip.js` — it turns
 matching spans into click-activated popovers sourced from
 `window.FN_GLOSSARY`. Currently used on GettingStarted, FireMilestones,
 and HealthcareBridge.
+
+## F.A.Q. page
+
+`FAQ/index.html` mirrors the Glossary page's own browse/sort/search UI
+(same icon-triggered-panel pattern, own `faq-` class prefix rather than a
+shared component) but adds one thing Glossary doesn't need: collapsible
+*questions*, on top of the collapsible category sections both pages share.
+Both categories and questions are native `<details>` elements — categories
+default open, questions default closed (a real accordion) — rather than
+hand-rolled open/closed state, so keyboard and screen-reader behavior come
+for free. `applyFilter()` force-opens (`.open = true`) any category or
+question a live search matches, but never force-closes anything, including
+when the search is cleared — simplest mental model, and an answer a search
+just revealed staying open afterward is harmless. Glossary's own
+`.gl-category` sections follow the same default-open, force-open-on-match,
+never-auto-close rules — just without a second collapsible layer for the
+term cards themselves, which stay always-visible within their section.
+
+Content lives in `assets/data/faq-data.js` — a plain `window.FN_FAQ` array of
+`{id, category, question, answer}` objects, same "just a JS file, not a
+build step" convention as `glossary-data.js`. `answer` allows simple inline
+HTML (mainly `<a href="...">`) and reusing a `category` string groups a new
+question into that section. Route an answer to specific Glossary entries or
+whole categories with `../Glossary/index.html#term-<id>` /
+`#cat-<slugified-category-name>` — Glossary already deep-links and flashes
+either target.
+
+The page also shows a disclaimer modal on a visitor's first visit (same
+localStorage-dismissed-forever pattern as the homepage's welcome modal —
+`fn-faq-notice-dismissed`, cleared along with everything else by "Clear all
+local data" since that's a blanket `localStorage.clear()`) reminding
+readers to consult a licensed professional, linking to Terms, Conditions &
+Copyright. It reuses the shared `.fn-help-overlay`/`.fn-help-modal`/
+`.fn-help-close` chrome from `site.css` (the same always-dark,
+works-over-any-theme modal `field-help.js` uses) rather than hand-rolling
+new modal CSS.
 
 ## Testing
 

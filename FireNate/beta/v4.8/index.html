@@ -214,35 +214,16 @@
   .hp-welcome-option-skip .hp-welcome-opt-name svg{ color:var(--fn-text-faint); }
 
   /* brief highlight on the Getting Started section after "No thanks" (or
-     any other dismissal) so it's clear those guides didn't go anywhere.
-     The rest of the page dims behind a fixed scrim (.hp-welcome-spotlight-
-     dim) while the section itself sits above that scrim on its own
-     opaque, page-matched background, so it reads as "spotlit" rather than
-     just glowing amid an otherwise-unchanged page. */
+     any other dismissal) so it's clear those guides didn't go anywhere. */
   @keyframes hp-welcome-glow{
     0%, 100% { box-shadow:0 0 0 0 rgba(217,132,15,0); }
     50% { box-shadow:0 0 0 8px rgba(217,132,15,0.28); }
   }
   .hp-welcome-highlight{
-    position:relative;
-    z-index:9001;
     background:var(--hp-bg);
     animation:hp-welcome-glow 1.3s ease-in-out 2;
     border-radius:18px;
   }
-  /* position:absolute (spanning the full document height via inset:0 with
-     no positioned ancestor), not position:fixed — a dynamically added/
-     removed full-viewport fixed element is a known iOS Safari trigger for
-     the page becoming unscrollable after the element is removed, even with
-     pointer-events:none throughout its life */
-  .hp-welcome-spotlight-dim{
-    position:absolute; inset:0; z-index:9000;
-    background:rgba(5,4,8,0.6);
-    opacity:0;
-    pointer-events:none;
-    transition:opacity .3s ease;
-  }
-  .hp-welcome-spotlight-dim.is-visible{ opacity:1; }
 
   html[data-theme="neon"] .hp-welcome-overlay{ background:rgba(4,7,20,0.42); }
   html[data-theme="neon"] .hp-welcome-modal{
@@ -601,6 +582,13 @@
         <span class="hp-card-cta">Open glossary &rarr;</span>
       </a>
 
+      <a class="hp-card" href="FAQ/index.html">
+        <span class="hp-card-tag plum">Q&amp;A</span>
+        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>F.A.Q.</h3>
+        <p>Common questions about using the site, budgeting, FIRE, and getting started with investing — searchable and sorted by topic.</p>
+        <span class="hp-card-cta">Open F.A.Q. &rarr;</span>
+      </a>
+
       <div class="hp-card hp-card-sponsor">
         <span class="hp-card-tag azure">D3 Planning</span>
         <h3>Don't be caught <del style="color:var(--hp-text-faint)">dead</del> without it.</h3>
@@ -788,24 +776,9 @@
     if (!section) return;
     section.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-    var dim = document.createElement('div');
-    dim.className = 'hp-welcome-spotlight-dim';
-    document.body.appendChild(dim);
-    // wait a frame so the opacity transition actually animates in, rather
-    // than starting already-visible with nothing to transition from
-    requestAnimationFrame(function(){ dim.classList.add('is-visible'); });
-
     section.classList.add('hp-welcome-highlight');
     setTimeout(function(){
       section.classList.remove('hp-welcome-highlight');
-      dim.classList.remove('is-visible');
-      setTimeout(function(){
-        if (dim.parentNode) dim.parentNode.removeChild(dim);
-        // nudge iOS Safari into recomputing scroll bounds after removing an
-        // element that was affecting layout/compositing — cheap, harmless
-        // insurance against the page becoming stuck unscrollable
-        void document.body.offsetHeight;
-      }, 300);
     }, 2700);
   }
 
@@ -821,7 +794,7 @@
     // scroll (scrollIntoView, below) starts in the very same tick that
     // body's overflow:hidden lock is lifted — a double rAF guarantees at
     // least one full render has actually completed with scrolling restored
-    // before that scroll (and the spotlight dim) kick off
+    // before that scroll kicks off
     if (highlight) requestAnimationFrame(function(){ requestAnimationFrame(highlightGettingStarted); });
   }
 

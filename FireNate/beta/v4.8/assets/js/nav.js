@@ -90,6 +90,7 @@
     { id: "files", label: "Files", href: BASE + "Downloads/index.html", group: "Resources" },
     { id: "gen-info", label: "Info", href: BASE + "GenInfo/index.html", group: "Resources" },
     { id: "glossary", label: "Glossary", href: BASE + "Glossary/index.html", group: "Resources" },
+    { id: "faq", label: "F.A.Q.", href: BASE + "FAQ/index.html", group: "Resources" },
     { id: "about", label: "About", href: BASE + "About/index.html", group: "Resources" },
     { id: "terms", label: "Terms, Conditions & Copyright", href: BASE + "Terms/index.html", group: "Resources" },
     { id: "contact", label: "Contact", href: BASE + "Contact/index.html", group: "Resources" },
@@ -262,6 +263,7 @@
     "files": '<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>',
     "gen-info": '<circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line>',
     "glossary": '<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>',
+    "faq": '<circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line>',
     "about": '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle>',
     "terms": '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line>',
     "contact": '<path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22 6 12 13 2 6"></polyline>',
@@ -335,6 +337,16 @@
             '<div class="fn-theme-group">' +
               '<svg class="fn-theme-group-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
                 'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+                '<rect x="2" y="3" width="20" height="14" rx="2"></rect>' +
+                '<line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line>' +
+              "</svg>" +
+              '<div class="fn-theme-group-options fn-theme-group-options-single">' +
+                '<button type="button" class="fn-theme-option" data-theme-option="system" role="radio" aria-checked="false">System</button>' +
+              "</div>" +
+            "</div>" +
+            '<div class="fn-theme-group">' +
+              '<svg class="fn-theme-group-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+                'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
                 '<circle cx="12" cy="12" r="4"></circle>' +
                 '<path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>' +
               "</svg>" +
@@ -355,6 +367,7 @@
               "</div>" +
             "</div>" +
           "</div>" +
+          '<p class="fn-settings-hint">System matches your device: light &rarr; Sunshine, dark &rarr; Neon.</p>' +
         "</div>" +
         '<div class="fn-settings-divider"></div>' +
         '<div class="fn-settings-row fn-settings-row-stack">' +
@@ -844,7 +857,11 @@
 
       function syncThemeSelect() {
         if (!themeOptions.length || !window.FNTheme) return;
-        var current = window.FNTheme.get();
+        // check against the visitor's stored *preference* ("system" or a
+        // concrete theme), not the resolved applied theme — otherwise a
+        // "system" visitor whose device is dark would see "Neon" marked
+        // active instead of "System"
+        var current = window.FNTheme.getPreference ? window.FNTheme.getPreference() : window.FNTheme.get();
         themeOptions.forEach(function (btn) {
           var active = btn.getAttribute("data-theme-option") === current;
           btn.classList.toggle("is-active", active);

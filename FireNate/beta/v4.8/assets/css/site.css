@@ -134,6 +134,39 @@ html[data-theme="lcars"]{
   -webkit-backdrop-filter:blur(10px);
   border-bottom:1px solid var(--fn-line);
 }
+/* projects downward onto the page below the nav — brightest at center,
+   tapering out toward the sides. Deliberately a pseudo-element positioned
+   with top:100% (starting exactly at the nav's own bottom edge and
+   extending downward from there), not a background on #fn-site-nav itself
+   — a background is clipped to its own element's box, so a gradient
+   painted that way can only ever fade "into" the nav (up/inward), never
+   spill onto the content below it, which is the opposite of what a
+   downward-cast effect needs.
+   This base rule (light theme, plus dark until its own override below)
+   reads as a neutral drop shadow — the nav's own --fn-ink color at low
+   opacity, like the bar casting a literal shadow — rather than a colored
+   glow, which suits light backgrounds better. Dark and neon keep an
+   accent-colored glow instead (overrides below); sunshine gets its own
+   neutral shadow in its own ink tone. LCARS opts out via content:none —
+   deliberately flat, no shadow or glow anywhere, per its own console
+   aesthetic. */
+#fn-site-nav::after{
+  content:'';
+  position:absolute;
+  left:0; right:0; top:100%;
+  height:24px;
+  background:radial-gradient(ellipse 480px 24px at 50% 0%, rgba(21,17,26,0.28), rgba(21,17,26,0) 75%);
+  pointer-events:none;
+}
+/* dark theme keeps the original accent-colored glow (light's own nav looks
+   identical to dark's otherwise — see the "always-dark chrome" note at the
+   top of this file — so without this override, changing the base rule to
+   a neutral shadow for light would silently change dark's look too) */
+html[data-theme="dark"] #fn-site-nav::after{
+  /* a deeper, dimmer amber than the literal --fn-gold accent — the bright
+     version read a little too vivid against this theme's own dark page */
+  background:radial-gradient(ellipse 480px 24px at 50% 0%, rgba(182,124,36,0.3), rgba(182,124,36,0) 75%);
+}
 .fn-nav-inner{
   position:relative;
   max-width:1180px;
@@ -548,6 +581,11 @@ html[data-theme="lcars"]{
   gap:3px;
   flex:1;
   min-width:0;
+}
+/* the System row has just the one option — let it span the full row
+   instead of sitting cramped in a 3-column track meant for its siblings */
+.fn-theme-group-options-single{
+  grid-template-columns:1fr;
 }
 .fn-theme-option{
   min-width:0;
@@ -1206,8 +1244,12 @@ html[data-theme="lcars"]{
 /* an #id selector always outranks a page's own bare "footer{...}" rule
    (meant for that page's local disclaimer footer), so this keeps the
    shared footer's spacing/border consistent everywhere regardless of
-   what each page's own stylesheet declares for plain <footer> elements */
-#site-footer{ margin:0; padding:0; border:none; text-align:inherit; }
+   what each page's own stylesheet declares for plain <footer> elements.
+   The top margin is the gap between a page's own last bit of content and
+   the footer — without it the footer sits flush against whatever content
+   happens to be last on a given page. */
+#site-footer{ margin:64px 0 0; padding:0; border:none; text-align:inherit; }
+@media (max-width:640px){ #site-footer{ margin-top:40px; } }
 .fn-footer-inner{
   max-width:1180px;
   margin:0 auto;
@@ -1245,6 +1287,18 @@ html[data-theme="lcars"]{
   opacity:.75;
   margin-top:10px;
 }
+/* links to the version picker, but stays visually identical to the plain
+   text it used to be — overrides .fn-footer-grid a's link styling below
+   (color change, hover color, icon-row flex layout) so it doesn't read as
+   a link at a glance */
+.fn-footer-grid .fn-footer-version a{
+  display:inline;
+  color:inherit;
+  font:inherit;
+  letter-spacing:inherit;
+  text-decoration:none;
+}
+.fn-footer-grid .fn-footer-version a:hover{ color:inherit; }
 .fn-footer-grid h5{
   font-family:var(--fn-mono);
   font-size:11px;
@@ -1509,7 +1563,9 @@ html[data-theme="neon"] body{
 html[data-theme="neon"] #fn-site-nav{
   background:rgba(15,23,42,0.9);
   border-bottom-color:rgba(168,85,247,0.35);
-  box-shadow:0 1px 24px rgba(168,85,247,0.15);
+}
+html[data-theme="neon"] #fn-site-nav::after{
+  background:radial-gradient(ellipse 480px 24px at 50% 0%, rgba(168,85,247,0.42), rgba(168,85,247,0) 75%);
 }
 html[data-theme="neon"] .fn-brand .fn-dot{
   background:linear-gradient(135deg, #6366f1, #a855f7, #ec4899);
@@ -1586,7 +1642,12 @@ html[data-theme="sunshine"] body{
 html[data-theme="sunshine"] #fn-site-nav{
   background:rgba(255,255,255,0.85);
   border-bottom-color:rgba(31,92,110,0.18);
-  box-shadow:0 1px 24px rgba(245,166,35,0.18);
+}
+html[data-theme="sunshine"] #fn-site-nav::after{
+  /* neutral shadow like light's own, just in sunshine's own ink tone
+     (#1F3540) instead of light/dark's — a colored glow read wrong here
+     too, same reasoning as the base rule above */
+  background:radial-gradient(ellipse 480px 24px at 50% 0%, rgba(31,53,64,0.25), rgba(31,53,64,0) 75%);
 }
 html[data-theme="sunshine"] .fn-brand .fn-dot{
   background:linear-gradient(135deg, #FFCB5C, #F5A623, #FF6F59);
@@ -1670,7 +1731,7 @@ html[data-theme="lcars"] #fn-site-nav{
 html[data-theme="lcars"] #fn-site-nav::after{
   content:"";
   position:absolute;
-  left:0; right:0; bottom:0;
+  left:0; right:0; top:auto; bottom:0;
   height:7px;
   background:
     linear-gradient(90deg,

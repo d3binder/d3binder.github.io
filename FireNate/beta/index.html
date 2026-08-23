@@ -257,6 +257,15 @@
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   }
 
+  .version-info .version-dates {
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--text-dim);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    opacity: 0.75;
+    margin: 4px 0 10px;
+  }
+
   .status-pill {
     flex-shrink: 0;
     display: inline-flex;
@@ -415,17 +424,24 @@
         <div class="version-info">
           <p class="name">Beta 4.8</p>
           <p class="path">/beta/v4.8</p>
+          <p class="version-dates">Initial Creation: 2026-08-21 20:48:26<br>Last Update: 2026-08-23 14:31:32</p>
           <p class="notes"><ul>
             <li>Branched from v4.7</li>
             <li>Homepage nav bar and hamburger menu section labels shortened: "Basics", "Independence", "Retirement", "Daily Decisions"</li>
-            <li>New first-visit welcome modal on the homepage — choose to learn the site, get a guided calculator pick, or skip, with a spotlight highlight on the Getting Started section if you skip</li>
+            <li>New first-visit welcome modal on the homepage — choose to learn the site, get a guided calculator pick, or skip, with a highlight on the Getting Started section if you skip (just a scroll and a highlight pulse — no page dimming)</li>
             <li>Picking Calculators quiz: mobile now has a "Show my results" button so closing the results drawer doesn't strand you</li>
             <li>Fixed a handful of bugs surfaced by the welcome modal: an iOS Safari scroll-lock issue, the modal accidentally dismissing the separate "Add your info" hint, and that hint's arrow pointing at the wrong icon on mobile</li>
             <li>"Clear all local data" now sends you to the homepage for a genuinely fresh-visitor experience, instead of just reloading wherever you were</li>
             <li>Homepage headline changed to "Your journey to financial independence," and the D3 Planning card's "Sponsor" ribbon renamed to "Partner"</li>
-            <li>Using This Site page: added a direct "Open the Glossary" button, in case the inline link gets missed</li>
+            <li>Using This Site page: added a direct "Open the Glossary" button, in case the inline link gets missed, plus a new "Pick a look that fits you" section explaining every theme with a button that jumps straight to the theme picker</li>
             <li>Glossary browsing redesigned: category jump-links now live behind a small expandable icon instead of an always-visible bar that ate space on mobile, plus a new sort menu (by category or alphabetically A&ndash;Z)</li>
-            <li>Glossary content greatly expanded — from 21 to 68 terms — adding full coverage of account types (retirement, investment, and banking), loan and credit types, and everyday money-basics and investing vocabulary</li>
+            <li>Glossary content greatly expanded — now 72 terms — adding full coverage of account types (retirement, investment, and banking), loan and credit types, everyday money-basics and investing vocabulary, and more advanced terms like Robo-Investor, Fractional Shares, Short Selling, and Stock Options</li>
+            <li>Glossary reorganized into a two-level category tree — five topic groups (Foundational Concepts, Retirement, Banking, Investing, Debt &amp; Loans), each with its own subcategories — with a persistent browsing sidebar on wider screens, collapsible at every level, and definition cards that glow on hover</li>
+            <li>New "System" theme option that automatically matches your device's light/dark setting (light &rarr; Sunshine, dark &rarr; Neon) — now the default for new visitors, alongside the previous five themes</li>
+            <li>New F.A.Q. page — the same searchable, sortable, collapsible browsing as the Glossary, seeded with about 20 questions across five topics, plus a first-visit reminder to consult a licensed professional</li>
+            <li>Footer's version number now links back to this version picker (styled like plain text, not an obvious link), and a bit more breathing room added above the footer on every page</li>
+            <li>Nav bar now casts a soft shadow/glow along its bottom edge, tuned to each theme</li>
+            <li>Fixed a contrast bug where Neon and Sunshine's icon buttons and category pills washed out against their own translucent panels on the Glossary and F.A.Q. pages</li>
             <li>More still to come</li>
           </ul></p>
           <p class="cta-hint">Click to open the in-progress build</p>
@@ -438,6 +454,7 @@
         <div class="version-info">
           <p class="name">Beta 4.7 — Current</p>
           <p class="path">/beta/v4.7</p>
+          <p class="version-dates">Initial Creation: 2026-08-20 17:56:20<br>Last Update: 2026-08-21 20:13:25</p>
           <p class="notes"><ul>
             <li>Branched from v4.6</li>
             <li>Every calculator's "?" help window now lists every single input field individually (Net Worth's was condensed into 4 summary bullets for its 30 fields — now all 30 are listed by name)</li>
@@ -462,6 +479,7 @@
         <div class="version-info">
           <p class="name">Beta 4.6</p>
           <p class="path">/beta/v4.6</p>
+          <p class="version-dates">Initial Creation: 2026-08-16 20:21:38<br>Last Update: 2026-08-20 16:55:20</p>
           <p class="notes"><ul>
             <li>New calculator: Cash Out or Hold — decide whether to sell investments to pay off debt or stay invested, accounting for capital gains tax and short/long-term holding period</li>
             <li>New "Neon" and "Sunshine" glass themes — a 4-option theme selector (Light, Dark, Neon, Sunshine) replacing the old dark-mode toggle, rolled out site-wide</li>
@@ -486,6 +504,7 @@
         <div class="version-info">
           <p class="name">Beta 4.5</p>
           <p class="path">/beta/v4.5</p>
+          <p class="version-dates">Initial Creation: 2026-08-16 17:00:18<br>Last Update: 2026-08-16 20:21:38</p>
           <p class="notes"><ul>
             <li>Icons, added lots of icons</li>
             <li>Fixed a real bug: the Net Worth calculator was saving to a cookie instead of localStorage, invisible to Profile Manager, snapshots, and export</li>
@@ -512,6 +531,7 @@
         <div class="version-info">
           <p class="name">Beta 4.4</p>
           <p class="path">/beta/v4.4</p>
+          <p class="version-dates">Initial Creation: 2026-08-15 21:45:42<br>Last Update: 2026-08-15 23:21:23</p>
           <p class="notes"><ul>
             <li>Profile Manager: share a saved snapshot as a plain text string (and import one someone shares with you) — not just a URL</li>
             <li>Profile Manager: one-click "Quick snapshot" that captures your live profile and every calculator's inputs with an auto-generated name, no typing required</li>
@@ -526,6 +546,7 @@
         <div class="version-info">
           <p class="name">Beta 4.3</p>
           <p class="path">/beta/v4.3</p>
+          <p class="version-dates">Initial Creation: 2026-08-15 09:46:45<br>Last Update: 2026-08-15 18:49:24</p>
           <p class="notes"><ul>
             <li>New calculators: Debt Snowball, Social Security &amp; Pension Bridge, Roth Conversion Ladder, Variable Withdrawal Rate (Guyton-Klinger guardrails + cash buffer), and Healthcare &amp; ACA Bridge (with a subsidy-cliff visualizer)</li>
             <li>Homepage reorganized into grouped sections with a sticky "jump to section" bar and a live search/filter across every calculator</li>
@@ -548,6 +569,7 @@
         <div class="version-info">
           <p class="name">Beta 4.2</p>
           <p class="path">/beta/v4.2</p>
+          <p class="version-dates">Initial Creation: 2026-08-14 17:52:21<br>Last Update: 2026-08-15 09:34:48</p>
           <p class="notes"><ul>
             <li>Bug Fixes</li>
             <li>New pages</li>
@@ -565,6 +587,7 @@
         <div class="version-info">
           <p class="name">Beta 4.1 </p>
           <p class="path">/beta/v4.1</p>
+          <p class="version-dates">Initial Creation: 2026-08-14 04:50:38<br>Last Update: 2026-08-14 16:51:42</p>
           <p class="notes"><ul>
             <li>Full "Your info" profile panel — quick snapshot via camera icon, an automatic safety backup before "Clear my info", and a hover/tap quick-load menu for saved profiles</li>
             <li>New Profile Manager page — save, load, delete, and compare named snapshots of your plan side by side</li>
@@ -583,6 +606,7 @@
         <div class="version-info">
           <p class="name">Version 4.0</p>
           <p class="path">/beta/v4.0</p>
+          <p class="version-dates">Initial Creation: 2026-08-13 05:38:14<br>Last Update: 2026-08-13 18:53:47</p>
           <p class="notes"><ul>
             <li>FI Snapshot dashboard — age, savings, and goal progress pulled straight from your saved profile</li>
             <li>Coast-FI status, with saved what-if scenarios you can compare, load, or delete</li>
@@ -600,6 +624,7 @@
         <div class="version-info">
           <p class="name">Beta 3.1</p>
           <p class="path">/beta/v3.1</p>
+          <p class="version-dates">Initial Creation: 2026-08-09 20:18:50<br>Last Update: 2026-08-13 05:33:14</p>
           <p class="notes"><ul>
             <li>Unified styles</li>
              <li>Dark and light modes</li>
@@ -622,6 +647,7 @@
         <div class="version-info">
           <p class="name">Beta 3.0</p>
           <p class="path">/beta/v3</p>
+          <p class="version-dates">Initial Creation: 2026-08-09 20:18:50<br>Last Update: 2026-08-11 18:58:20</p>
           <p class="notes">Unify pages into a cohesive site</p>
           <p class="cta-hint">Click to open </p>
         </div>
@@ -633,6 +659,7 @@
         <div class="version-info">
           <p class="name">Beta 2.0</p>
           <p class="path">/beta/v2</p>
+          <p class="version-dates">Initial Creation: 2026-08-09 20:20:58<br>Last Update: 2026-08-09 22:31:13</p>
           <p class="notes">Add additional calculators</p>
         </div>
         <span class="status-pill disabled">⛔ Disabled</span>
@@ -643,6 +670,7 @@
         <div class="version-info">
           <p class="name">Alpha 1.0</p>
           <p class="path">/beta/v1</p>
+          <p class="version-dates">Initial Creation: 2026-08-08 20:37:52<br>Last Update: 2026-08-09 20:20:56</p>
           <p class="notes">Initial Time-To-FI Calculator P.O.C.</p>
         </div>
         <span class="status-pill deleted">🗑 Deleted</span>
