@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script src="../assets/js/theme-init.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FireNate - About</title>
+<meta name="description" content="Why FireNate exists, what it is and isn't, and how it handles your data.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Antonio:wght@400;500;600;700&family=Michroma&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/site.css">
+<link rel="stylesheet" href="../assets/css/timeToFI.css">
+<script src="../assets/js/theme.js" defer></script>
+<script src="../assets/js/user-profile.js" defer></script>
+<script src="../assets/js/nav.js" defer></script>
+<script>window.FN_BASE = "../"; window.FN_PAGE = "about";</script>
+<style>
+  .lg-section{ margin-top:36px; }
+  [data-theme="lcars"] .lg-section h2{ font-family:var(--display); letter-spacing:.02em; }
+  .lg-section h2{ font-family:var(--serif); font-size:22px; font-weight:500; margin:0 0 12px; color:var(--ink); }
+  .lg-section p{ font-size:14.5px; line-height:1.7; color:var(--ink-dim); margin:0 0 14px; max-width:70ch; }
+  .lg-section p:last-child{ margin-bottom:0; }
+  .lg-card{
+    background:var(--surface); border:1px solid var(--line); border-top:4px solid var(--gold);
+    border-radius:var(--radius); padding:24px 26px;
+  }
+  .lg-card.jade{ border-top-color:var(--jade); }
+  .lg-card.plum{ border-top-color:var(--plum); }
+  .lg-card.target{ border-top-color:var(--target); }
+  .lg-video{ width:100%; max-height:540px; border-radius:12px; background:#000; display:block; margin-top:4px; }
+  .lg-video-fallback{
+    padding:40px 20px; text-align:center; color:var(--ink-faint); font-size:14px;
+    background:var(--surface-2); border-radius:12px; border:1px dashed var(--line);
+  }
+</style>
+</head>
+<body>
+<div id="fn-site-nav"></div>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">FIRE Nate - About</p>
+    <h1>One guy who loves spreadsheets. One guy who loves building <em>web apps</em>.</h1>
+    <p class="lede">FireNate started as a personal spreadsheet for tracking a path to financial independence — the kind of thing one of us builds obsessively for fun. Turning that into something you can actually click around in a browser was the other's kind of fun. Together, that grew into a small set of focused calculators — because most of the math that actually matters for FIRE planning doesn't need a full financial-planning suite to answer.</p>
+  </header>
+
+  <div class="lg-section">
+    <div class="lg-card">
+      <h2>Where the name came from</h2>
+      <p>A short, mostly-a-joke video clip — with a surprising amount of truth behind it — about how this site ended up called "FireNate."</p>
+      <video class="lg-video" controls preload="metadata">
+        <source src="videos/FireNate.mp4" type="video/mp4">
+        <div class="lg-video-fallback">Your browser can't play this video inline.</div>
+      </video>
+    </div>
+  </div>
+
+  <div class="lg-section">
+    <div class="lg-card">
+      <h2>What this is</h2>
+      <p>A collection of small, single-purpose calculators for the questions that come up again and again on the road to financial independence: how fast can I get there, what does a loan really cost, should the next dollar pay down debt or go into the market, what happens to my portfolio in a bad decade, and so on.</p>
+      <p>Every calculator is built to make a specific trade-off visible — not to replace judgment, and not to predict the future. They're ledgers: a place to see your own numbers clearly, not a guarantee of an outcome.</p>
+    </div>
+  </div>
+
+  <div class="lg-section">
+    <div class="lg-card jade">
+      <h2>What this isn't</h2>
+      <p>FireNate is not a licensed financial advisor, a broker, a bank, or a registered investment service, and it isn't affiliated with any financial institution. It doesn't manage money, place trades, or offer personalized advice. It's a set of calculators built by two guys — one who loves spreadsheets, one who loves web &amp; app development — for anyone who finds them useful, on their own time and at their own risk.</p>
+      <p>See the <a href="../Terms/index.html">Terms, Conditions &amp; Copyright</a> page for the full disclaimer.</p>
+    </div>
+  </div>
+
+  <div class="lg-section">
+    <div class="lg-card plum">
+      <h2>Your data</h2>
+      <p>There are no accounts, no logins, and no tracking. Everything you type into a calculator is saved only in your own browser's local storage, on your own device — it's never sent to a server, because there isn't one collecting it.</p>
+      <p>If you want to move your data — to another device, or to share a specific scenario with someone — the Profile Manager and each calculator's own "copy a shareable link" button let you do that explicitly, on your own terms. Nothing leaves your device unless you choose to export or share it yourself.</p>
+    </div>
+  </div>
+
+  <div class="lg-section">
+    <div class="lg-card target">
+      <h2>Credit</h2>
+      <p>The math behind these calculators is based on Nate Ellison's personal workbook, "Nate's F.I.R.E. Spreadsheet." This site is that same thinking, rebuilt — spreadsheet logic on one side, web &amp; app development on the other — as a set of interactive tools instead of a single spreadsheet.</p>
+    </div>
+  </div>
+
+  <footer id="site-footer"></footer>
+</div>
+</body>
+</html>

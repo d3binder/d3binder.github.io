@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script src="../assets/js/theme-init.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FireNate - Glossary</title>
+<meta name="description" content="Plain-English definitions for the FIRE jargon used across this site — Lean/Barista/Coast/Fat FIRE, the 4% rule, MAGI, the ACA subsidy cliff, debt snowball vs. avalanche, and more.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Antonio:wght@400;500;600;700&family=Michroma&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/site.css">
+<link rel="stylesheet" href="../assets/css/timeToFI.css">
+<script src="../assets/js/theme.js" defer></script>
+<script src="../assets/js/user-profile.js" defer></script>
+<script src="../assets/js/nav.js" defer></script>
+<script src="../assets/js/glossary-data.js"></script>
+<script>window.FN_BASE = "../"; window.FN_PAGE = "glossary";</script>
+<style>
+  @media (prefers-reduced-motion: no-preference){
+    html{ scroll-behavior:smooth; }
+  }
+
+  /* ---------- STICKY "BROWSE / SEARCH" ICON ROW ----------
+     Two matching circular icon buttons (categories, search) — each toggles
+     its own panel below, mutually exclusive. Same gradient-border pill
+     treatment as the homepage's .hp-quicklinks, translated to this page's
+     own --gold/--danger/--surface tokens instead of the homepage's --hp-*
+     set. Replaces an earlier always-visible pill bar, which took too much
+     space (especially on mobile) given how many categories this page has
+     compared to the homepage's own section list. */
+  .gl-quicklinks{ position:sticky; top:60px; z-index:38; padding:14px 0 0; margin-bottom:8px; }
+  .gl-quicklinks-row{ display:flex; align-items:center; gap:8px; }
+
+  .gl-icon-btn{
+    flex:none; width:40px; height:40px;
+    display:inline-flex; align-items:center; justify-content:center;
+    border-radius:999px; cursor:pointer;
+    background:var(--surface);
+    border:1px solid transparent;
+    background-image:
+      linear-gradient(var(--surface), var(--surface)),
+      linear-gradient(90deg, var(--gold), var(--danger));
+    background-origin:border-box; background-clip:padding-box, border-box;
+    color:var(--ink-dim);
+    box-shadow:0 14px 32px -14px rgba(0,0,0,0.45);
+    transition:color .15s ease, transform .15s ease;
+  }
+  .gl-icon-btn:hover{ color:var(--gold); transform:translateY(-1px); }
+  .gl-icon-btn.active{
+    background:linear-gradient(90deg, var(--gold), var(--danger));
+    color:#201205;
+    box-shadow:0 6px 16px -6px rgba(217,132,15,0.55);
+  }
+
+  .gl-categories-panel{ margin-top:8px; }
+  .gl-categories-panel[hidden]{ display:none; }
+  .gl-quicklinks-inner{
+    display:flex; flex-wrap:wrap; gap:6px;
+    padding:9px; border-radius:16px;
+    background:var(--surface);
+    border:1px solid transparent;
+    background-image:
+      linear-gradient(var(--surface), var(--surface)),
+      linear-gradient(90deg, var(--gold), var(--danger));
+    background-origin:border-box; background-clip:padding-box, border-box;
+    box-shadow:0 14px 32px -14px rgba(0,0,0,0.45);
+  }
+  /* shared by the category/letter jump-links (<a>) and the sort-mode
+     options (<button>) — same pill family either way */
+  .gl-quicklinks-inner a, .gl-quicklinks-inner button{
+    flex:none;
+    font-family:var(--sans); font-size:13px; font-weight:700;
+    color:var(--ink-dim); text-decoration:none;
+    padding:9px 16px; border-radius:999px; white-space:nowrap;
+    background:none; border:none; cursor:pointer;
+    transition:background-color .15s ease, color .15s ease, transform .15s ease;
+  }
+  .gl-quicklinks-inner a:hover, .gl-quicklinks-inner button:hover{ background:rgba(217,132,15,0.12); color:var(--gold); transform:translateY(-1px); }
+  .gl-quicklinks-inner a.active, .gl-quicklinks-inner button.active{
+    background:linear-gradient(90deg, var(--gold), var(--danger));
+    color:#201205;
+    box-shadow:0 6px 16px -6px rgba(217,132,15,0.55);
+  }
+
+  .gl-search-panel{ margin-top:8px; }
+  .gl-search-panel[hidden]{ display:none; }
+  .gl-search-panel-inner{
+    display:flex; align-items:center; gap:10px;
+    padding:11px 16px; border-radius:14px;
+    background:var(--surface);
+    border:1px solid transparent;
+    background-image:
+      linear-gradient(var(--surface), var(--surface)),
+      linear-gradient(90deg, var(--gold), var(--danger));
+    background-origin:border-box; background-clip:padding-box, border-box;
+    box-shadow:0 14px 32px -14px rgba(0,0,0,0.45);
+  }
+  .gl-search-panel-inner svg{ flex:none; color:var(--ink-faint); }
+  #glSearch{
+    flex:1; min-width:0; background:none; border:none; outline:none;
+    font-family:var(--sans); font-size:14px; color:var(--ink);
+  }
+  #glSearch::placeholder{ color:var(--ink-faint); }
+  #glSearch::-webkit-search-cancel-button{ -webkit-appearance:none; appearance:none; }
+  .gl-search-clear{
+    flex:none; width:22px; height:22px; border-radius:999px; border:none;
+    background:rgba(217,132,15,0.12); color:var(--ink-dim); cursor:pointer;
+    display:inline-flex; align-items:center; justify-content:center;
+    font-size:15px; line-height:1;
+  }
+  .gl-search-clear:hover{ color:var(--gold); }
+  .gl-search-clear[hidden]{ display:none; }
+  .gl-status{ margin:10px 2px 0; font-family:var(--mono); font-size:11.5px; letter-spacing:.04em; color:var(--ink-faint); }
+  .gl-status[hidden]{ display:none; }
+  .gl-status.no-results{ color:var(--danger); }
+
+  .gl-category{ margin-top:36px; scroll-margin-top:130px; }
+  [data-theme="lcars"] .gl-category-title{ font-family:var(--display); letter-spacing:.02em; }
+  .gl-category-title{ font-family:var(--serif); font-size:22px; font-weight:500; margin:0 0 16px; color:var(--ink); }
+  .gl-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:14px; }
+  .gl-card{
+    background:var(--surface); border:1px solid var(--line); border-top:4px solid var(--gold);
+    border-radius:var(--radius); padding:20px 22px; scroll-margin-top:100px;
+    transition:border-color .3s, box-shadow .3s;
+  }
+  .gl-card.flash{ border-color:var(--gold); box-shadow:0 0 0 3px rgba(217,132,15,0.25); }
+  [data-theme="lcars"] .gl-card h3{ font-family:var(--display); letter-spacing:.02em; }
+  .gl-card h3{ font-family:var(--serif); font-size:18px; font-weight:600; margin:0 0 8px; color:var(--ink); }
+  .gl-card p{ font-size:13.5px; line-height:1.6; color:var(--ink-dim); margin:0 0 12px; }
+  .gl-card a.related{ display:inline-flex; align-items:center; gap:6px; font-family:var(--mono); font-size:11.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--jade); text-decoration:none; }
+  .gl-card a.related:hover{ color:var(--gold); }
+  .gl-card a.related svg{ flex-shrink:0; }
+  .gl-empty{ text-align:center; color:var(--ink-faint); padding:48px 0; display:none; }
+</style>
+</head>
+<body>
+<div id="fn-site-nav"></div>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">FIRE Nate - Glossary</p>
+    <h1>A shared vocabulary for the road to <em>FI</em>.</h1>
+    <p class="lede">Every term used across this site's calculators, defined in one place — click any dotted-underlined term on a calculator page to jump straight to its entry here.</p>
+  </header>
+
+  <nav class="gl-quicklinks" id="glQuicklinks" aria-label="Browse the glossary">
+    <div class="gl-quicklinks-row">
+      <button type="button" class="gl-icon-btn" id="glCategoriesToggle" aria-expanded="false" aria-controls="glCategoriesPanel" aria-label="Jump to a section">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="8" y1="6" x2="21" y2="6"></line>
+          <line x1="8" y1="12" x2="21" y2="12"></line>
+          <line x1="8" y1="18" x2="21" y2="18"></line>
+          <line x1="3" y1="6" x2="3.01" y2="6"></line>
+          <line x1="3" y1="12" x2="3.01" y2="12"></line>
+          <line x1="3" y1="18" x2="3.01" y2="18"></line>
+        </svg>
+      </button>
+      <button type="button" class="gl-icon-btn" id="glSortToggle" aria-expanded="false" aria-controls="glSortPanel" aria-label="Sort terms">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 8l4-4 4 4"></path>
+          <path d="M7 4v10"></path>
+          <path d="M21 16l-4 4-4-4"></path>
+          <path d="M17 20V10"></path>
+        </svg>
+      </button>
+      <button type="button" class="gl-icon-btn" id="glSearchToggle" aria-expanded="false" aria-controls="glSearchPanel" aria-label="Search glossary">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+      </button>
+    </div>
+    <div class="gl-categories-panel" id="glCategoriesPanel" hidden>
+      <div class="gl-quicklinks-inner" id="glQuicklinksInner"></div>
+    </div>
+    <div class="gl-categories-panel" id="glSortPanel" hidden>
+      <div class="gl-quicklinks-inner" id="glSortOptions">
+        <button type="button" data-sort="category" class="active">By Category</button>
+        <button type="button" data-sort="alphabetical">Alphabetical (A&ndash;Z)</button>
+      </div>
+    </div>
+    <div class="gl-search-panel" id="glSearchPanel" hidden>
+      <div class="gl-search-panel-inner">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="search" id="glSearch" placeholder="Search terms&hellip;" aria-label="Search glossary">
+        <button type="button" class="gl-search-clear" id="glSearchClear" aria-label="Clear search" hidden>&times;</button>
+      </div>
+      <p class="gl-status" id="glStatus" hidden></p>
+    </div>
+  </nav>
+
+  <div id="glCategories"></div>
+  <p class="gl-empty" id="glEmpty">No terms match your search.</p>
+
+  <footer id="site-footer"></footer>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+function slugify(s){ return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''); }
+
+// 'category' groups terms the way the data itself defines them; 'alphabetical'
+// ignores category entirely and buckets by the term's own first letter
+let sortMode = 'category';
+
+// strips leading punctuation (quotes, parens, ...) before alphabetizing —
+// otherwise a term like '"Under the Mattress" Savings' sorts/buckets on
+// the quote mark itself instead of the "U" a reader would expect
+function sortKey(term){
+  return term.replace(/^[^a-zA-Z0-9]+/, '');
+}
+
+function buildGroups(glossary){
+  const groupOrder = [];
+  const byGroup = {};
+
+  if (sortMode === 'alphabetical'){
+    const sorted = glossary.slice().sort((a, b) => sortKey(a.term).localeCompare(sortKey(b.term)));
+    sorted.forEach(t => {
+      const first = sortKey(t.term).charAt(0).toUpperCase();
+      const key = /[A-Z]/.test(first) ? first : '0-9';
+      if (!byGroup[key]) { byGroup[key] = []; groupOrder.push(key); }
+      byGroup[key].push(t);
+    });
+    groupOrder.sort((a, b) => (a === '0-9' ? -1 : b === '0-9' ? 1 : a.localeCompare(b)));
+  } else {
+    glossary.forEach(t => {
+      const cat = t.category || 'Other';
+      if (!byGroup[cat]) { byGroup[cat] = []; groupOrder.push(cat); }
+      byGroup[cat].push(t);
+    });
+  }
+
+  return { groupOrder, byGroup };
+}
+
+function render(){
+  const glossary = window.FN_GLOSSARY || [];
+  const host = $('glCategories');
+  host.innerHTML = '';
+
+  const { groupOrder, byGroup } = buildGroups(glossary);
+
+  const quicklinksHost = $('glQuicklinksInner');
+  quicklinksHost.innerHTML = '';
+
+  groupOrder.forEach(group => {
+    const groupId = 'cat-' + slugify(group);
+
+    const link = document.createElement('a');
+    link.href = '#' + groupId;
+    link.textContent = group;
+    quicklinksHost.appendChild(link);
+
+    const section = document.createElement('div');
+    section.className = 'gl-category';
+    section.id = groupId;
+    const title = document.createElement('h2');
+    title.className = 'gl-category-title';
+    title.textContent = group;
+    section.appendChild(title);
+
+    const grid = document.createElement('div');
+    grid.className = 'gl-grid';
+    byGroup[group].forEach(t => {
+      const card = document.createElement('div');
+      card.className = 'gl-card';
+      card.id = 'term-' + t.id;
+      card.dataset.searchText = (t.term + ' ' + t.short).toLowerCase();
+      card.innerHTML = `
+        <h3>${t.term}</h3>
+        <p>${t.short}</p>
+        ${t.relatedHref ? `<a class="related" href="..${t.relatedHref}">${t.relatedIcon ? `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${t.relatedIcon}</svg>` : ''}${t.relatedLabel || 'Open calculator'} &rarr;</a>` : ''}
+      `;
+      grid.appendChild(card);
+    });
+    section.appendChild(grid);
+    host.appendChild(section);
+  });
+}
+
+function applyFilter(query){
+  const q = query.trim().toLowerCase();
+  const cards = Array.from(document.querySelectorAll('.gl-card'));
+  let visible = 0;
+  cards.forEach(card => {
+    const match = !q || card.dataset.searchText.indexOf(q) > -1;
+    card.style.display = match ? '' : 'none';
+    if (match) visible++;
+  });
+  document.querySelectorAll('.gl-category').forEach(section => {
+    const anyVisible = Array.from(section.querySelectorAll('.gl-card')).some(c => c.style.display !== 'none');
+    section.style.display = anyVisible ? '' : 'none';
+  });
+  const status = $('glStatus');
+  const empty = $('glEmpty');
+  const clearBtn = $('glSearchClear');
+  if (clearBtn) clearBtn.hidden = !q;
+  if (!q){
+    status.hidden = true;
+    status.classList.remove('no-results');
+    empty.style.display = 'none';
+  } else if (visible === 0){
+    status.hidden = true;
+    empty.style.display = 'block';
+  } else {
+    status.hidden = false;
+    status.classList.remove('no-results');
+    status.textContent = `Showing ${visible} of ${cards.length} terms.`;
+    empty.style.display = 'none';
+  }
+}
+
+// categories panel + sort panel + search panel — each starts collapsed
+// behind its own icon button and toggles independently, but opening one
+// closes the other two (mutually exclusive), matching how nav.js's own
+// profile/settings/hamburger panels behave elsewhere on the site
+(function(){
+  const catToggle = $('glCategoriesToggle');
+  const catPanel = $('glCategoriesPanel');
+  const sortToggle = $('glSortToggle');
+  const sortPanel = $('glSortPanel');
+  const searchToggle = $('glSearchToggle');
+  const searchPanel = $('glSearchPanel');
+  const input = $('glSearch');
+  const clearBtn = $('glSearchClear');
+  if (!catToggle || !catPanel || !sortToggle || !sortPanel || !searchToggle || !searchPanel || !input) return;
+
+  function openCategories(){
+    closeSort(); closeSearch();
+    catPanel.hidden = false;
+    catToggle.classList.add('active');
+    catToggle.setAttribute('aria-expanded', 'true');
+  }
+  function closeCategories(){
+    catPanel.hidden = true;
+    catToggle.classList.remove('active');
+    catToggle.setAttribute('aria-expanded', 'false');
+  }
+  function openSort(){
+    closeCategories(); closeSearch();
+    sortPanel.hidden = false;
+    sortToggle.classList.add('active');
+    sortToggle.setAttribute('aria-expanded', 'true');
+  }
+  function closeSort(){
+    sortPanel.hidden = true;
+    sortToggle.classList.remove('active');
+    sortToggle.setAttribute('aria-expanded', 'false');
+  }
+  function openSearch(){
+    closeCategories(); closeSort();
+    searchPanel.hidden = false;
+    searchToggle.classList.add('active');
+    searchToggle.setAttribute('aria-expanded', 'true');
+    input.focus();
+  }
+  function closeSearch(){
+    searchPanel.hidden = true;
+    searchToggle.classList.remove('active');
+    searchToggle.setAttribute('aria-expanded', 'false');
+    input.value = '';
+    applyFilter('');
+  }
+
+  catToggle.addEventListener('click', () => { catPanel.hidden ? openCategories() : closeCategories(); });
+  sortToggle.addEventListener('click', () => { sortPanel.hidden ? openSort() : closeSort(); });
+  searchToggle.addEventListener('click', () => { searchPanel.hidden ? openSearch() : closeSearch(); });
+  input.addEventListener('input', () => applyFilter(input.value));
+  input.addEventListener('keydown', e => { if (e.key === 'Escape') closeSearch(); });
+  if (clearBtn){
+    clearBtn.addEventListener('click', () => {
+      input.value = '';
+      applyFilter('');
+      input.focus();
+    });
+  }
+
+  // its job (jumping you there) is done once a category link is actually
+  // clicked — close the panel so it doesn't sit open over the section you
+  // just navigated to
+  $('glQuicklinksInner').addEventListener('click', e => {
+    if (e.target.tagName === 'A') closeCategories();
+  });
+
+  // switch sort mode, rebuild the listing, re-apply any active search
+  // filter (render() rebuilds every card from scratch), then close
+  $('glSortOptions').querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const mode = btn.dataset.sort;
+      $('glSortOptions').querySelectorAll('button').forEach(b => b.classList.toggle('active', b === btn));
+      if (mode !== sortMode){
+        sortMode = mode;
+        render();
+        applyFilter(input.value);
+        setupCategoryScrollSpy();
+      }
+      closeSort();
+    });
+  });
+})();
+
+// highlights whichever category (or letter, in alphabetical mode) is
+// currently in view in the sticky jump bar, matching the homepage's own
+// scroll-spy behavior. Re-runnable — render() rebuilds the jump links (and
+// their target section ids) from scratch on every sort-mode switch, which
+// would otherwise leave a stale observer watching detached elements
+let categoryObserver = null;
+function setupCategoryScrollSpy(){
+  if (!('IntersectionObserver' in window)) return;
+  if (categoryObserver) categoryObserver.disconnect();
+
+  const links = Array.from(document.querySelectorAll('.gl-quicklinks-inner a'));
+  const sections = links
+    .map(a => document.getElementById(a.getAttribute('href').slice(1)))
+    .filter(Boolean);
+  if (!sections.length) return;
+
+  function setActive(id){
+    links.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + id));
+  }
+  categoryObserver = new IntersectionObserver(entries => {
+    entries.forEach(entry => { if (entry.isIntersecting) setActive(entry.target.id); });
+  }, { rootMargin: '-140px 0px -70% 0px', threshold: 0 });
+  sections.forEach(sec => categoryObserver.observe(sec));
+}
+setTimeout(setupCategoryScrollSpy, 0);
+
+// deep-link support: a tooltip popover elsewhere on the site links to
+// /Glossary/index.html#term-<id> — scroll to it and briefly highlight it
+function focusFromHash(){
+  const id = window.location.hash.slice(1);
+  if (!id) return;
+  const card = document.getElementById(id);
+  if (!card) return;
+  card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  card.classList.add('flash');
+  setTimeout(() => card.classList.remove('flash'), 1600);
+}
+
+render();
+window.addEventListener('hashchange', focusFromHash);
+setTimeout(focusFromHash, 50);
+</script>
+</body>
+</html>
