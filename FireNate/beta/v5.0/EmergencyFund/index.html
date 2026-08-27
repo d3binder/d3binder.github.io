@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script src="../assets/js/theme-init.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FireNate - Emergency Fund</title>
+<meta name="description" content="How much you need set aside for a rainy day, how funded you are today, and how long it'll take to get there.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Antonio:wght@400;500;600;700&family=Michroma&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/site.css">
+<link rel="stylesheet" href="../assets/css/timeToFI.css">
+<link rel="stylesheet" href="../assets/css/toolbar.css">
+<script src="../assets/js/theme.js" defer></script>
+<script src="../assets/js/user-profile.js" defer></script>
+<script src="../assets/js/nav.js" defer></script>
+<script src="../assets/js/field-help.js" defer></script>
+<script>
+window.FN_BASE = "../"; window.FN_PAGE = "emergency-fund";
+window.FN_FIELD_HELP = {
+  "title": "About this Tool",
+  "intro": "This estimates how close you are to a fully-funded emergency fund, and how long it'll take to close the gap.",
+  "sections": [
+    {
+      "heading": "Inputs",
+      "items": [
+        {
+          "label": "Monthly Essential Expenses",
+          "text": "What it costs to cover necessities for one month — housing, food, utilities, insurance, minimum debt payments. Leave out discretionary spending."
+        },
+        {
+          "label": "Target Coverage",
+          "text": "How many months of essential expenses you want saved up."
+        },
+        {
+          "label": "Current Emergency Savings",
+          "text": "What you've already set aside specifically for emergencies."
+        },
+        {
+          "label": "Monthly Contribution",
+          "text": "How much you're adding to this fund each month."
+        },
+        {
+          "label": "Savings Account APY",
+          "text": "The interest rate on the account holding this money — usually a high-yield savings account."
+        },
+        {
+          "label": "Expected Expense Growth",
+          "text": "How much you expect your essential expenses (and therefore your target) to rise per year — a rough inflation estimate. Used to show a more realistic, moving-target timeline alongside the fixed one."
+        },
+        {
+          "label": "Expected Income During Emergency",
+          "text": "Any income you'd realistically still have during a job loss or other emergency — severance, unemployment benefits, a spouse's income, freelance work. Leave at $0 to assume income drops to zero, the conservative default this tool otherwise uses. Only affects the optional runway note, not your main target."
+        }
+      ]
+    }
+  ]
+};
+</script>
+<style>
+  /* ---------- toolbar overrides (shared: assets/css/toolbar.css) ---------- */
+  .ef-summary-row{ max-width:1080px; margin:0 auto; }
+
+  /* ---------- SUMMARY CARD ---------- */
+  .ef-summary-card{
+    margin-top:4px; position:relative; overflow:hidden;
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    padding:28px 28px 24px;
+  }
+  .ef-summary-card::before{
+    content:''; position:absolute; top:0; left:0; right:0; height:4px;
+    background:linear-gradient(90deg, var(--gold), var(--jade), var(--target), var(--plum));
+  }
+  .ef-summary-card .es-eyebrow{
+    font-family:var(--serif); font-size:clamp(18px,2.6vw,26px); font-weight:600;
+    color:var(--target); margin:0 0 6px;
+  }
+  .ef-summary-card .es-amount-row{
+    display:flex; align-items:baseline; flex-wrap:wrap; gap:12px 14px; margin:0 0 8px;
+  }
+  [data-theme="lcars"] .ef-summary-card .es-eyebrow{ font-family:var(--display); letter-spacing:.02em; }
+  [data-theme="lcars"] .ef-summary-card .es-amount{ font-family:var(--mono); font-variant-numeric:tabular-nums; }
+  .ef-summary-card .es-amount{
+    font-family:var(--serif); font-size:clamp(32px,6vw,52px); font-weight:600; color:var(--gold);
+    margin:0; line-height:1;
+  }
+  .ef-summary-card .es-badge{
+    font-family:var(--mono); font-size:14px; font-weight:600;
+    padding:5px 12px; border-radius:999px; white-space:nowrap;
+  }
+  .ef-summary-card .es-badge.ef-pos{ background:rgba(79,219,143,0.15); color:var(--jade); }
+  .ef-summary-card .es-badge.ef-neg{ background:rgba(255,122,92,0.15); color:var(--danger); }
+  .ef-summary-card .es-sub{ color:var(--ink-dim); font-size:14.5px; line-height:1.55; max-width:64ch; margin:0; }
+  .ef-summary-card .es-sub b{ color:var(--ink); }
+  @media (max-width:640px){ .ef-summary-card{ padding:22px 18px 20px; } }
+
+  /* ---------- PROGRESS BAR ---------- */
+  .ef-progress-wrap{ margin-top:22px; }
+  .ef-progress-track{
+    position:relative; height:26px; background:var(--surface-2); border:1px solid var(--line);
+    border-radius:999px; overflow:hidden;
+  }
+  .ef-progress-fill{
+    height:100%; border-radius:999px;
+    background:linear-gradient(90deg, var(--jade-dim), var(--jade));
+    transition:width .3s ease;
+  }
+  .ef-progress-marks{ position:relative; height:18px; margin-top:4px; }
+  .ef-progress-mark{
+    position:absolute; top:0; transform:translateX(-50%);
+    font-family:var(--mono); font-size:10px; color:var(--ink-faint); white-space:nowrap;
+  }
+  .ef-progress-mark::before{
+    content:''; position:absolute; left:50%; top:-22px; width:1px; height:18px;
+    background:var(--line);
+  }
+
+  /* ---------- inline SVG chart ---------- */
+  #efChart{ width:100%; height:auto; display:block; overflow:visible; }
+  .ef-bar{ fill:url(#efGradient); transition:opacity .15s ease; }
+  .ef-bar:hover{ opacity:0.8; }
+  .ef-bar-group:focus{ outline:none; }
+  .ef-bar-group:focus-visible .ef-bar{ opacity:0.8; }
+  .ef-bar-group:focus-visible{ outline:2px solid var(--jade); outline-offset:2px; }
+  .ef-target-line{ stroke:var(--gold); stroke-width:2; stroke-dasharray:6 4; }
+  .ef-target-label{ font-family:var(--mono); font-size:11px; fill:var(--gold); font-weight:600; }
+  .ef-grid-line{ stroke:var(--line); stroke-width:1; }
+  .ef-grid-label, .ef-axis-label{ font-family:var(--mono); font-size:10px; fill:var(--ink-faint); }
+  #efTooltip{
+    position:fixed; pointer-events:none; background:var(--surface); border:1px solid var(--line);
+    border-radius:10px; padding:9px 13px; font-family:var(--mono); font-size:12px; color:var(--ink);
+    opacity:0; transform:translate(-50%,-115%); transition:opacity .12s; z-index:50;
+    white-space:nowrap; box-shadow:0 8px 24px -10px rgba(0,0,0,0.45);
+  }
+  #efTooltip .yr{ color:var(--ink-faint); margin-bottom:3px; }
+  [data-theme="neon"] #efTooltip .yr{ color:var(--ink-dim); }
+  #efTooltip b{ color:var(--gold); }
+  .ef-diff-pos{ color:var(--jade); font-weight:600; }
+  .ef-diff-neg{ color:var(--danger); }
+  .ef-funded{ color:var(--jade); font-weight:600; }
+  .ef-unfunded{ color:var(--ink-faint); }
+
+  /* ---------- note cards: below the status strip, one topic per box ---------- */
+  .ef-notes{
+    display:grid; grid-template-columns:repeat(auto-fit, minmax(230px, 1fr));
+    gap:14px; margin-top:16px;
+  }
+  .ef-note{
+    background:var(--surface); border:1px solid var(--line); border-top:3px solid var(--target);
+    border-radius:var(--radius); padding:16px 18px;
+    color:var(--ink-faint); font-size:13px; line-height:1.55; margin:0;
+  }
+  .ef-note b{ color:var(--ink-dim); }
+  .ef-note[hidden]{ display:none; }
+  .ef-note#efNoteInterest{ border-top-color:var(--jade); }
+  .ef-note#efNoteSensitivity{ border-top-color:var(--plum); }
+  .ef-note#efNoteInflation{ border-top-color:var(--danger); }
+  .ef-note#efNoteFunded{ border-top-color:var(--jade); }
+  .ef-note#efNoteRateBenchmark{ border-top-color:var(--gold); }
+  .ef-note#efNoteDrawdown{ border-top-color:var(--target); }
+  .ef-note#efNoteRunway{ border-top-color:var(--plum); }
+  .ef-note-label{
+    display:block; color:var(--ink); font-weight:700; font-size:10.5px;
+    letter-spacing:0.08em; text-transform:uppercase; margin-bottom:6px;
+  }
+  .ef-scenario-toggle{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+  .ef-scenario-btn{
+    font-family:var(--mono); font-size:12px; font-weight:600;
+    padding:6px 13px; border-radius:999px; border:1px solid var(--line);
+    background:var(--surface-2); color:var(--ink-faint); cursor:pointer;
+  }
+  .ef-scenario-btn:hover:not(.active){ border-color:var(--gold); color:var(--ink-dim); }
+  .ef-scenario-btn.active{ background:var(--gold); color:#201205; border-color:var(--gold); }
+</style>
+</head>
+<body>
+<div id="fn-site-nav"></div>
+
+<div class="ef-inputs" id="efInputs">
+  <div class="wrap ef-summary-row" style="position:relative">
+    <div class="ef-summary" id="efSummary">&mdash;</div>
+    <button type="button" class="fn-help-btn" style="position:absolute; right:20px; top:50%; transform:translateY(-50%)" aria-label="What do these inputs mean?">?</button>
+  </div>
+  <div class="ef-content" id="efContent">
+    <div class="ef-inner">
+      <div class="ef-fields">
+        <div class="ef-field">
+          <label for="monthlyExpenses">Monthly Essential Expenses</label>
+          <div class="ef-input-row"><span class="ef-prefix">$</span><input type="text" inputmode="decimal" pattern="[0-9,.]*" id="monthlyExpenses" value="3,000.00"></div>
+        </div>
+        <div class="ef-field">
+          <label for="targetMonths">Target Coverage</label>
+          <div class="ef-input-row"><input class="ef-narrow" type="number" id="targetMonths" value="6" min="1" max="24" step="1"><span class="ef-suffix">mo</span></div>
+        </div>
+        <div class="ef-field">
+          <label for="currentEfSavings">Current Emergency Savings</label>
+          <div class="ef-input-row"><span class="ef-prefix">$</span><input type="text" inputmode="decimal" pattern="[0-9,.]*" id="currentEfSavings" value="0.00"></div>
+        </div>
+        <div class="ef-field">
+          <label for="monthlyContribution">Monthly Contribution</label>
+          <div class="ef-input-row"><span class="ef-prefix">$</span><input type="text" inputmode="decimal" pattern="[0-9,.]*" id="monthlyContribution" value="200.00"></div>
+        </div>
+        <div class="ef-field">
+          <label for="apy">Savings Account APY</label>
+          <div class="ef-input-row"><input class="ef-narrow" type="number" step="0.1" inputmode="decimal" id="apy" value="4.5" min="0" max="15"><span class="ef-suffix">%</span></div>
+        </div>
+        <div class="ef-field">
+          <label for="inflationRate">Expected Expense Growth</label>
+          <div class="ef-input-row"><input class="ef-narrow" type="number" step="0.1" inputmode="decimal" id="inflationRate" value="3" min="0" max="15"><span class="ef-suffix">%/yr</span></div>
+        </div>
+        <div class="ef-field">
+          <label for="emergencyIncome">Expected Income During Emergency</label>
+          <div class="ef-input-row"><span class="ef-prefix">$</span><input type="text" inputmode="decimal" pattern="[0-9,.]*" id="emergencyIncome" value="0.00"><span class="ef-suffix">/mo</span></div>
+        </div>
+      </div>
+      <div class="ef-save">
+        <span class="save-status" id="efSaveStatus">Not saved yet</span>
+        <button type="button" id="resetBtn" class="reset-btn">Reset to defaults</button>
+      </div>
+    </div>
+  </div>
+  <div class="wrap ef-toggle-row">
+    <button id="efToggle" type="button" class="ef-toggle" aria-expanded="true" aria-controls="efContent">
+      <svg class="ef-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+      <span id="efToggleLabel">Hide inputs</span>
+    </button>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">FIRE Nate - Emergency Fund</p>
+    <h1 id="pageTitleHeader">A cushion for the day <em>everything goes wrong</em> at once.</h1>
+    <p class="lede">How much cash you should keep on hand for job loss, medical bills, or a broken transmission — and how close you already are to having it.</p>
+  </header>
+
+  <h2 class="ledger-title" style="margin-top: 40px; margin-bottom: 4px;">Summary</h2>
+  <div class="ef-summary-card">
+    <p class="es-eyebrow" id="esEyebrow">Your target</p>
+    <div class="es-amount-row">
+      <p class="es-amount" id="esAmount">$0</p>
+      <span class="es-badge" id="esBadge"></span>
+    </div>
+    <p class="es-sub" id="esSub">&mdash;</p>
+
+    <div class="ef-progress-wrap">
+      <div class="ef-progress-track">
+        <div class="ef-progress-fill" id="efProgressFill" style="width:0%"></div>
+      </div>
+      <div class="ef-progress-marks" id="efProgressMarks"></div>
+    </div>
+  </div>
+  <div class="status" id="statusStrip" style="margin-top:16px;"></div>
+  <div class="ef-notes" id="efNotes">
+    <p class="ef-note" id="efNoteInterest" hidden></p>
+    <p class="ef-note" id="efNoteSensitivity" hidden></p>
+    <p class="ef-note" id="efNoteInflation" hidden></p>
+    <p class="ef-note" id="efNoteFunded" hidden></p>
+    <p class="ef-note" id="efNoteRateBenchmark" hidden></p>
+    <div class="ef-note" id="efNoteDrawdown" hidden>
+      <span class="ef-note-label">What if you had to use it?</span>
+      <div class="ef-scenario-toggle" id="drawdownToggle">
+        <button type="button" class="ef-scenario-btn" data-draw="1000">$1,000</button>
+        <button type="button" class="ef-scenario-btn active" data-draw="2500">$2,500</button>
+        <button type="button" class="ef-scenario-btn" data-draw="half">Half the fund</button>
+      </div>
+      <div id="drawdownText"></div>
+    </div>
+    <p class="ef-note" id="efNoteRunway" hidden></p>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h2>Projected balance toward target</h2>
+      <span class="sub">MONTHLY BALANCE AT YOUR CURRENT CONTRIBUTION RATE</span>
+    </div>
+    <div class="chart-card">
+      <svg id="efChart" viewBox="0 0 1120 340"></svg>
+      <div id="efTooltip"></div>
+      <div class="legend-row">
+        <span class="legend-dot gold"></span> Projected balance, by month
+        <span class="legend-dot" style="background:var(--gold);"></span> Target amount
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h2>Coverage milestones</h2>
+      <span class="sub">HOW MUCH EACH LEVEL OF COVERAGE COSTS, AND WHETHER YOU'RE THERE YET</span>
+    </div>
+    <div class="table-card">
+      <div class="table-scroll">
+        <table id="efTable">
+          <thead>
+            <tr>
+              <th>Coverage</th>
+              <th>Amount Needed</th>
+              <th>Status</th>
+              <th>Difference</th>
+              <th>Time to Reach</th>
+            </tr>
+          </thead>
+          <tbody id="efTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer id="site-footer"></footer>
+
+<script src="../assets/js/calc-utils.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const fmtUSD = n => n.toLocaleString('en-US', {style:'currency', currency:'USD', maximumFractionDigits:0});
+const fmtNum = n => n.toLocaleString('en-US', {maximumFractionDigits:1});
+const formatCurrencyField = id => {
+  const raw = parseCurrency(id);
+  $(id).value = raw.toLocaleString('en-US', {maximumFractionDigits:2});
+};
+function sanitizeCurrencyInput(id){
+  const el = $(id);
+  const before = el.value;
+  const cursorFromEnd = before.length - (el.selectionStart ?? before.length);
+  let cleaned = before.replace(/[^0-9.,]/g, '');
+  const parts = cleaned.split('.');
+  if (parts.length > 2){
+    cleaned = parts[0] + '.' + parts.slice(1).join('');
+  }
+  if (cleaned !== before){
+    el.value = cleaned;
+    const newPos = Math.max(0, cleaned.length - cursorFromEnd);
+    el.setSelectionRange(newPos, newPos);
+  }
+}
+function fmtUSDShort(n){
+  const abs = Math.abs(n);
+  if (abs >= 1e6) return '$' + (n / 1e6).toFixed(1) + 'M';
+  if (abs >= 1e3) return '$' + Math.round(n / 1e3) + 'K';
+  return '$' + Math.round(n);
+}
+
+// ---------- sticky, collapsible input toolbar ----------
+const EF_COLLAPSE_KEY = 'emergencyFundInputsCollapsed';
+const efInputsEl = $('efInputs');
+const efToggle = $('efToggle');
+const efToggleLabel = $('efToggleLabel');
+const efSummary = $('efSummary');
+const efSaveStatus = $('efSaveStatus');
+
+let efInputsCollapsed = false;
+function setEfInputsCollapsed(collapsed){
+  efInputsCollapsed = collapsed;
+  if (efInputsEl) efInputsEl.classList.toggle('collapsed', collapsed);
+  if (efToggle) efToggle.setAttribute('aria-expanded', String(!collapsed));
+  if (efToggleLabel) efToggleLabel.textContent = collapsed ? 'Show inputs' : 'Hide inputs';
+  try { localStorage.setItem(EF_COLLAPSE_KEY, collapsed ? '1' : '0'); } catch(e) {}
+}
+
+function updateEfSummary(){
+  if (!efSummary) return;
+  const expenses = parseCurrency('monthlyExpenses');
+  const months = parseFloat($('targetMonths').value) || 0;
+  const current = parseCurrency('currentEfSavings');
+  const contribution = parseCurrency('monthlyContribution');
+  efSummary.textContent = `Expenses: ${fmtUSD(expenses)}/mo  |  Target: ${fmtNum(months)} months  |  Saved: ${fmtUSD(current)}  |  Adding: ${fmtUSD(contribution)}/mo`;
+}
+
+function efPad2(n){ return String(n).padStart(2, '0'); }
+function updateEfSaveStatus(){
+  if (!efSaveStatus) return;
+  const d = new Date();
+  efSaveStatus.textContent = `Last saved: ${efPad2(d.getHours())}:${efPad2(d.getMinutes())}:${efPad2(d.getSeconds())}`;
+}
+
+if (efToggle){
+  efToggle.addEventListener('click', () => setEfInputsCollapsed(!efInputsCollapsed));
+}
+
+// ---------- "since your last visit" trend ----------
+// One dated entry per calendar day, separate from the plain input snapshot
+// (STORAGE_KEY below) — today's own entry keeps getting overwritten as the
+// user edits, but efHistoryBaseline (captured once, at load, from whatever
+// the most recent *prior* day's entry already was) stays fixed for the
+// whole session, so the comparison reads against a real earlier visit
+// rather than against itself.
+const HISTORY_KEY = 'emergencyFundHistory';
+function efTodayStr(){
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+function loadEfHistory(){
+  try {
+    const arr = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+    return Array.isArray(arr) ? arr : [];
+  } catch(e) { return []; }
+}
+function saveEfHistory(history){
+  try { localStorage.setItem(HISTORY_KEY, JSON.stringify(history)); } catch(e) { /* storage unavailable, ignore */ }
+}
+function logEfSnapshot(state){
+  const today = efTodayStr();
+  let history = loadEfHistory();
+  const entry = { date: today, monthsToTarget: state.monthsToTarget, pct: state.pct };
+  const idx = history.findIndex(h => h.date === today);
+  if (idx >= 0) history[idx] = entry; else history.push(entry);
+  history.sort((a, b) => a.date < b.date ? -1 : (a.date > b.date ? 1 : 0));
+  if (history.length > 90) history = history.slice(history.length - 90);
+  saveEfHistory(history);
+}
+
+let efHistoryBaseline = null;
+(function(){
+  const today = efTodayStr();
+  const prior = loadEfHistory().filter(h => h.date < today);
+  efHistoryBaseline = prior.length ? prior[prior.length - 1] : null;
+})();
+
+let lastEfState = null;
+
+// Same monthly-compounding loop compute() below runs to build its chart
+// series, but returning just the month count — used by the sensitivity
+// what-ifs, which only need "how long would this take", not a full series.
+function monthsToReachTarget(startBalance, contribution, monthlyRate, target){
+  if (startBalance >= target) return 0;
+  const CAP = 240;
+  let balance = startBalance;
+  for (let m = 1; m <= CAP; m++){
+    balance = balance * (1 + monthlyRate) + contribution;
+    if (balance >= target) return m;
+  }
+  return null;
+}
+const CONTRIB_BUMP = 50;
+const APY_BUMP = 1;
+const BENCHMARK_APY = 4.5; // a realistic "you could do better" high-yield savings benchmark
+let drawdownScenario = '2500';
+
+// Same idea as monthsToReachTarget above, but the target itself grows each
+// month at the given inflation rate instead of staying fixed — used for the
+// "moving target" note, which compares this against the static estimate.
+function monthsToReachGrowingTarget(startBalance, contribution, monthlyRate, initialTarget, monthlyInflation){
+  if (startBalance >= initialTarget) return 0;
+  const CAP = 240;
+  let balance = startBalance;
+  let target = initialTarget;
+  for (let m = 1; m <= CAP; m++){
+    balance = balance * (1 + monthlyRate) + contribution;
+    target = target * (1 + monthlyInflation);
+    if (balance >= target) return m;
+  }
+  return null;
+}
+
+function fvAnnuity(pv, pmt, r, months){
+  if (r === 0) return pv + pmt * months;
+  return pv * Math.pow(1 + r, months) + pmt * ((Math.pow(1 + r, months) - 1) / r);
+}
+
+function compute(){
+  const expenses = parseCurrency('monthlyExpenses');
+  const months = Math.max(1, parseFloat($('targetMonths').value) || 0);
+  const current = parseCurrency('currentEfSavings');
+  const contribution = parseCurrency('monthlyContribution');
+  const apy = (parseFloat($('apy').value) || 0) / 100;
+  const monthlyRate = apy / 12;
+  const inflationRate = Math.max(0, parseFloat($('inflationRate').value) || 0) / 100;
+  const monthlyInflation = inflationRate / 12;
+  const emergencyIncome = parseCurrency('emergencyIncome');
+
+  const target = expenses * months;
+  const pct = target > 0 ? (current / target) * 100 : 0;
+  const diff = current - target;
+  const funded = current >= target;
+
+  // project monthly balances until target reached (cap at 240 months / 20yrs)
+  const CAP = 240;
+  const series = [current];
+  let balance = current;
+  let monthsToTarget = funded ? 0 : null;
+  for (let m = 1; m <= CAP; m++){
+    balance = balance * (1 + monthlyRate) + contribution;
+    series.push(balance);
+    if (monthsToTarget === null && balance >= target){
+      monthsToTarget = m;
+    }
+    if (monthsToTarget !== null && m >= monthsToTarget) break;
+  }
+
+  // milestone table
+  const milestoneMonths = [1, 3, 6, 9, 12, 18, 24];
+  const milestones = milestoneMonths.map(m => {
+    const amt = expenses * m;
+    const isFunded = current >= amt;
+    const monthsAway = isFunded ? 0 : monthsToReachTarget(current, contribution, monthlyRate, amt);
+    return { months: m, amount: amt, funded: isFunded, diff: current - amt, monthsAway };
+  });
+
+  const monthsToTargetInflated = funded ? 0 : monthsToReachGrowingTarget(current, contribution, monthlyRate, target, monthlyInflation);
+
+  return { expenses, months, current, contribution, apy, inflationRate, emergencyIncome, target, pct, diff, funded, series, monthsToTarget, monthsToTargetInflated, milestones, monthlyRate };
+}
+
+function renderSummary(state){
+  const { target, months, current, diff, funded, monthsToTarget } = state;
+  $('esEyebrow').textContent = `Target: ${fmtNum(months)} months of expenses`;
+  $('esAmount').textContent = fmtUSD(target);
+
+  const badge = $('esBadge');
+  badge.classList.remove('ef-pos', 'ef-neg');
+  if (funded){
+    badge.classList.add('ef-pos');
+    badge.textContent = `+${fmtUSD(Math.abs(diff))} ahead`;
+  } else {
+    badge.classList.add('ef-neg');
+    badge.textContent = `${fmtUSD(Math.abs(diff))} short`;
+  }
+
+  if (funded){
+    $('esSub').innerHTML = `You've got <b>${fmtUSD(current)}</b> set aside &mdash; that fully covers your <b>${fmtNum(months)}-month</b> target of <b>${fmtUSD(target)}</b>. Nicely done.`;
+  } else if (monthsToTarget !== null){
+    $('esSub').innerHTML = `You've got <b>${fmtUSD(current)}</b> toward a <b>${fmtUSD(target)}</b> target. At your current pace, you'll be fully funded in about <b>${fmtNum(monthsToTarget)} months</b>.`;
+  } else {
+    $('esSub').innerHTML = `You've got <b>${fmtUSD(current)}</b> toward a <b>${fmtUSD(target)}</b> target. At $0/mo contribution, this won't grow on its own &mdash; add a monthly contribution to see a payoff date.`;
+  }
+
+  const fill = $('efProgressFill');
+  fill.style.width = Math.max(0, Math.min(100, state.pct)) + '%';
+
+  const marks = $('efProgressMarks');
+  marks.innerHTML = '';
+  [25, 50, 75, 100].forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'ef-progress-mark';
+    div.style.left = p + '%';
+    div.textContent = p + '%';
+    marks.appendChild(div);
+  });
+}
+
+function renderStatusStrip(state){
+  const { target, current, pct, monthsToTarget, apy } = state;
+  const strip = $('statusStrip');
+  strip.innerHTML = '';
+  const add = (k, v, cls) => {
+    const div = document.createElement('div');
+    div.className = 'stat';
+    div.innerHTML = `<div class="k">${k}</div><div class="v ${cls || ''}">${v}</div>`;
+    strip.appendChild(div);
+  };
+  add('Target amount', fmtUSD(target), 'gold');
+  add('Currently saved', fmtUSD(current), 'jade');
+  add('% funded', fmtNum(Math.max(0, pct)) + '%');
+  add('Months to target', monthsToTarget === null ? '—' : (monthsToTarget === 0 ? 'Funded' : fmtNum(monthsToTarget)), 'target');
+
+  // Baseline is a fixed prior-day snapshot (see efHistoryBaseline above),
+  // not today's own entry, so editing the fields right now doesn't move
+  // the comparison point out from under you.
+  if (efHistoryBaseline && efHistoryBaseline.monthsToTarget !== null && monthsToTarget !== null){
+    const deltaMonths = monthsToTarget - efHistoryBaseline.monthsToTarget;
+    const baselineLabel = new Date(efHistoryBaseline.date + 'T00:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric'});
+    if (Math.abs(deltaMonths) < 0.5){
+      add(`Since ${baselineLabel}`, 'No change');
+    } else if (deltaMonths < 0){
+      add(`Since ${baselineLabel}`, `${fmtNum(Math.abs(deltaMonths))} mo faster`, 'jade');
+    } else {
+      add(`Since ${baselineLabel}`, `${fmtNum(deltaMonths)} mo slower`, 'danger');
+    }
+  }
+}
+
+function renderRateBenchmarkNote(state){
+  const { apy, contribution, current, target, monthsToTarget, monthlyRate } = state;
+  const el = $('efNoteRateBenchmark');
+  if (!el) return;
+  if (monthsToTarget === null || monthsToTarget <= 0){ el.hidden = true; return; }
+  el.hidden = false;
+  let html = `<span class="ef-note-label">Is your rate competitive?</span>`;
+  if (apy * 100 < BENCHMARK_APY - 0.05){
+    const benchmarkMonthlyRate = BENCHMARK_APY / 100 / 12;
+    const benchmarkMonths = monthsToReachTarget(current, contribution, benchmarkMonthlyRate, target);
+    const monthsSaved = benchmarkMonths !== null ? monthsToTarget - benchmarkMonths : null;
+    html += `Your account earns <b>${fmtNum(apy * 100)}%/yr</b>. A competitive high-yield savings account today is closer to <b>${fmtNum(BENCHMARK_APY)}%/yr</b>`;
+    if (monthsSaved !== null && monthsSaved > 0){
+      html += ` — moving this money over could get you to your target about <b>${fmtNum(monthsSaved)} month${monthsSaved === 1 ? '' : 's'} sooner</b>, at no extra cost to you.`;
+    } else {
+      html += `, worth checking whether your current bank can match it.`;
+    }
+  } else {
+    html += `Your <b>${fmtNum(apy * 100)}%/yr</b> rate already holds up well against today's better high-yield savings accounts (~${fmtNum(BENCHMARK_APY)}%/yr) — no obvious upgrade needed here.`;
+  }
+  el.innerHTML = html;
+}
+
+function computeDrawdownAmount(current){
+  if (drawdownScenario === 'half') return current * 0.5;
+  return Math.min(current, parseFloat(drawdownScenario));
+}
+
+function renderDrawdownNote(state){
+  const { current, contribution, target, monthlyRate } = state;
+  const el = $('efNoteDrawdown');
+  const textEl = $('drawdownText');
+  if (!el || !textEl) return;
+  if (current <= 0){
+    el.hidden = false;
+    textEl.innerHTML = `You haven't got anything set aside yet to model a draw-down against — this fills in once you've got some savings on hand.`;
+    return;
+  }
+  el.hidden = false;
+  const drawAmount = computeDrawdownAmount(current);
+  const remaining = Math.max(0, current - drawAmount);
+  const remainingPct = target > 0 ? (remaining / target) * 100 : 0;
+  const rebuildMonths = monthsToReachTarget(remaining, contribution, monthlyRate, target);
+  let html = `If you had to pull <b>${fmtUSD(drawAmount)}</b> from this fund today, you'd be left with <b>${fmtUSD(remaining)}</b> (${fmtNum(Math.max(0, remainingPct))}% of target). `;
+  if (rebuildMonths === null){
+    html += `At your current contribution rate, it wouldn't fully rebuild within 20 years — consider bumping contributions after a real withdrawal.`;
+  } else if (rebuildMonths === 0){
+    html += `That still leaves you fully funded.`;
+  } else {
+    html += `At your current pace, it'd take about <b>${fmtNum(rebuildMonths)} month${rebuildMonths === 1 ? '' : 's'}</b> to fully rebuild.`;
+  }
+  textEl.innerHTML = html;
+}
+
+function renderRunwayNote(state){
+  const { current, expenses, emergencyIncome } = state;
+  const el = $('efNoteRunway');
+  if (!el) return;
+  if (emergencyIncome <= 0 || current <= 0 || expenses <= 0){ el.hidden = true; return; }
+  el.hidden = false;
+  const rawRunway = current / expenses;
+  const netBurn = Math.max(0, expenses - emergencyIncome);
+  let html = `<span class="ef-note-label">Runway with partial income</span>`;
+  if (netBurn <= 0){
+    html += `You've told us to expect about <b>${fmtUSD(emergencyIncome)}/mo</b> during an emergency — enough to fully cover your <b>${fmtUSD(expenses)}/mo</b> in essential expenses on its own. Your current savings would last indefinitely as a backstop, though the full target above is still worth funding for less certain scenarios.`;
+  } else {
+    const trueRunway = current / netBurn;
+    const extraMonths = trueRunway - rawRunway;
+    html += `You've told us to expect about <b>${fmtUSD(emergencyIncome)}/mo</b> coming in during an emergency (severance, benefits, a spouse's income, etc.), dropping your real monthly burn to <b>${fmtUSD(netBurn)}</b>. At that rate, your current <b>${fmtUSD(current)}</b> would actually stretch about <b>${fmtNum(trueRunway)} months</b> — ${fmtNum(Math.abs(extraMonths))} months ${extraMonths >= 0 ? 'longer' : 'shorter'} than the ${fmtNum(rawRunway)}-month raw runway the target above assumes.`;
+  }
+  el.innerHTML = html;
+}
+
+function renderNotes(state){
+  const { current, contribution, target, monthsToTarget, monthsToTargetInflated, inflationRate, apy, series, funded, diff } = state;
+
+  const interestEl = $('efNoteInterest');
+  if (interestEl){
+    if (monthsToTarget !== null && monthsToTarget > 0){
+      const finalBalance = series[monthsToTarget];
+      const totalContributed = current + contribution * monthsToTarget;
+      const totalInterest = Math.max(0, finalBalance - totalContributed);
+      const contribPct = finalBalance > 0 ? (totalContributed / finalBalance) * 100 : 0;
+      const interestPct = finalBalance > 0 ? (totalInterest / finalBalance) * 100 : 0;
+      interestEl.hidden = false;
+      interestEl.innerHTML = `<span class="ef-note-label">Interest vs. contributions</span>By the time you're funded, you'll have put in <b>${fmtUSD(totalContributed)}</b> (${fmtNum(contribPct)}%) and your <b>${fmtNum(apy * 100)}%</b> APY will have earned about <b>${fmtUSD(totalInterest)}</b> (${fmtNum(interestPct)}%).`;
+    } else {
+      interestEl.hidden = true;
+    }
+  }
+
+  const sensEl = $('efNoteSensitivity');
+  if (sensEl){
+    if (monthsToTarget !== null && monthsToTarget > 0){
+      const monthlyRate = apy / 12;
+      const boostedContribMonths = monthsToReachTarget(current, contribution + CONTRIB_BUMP, monthlyRate, target);
+      const boostedApyMonths = monthsToReachTarget(current, contribution, (apy + APY_BUMP / 100) / 12, target);
+      const contribSaved = boostedContribMonths !== null ? monthsToTarget - boostedContribMonths : null;
+      const apySaved = boostedApyMonths !== null ? monthsToTarget - boostedApyMonths : null;
+      if ((contribSaved !== null && contribSaved > 0) || apySaved !== null){
+        sensEl.hidden = false;
+        let html = `<span class="ef-note-label">Contribution vs. rate</span>`;
+        if (contribSaved !== null && contribSaved > 0){
+          html += `An extra <b>${fmtUSD(CONTRIB_BUMP)}/month</b> would get you there about <b>${fmtNum(contribSaved)} month${contribSaved === 1 ? '' : 's'} sooner</b>. `;
+        }
+        if (apySaved !== null){
+          html += apySaved > 0
+            ? `A full point higher APY would only save about <b>${fmtNum(apySaved)} month${apySaved === 1 ? '' : 's'}</b>.`
+            : `A full point higher APY wouldn't meaningfully change your timeline.`;
+        }
+        sensEl.innerHTML = html;
+      } else {
+        sensEl.hidden = true;
+      }
+    } else {
+      sensEl.hidden = true;
+    }
+  }
+
+  const inflEl = $('efNoteInflation');
+  if (inflEl){
+    if (monthsToTarget !== null && monthsToTarget > 0 && inflationRate > 0){
+      inflEl.hidden = false;
+      let html = `<span class="ef-note-label">Fixed vs. inflation-adjusted timeline</span>`;
+      html += `At a fixed <b>${fmtUSD(target)}</b> target, you're about <b>${fmtNum(monthsToTarget)} months</b> away. `;
+      if (monthsToTargetInflated === null){
+        html += `But expenses (and your target) rarely stand still — assuming <b>${fmtNum(inflationRate * 100)}%/yr</b> growth, the real target keeps outrunning your contributions, and this goal isn't reached within 20 years at this pace.`;
+      } else {
+        const extra = monthsToTargetInflated - monthsToTarget;
+        html += `But expenses (and your target) rarely stand still — assuming <b>${fmtNum(inflationRate * 100)}%/yr</b> growth, the real, rising target puts you about <b>${fmtNum(monthsToTargetInflated)} months</b> away instead`;
+        html += extra > 0.5 ? ` &mdash; ${fmtNum(extra)} months later than the fixed estimate.` : `, barely different from the fixed estimate.`;
+      }
+      inflEl.innerHTML = html;
+    } else {
+      inflEl.hidden = true;
+    }
+  }
+
+  const fundedEl = $('efNoteFunded');
+  if (fundedEl){
+    if (funded){
+      fundedEl.hidden = false;
+      const surplus = Math.max(0, diff);
+      const profile = (window.FNProfile ? window.FNProfile.get() : {}) || {};
+      const expectedReturnPct = parseFloat(profile.expectedReturn);
+      let html = `<span class="ef-note-label">You're funded — what now?</span>`;
+      html += `Nicely done. `;
+      const pieces = [];
+      if (contribution > 0) pieces.push(`the <b>${fmtUSD(contribution)}/mo</b> you were adding`);
+      if (surplus > 25) pieces.push(`the <b>${fmtUSD(surplus)}</b> sitting above target`);
+      const freedText = pieces.length ? pieces.join(' and ') : null;
+      if (freedText && !isNaN(expectedReturnPct) && expectedReturnPct > 0){
+        const rMonthly = expectedReturnPct / 100 / 12;
+        const projected = fvAnnuity(surplus, contribution, rMonthly, 120);
+        html += `If you redirected ${freedText} into investing instead — at your profile's ${fmtNum(expectedReturnPct)}%/yr expected return — it could grow to about <b>${fmtUSD(projected)}</b> in 10 years.`;
+      } else if (freedText){
+        html += `${freedText.charAt(0).toUpperCase() + freedText.slice(1)} could now go toward debt payoff, retirement contributions, or other goals. Set an expected return in <b>Your Info</b> to see a growth projection here.`;
+      } else {
+        html += `With the fund covered, you're free to point future savings toward your next goal.`;
+      }
+      fundedEl.innerHTML = html;
+    } else {
+      fundedEl.hidden = true;
+    }
+  }
+}
+
+function renderTable(state){
+  const tbody = $('efTableBody');
+  tbody.innerHTML = '';
+  state.milestones.forEach(row => {
+    const tr = document.createElement('tr');
+    if (row.months === state.months) tr.classList.add('target-row');
+    const diffCls = row.diff >= 0 ? 'ef-diff-pos' : 'ef-diff-neg';
+    const diffSign = row.diff > 0 ? '+' : (row.diff < 0 ? '−' : '');
+    const timeToReach = row.funded
+      ? '—'
+      : (row.monthsAway === null ? '20+ yrs' : `~${fmtNum(row.monthsAway)} mo`);
+    tr.innerHTML = `
+      <td>${row.months} ${row.months === 1 ? 'month' : 'months'}</td>
+      <td>${fmtUSD(row.amount)}</td>
+      <td class="${row.funded ? 'ef-funded' : 'ef-unfunded'}">${row.funded ? 'Funded ✓' : 'Not yet'}</td>
+      <td class="${diffCls}">${diffSign}${fmtUSD(Math.abs(row.diff))}</td>
+      <td class="${row.funded ? 'ef-funded' : ''}">${timeToReach}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+const svgNS = 'http://www.w3.org/2000/svg';
+const efSvg = $('efChart');
+const efTooltip = $('efTooltip');
+
+function niceCeil(v){
+  if (v <= 0) return 1;
+  const mag = Math.pow(10, Math.floor(Math.log10(v)));
+  const norm = v / mag;
+  let step;
+  if (norm <= 1) step = 1; else if (norm <= 2) step = 2; else if (norm <= 5) step = 5; else step = 10;
+  return step * mag;
+}
+
+function renderChart(state){
+  const { series, target } = state;
+  const W = 1120, H = 340;
+  const padL = 74, padR = 10, padT = 16, padB = 34;
+  const plotW = W - padL - padR;
+  const plotH = H - padT - padB;
+
+  const maxVal = Math.max(...series, target, 1);
+  const niceMax = niceCeil(maxVal * 1.05);
+
+  efSvg.innerHTML = '';
+  const defs = document.createElementNS(svgNS, 'defs');
+  defs.innerHTML =
+    '<linearGradient id="efGradient" x1="0" y1="1" x2="0" y2="0">' +
+      '<stop offset="0%" stop-color="#0F5C34"/>' +
+      '<stop offset="100%" stop-color="#4FDB8F"/>' +
+    '</linearGradient>';
+  efSvg.appendChild(defs);
+
+  const steps = 5;
+  for (let i = 0; i <= steps; i++){
+    const val = niceMax * i / steps;
+    const y = padT + plotH - (val / niceMax) * plotH;
+    const line = document.createElementNS(svgNS, 'line');
+    line.setAttribute('x1', padL); line.setAttribute('x2', W - padR);
+    line.setAttribute('y1', y); line.setAttribute('y2', y);
+    line.setAttribute('class', 'ef-grid-line');
+    efSvg.appendChild(line);
+
+    const label = document.createElementNS(svgNS, 'text');
+    label.setAttribute('x', padL - 10);
+    label.setAttribute('y', y + 4);
+    label.setAttribute('text-anchor', 'end');
+    label.setAttribute('class', 'ef-grid-label');
+    label.textContent = fmtUSDShort(val);
+    efSvg.appendChild(label);
+  }
+
+  const n = series.length;
+  const barGap = n > 40 ? 2 : n > 20 ? 4 : 8;
+  const barW = Math.max((plotW / n) - barGap, 1);
+  const labelStep = n <= 13 ? 1 : n <= 26 ? 3 : n <= 60 ? 6 : 12;
+
+  series.forEach((val, i) => {
+    const x = padL + i * (barW + barGap);
+    const barH = Math.max((val / niceMax) * plotH, 1);
+    const y = padT + plotH - barH;
+    const cx = x + barW / 2;
+
+    const group = document.createElementNS(svgNS, 'g');
+    group.setAttribute('class', 'ef-bar-group');
+    group.setAttribute('tabindex', '0');
+    group.setAttribute('role', 'img');
+    group.setAttribute('aria-label', `${i === 0 ? 'Now' : 'Month ' + i}: balance ${fmtUSD(val)}.`);
+    const rect = document.createElementNS(svgNS, 'rect');
+    rect.setAttribute('class', 'ef-bar');
+    rect.setAttribute('x', x);
+    rect.setAttribute('y', y);
+    rect.setAttribute('width', barW);
+    rect.setAttribute('height', barH);
+    rect.setAttribute('rx', 1.5);
+    group.appendChild(rect);
+
+    if (i % labelStep === 0 || i === n - 1){
+      const lbl = document.createElementNS(svgNS, 'text');
+      lbl.setAttribute('x', cx);
+      lbl.setAttribute('y', H - padB + 16);
+      lbl.setAttribute('text-anchor', 'middle');
+      lbl.setAttribute('class', 'ef-axis-label');
+      lbl.textContent = i === 0 ? 'Now' : 'Mo ' + i;
+      efSvg.appendChild(lbl);
+    }
+
+    const barHtml = `<div class="yr">${i === 0 ? 'Now' : 'Month ' + i}</div>Balance <b>${fmtUSD(val)}</b>`;
+    group.addEventListener('mousemove', (e) => {
+      efTooltip.style.opacity = 1;
+      efTooltip.style.left = e.clientX + 'px';
+      efTooltip.style.top = e.clientY + 'px';
+      efTooltip.innerHTML = barHtml;
+    });
+    group.addEventListener('mouseleave', () => { efTooltip.style.opacity = 0; });
+    group.addEventListener('focus', () => {
+      const r = group.getBoundingClientRect();
+      efTooltip.style.opacity = 1;
+      efTooltip.style.left = (r.left + r.width / 2) + 'px';
+      efTooltip.style.top = r.top + 'px';
+      efTooltip.innerHTML = barHtml;
+    });
+    group.addEventListener('blur', () => { efTooltip.style.opacity = 0; });
+
+    efSvg.appendChild(group);
+  });
+
+  // target line
+  const targetY = padT + plotH - (target / niceMax) * plotH;
+  const tline = document.createElementNS(svgNS, 'line');
+  tline.setAttribute('x1', padL); tline.setAttribute('x2', W - padR);
+  tline.setAttribute('y1', targetY); tline.setAttribute('y2', targetY);
+  tline.setAttribute('class', 'ef-target-line');
+  efSvg.appendChild(tline);
+
+  const tlabel = document.createElementNS(svgNS, 'text');
+  tlabel.setAttribute('x', W - padR);
+  tlabel.setAttribute('y', targetY - 8);
+  tlabel.setAttribute('text-anchor', 'end');
+  tlabel.setAttribute('class', 'ef-target-label');
+  tlabel.textContent = 'Target ' + fmtUSDShort(target);
+  efSvg.appendChild(tlabel);
+}
+
+function render(){
+  const state = compute();
+  lastEfState = state;
+  renderSummary(state);
+  renderStatusStrip(state);
+  renderTable(state);
+  renderChart(state);
+  renderNotes(state);
+  renderRateBenchmarkNote(state);
+  renderDrawdownNote(state);
+  renderRunwayNote(state);
+  updateEfSummary();
+}
+
+const STORAGE_KEY = 'emergencyFundInputs';
+const DEFAULTS = {monthlyExpenses:'3000', targetMonths:'6', currentEfSavings:'0', monthlyContribution:'200', apy:'4.5', inflationRate:'3', emergencyIncome:'0'};
+const CURRENCY_FIELDS = ['monthlyExpenses', 'currentEfSavings', 'monthlyContribution', 'emergencyIncome'];
+const ALL_FIELDS = ['monthlyExpenses', 'targetMonths', 'currentEfSavings', 'monthlyContribution', 'apy', 'inflationRate', 'emergencyIncome'];
+
+$('drawdownToggle').querySelectorAll('.ef-scenario-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    $('drawdownToggle').querySelectorAll('.ef-scenario-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    drawdownScenario = btn.dataset.draw;
+    if (lastEfState) renderDrawdownNote(lastEfState);
+  });
+});
+
+function saveInputs(){
+  const vals = {};
+  ALL_FIELDS.forEach(id => { vals[id] = $(id).value; });
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(vals)); } catch(e) {}
+  if (lastEfState) logEfSnapshot(lastEfState);
+  updateEfSaveStatus();
+}
+function loadInputs(){
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const vals = JSON.parse(raw);
+    Object.keys(vals).forEach(id => { if ($(id)) $(id).value = vals[id]; });
+  } catch(e) {}
+}
+
+// Persisting on every keystroke means an interrupted edit — select-all a
+// field to retype it, then get pulled away before finishing — saves
+// whatever partial digits were typed so far as the permanent value.
+// render() still runs on every keystroke for instant visual feedback; only
+// the localStorage write is debounced, so a normal typing pause settles on
+// the finished number instead of a mid-edit fragment. blur still saves
+// immediately (the field is done being edited at that point).
+let saveDebounceTimer = null;
+function scheduleSave(){
+  if (saveDebounceTimer) clearTimeout(saveDebounceTimer);
+  saveDebounceTimer = setTimeout(saveInputs, 500);
+}
+
+ALL_FIELDS.forEach(id => {
+  if (CURRENCY_FIELDS.includes(id)) return;
+  $(id).addEventListener('input', () => { scheduleSave(); render(); });
+});
+CURRENCY_FIELDS.forEach(id => {
+  $(id).addEventListener('input', () => { sanitizeCurrencyInput(id); scheduleSave(); render(); });
+  $(id).addEventListener('blur', () => { if (saveDebounceTimer) { clearTimeout(saveDebounceTimer); saveDebounceTimer = null; } formatCurrencyField(id); saveInputs(); });
+});
+
+$('resetBtn').addEventListener('click', () => {
+  Object.keys(DEFAULTS).forEach(id => { $(id).value = DEFAULTS[id]; });
+  CURRENCY_FIELDS.forEach(formatCurrencyField);
+  saveInputs();
+  render();
+});
+
+loadInputs();
+CURRENCY_FIELDS.forEach(formatCurrencyField);
+try { setEfInputsCollapsed(localStorage.getItem(EF_COLLAPSE_KEY) === '1'); } catch(e) { setEfInputsCollapsed(false); }
+render();
+if (lastEfState) logEfSnapshot(lastEfState);
+</script>
+</body>
+</html>

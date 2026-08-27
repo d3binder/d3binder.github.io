@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script src="../assets/js/theme-init.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FireNate - Budget Calculator</title>
+<meta name="description" content="Break your monthly take-home income into needs, wants, and savings, see how it compares to the 50/30/20 guideline, and log dated snapshots to track the trend.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Antonio:wght@400;500;600;700&family=Michroma&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/site.css">
+<link rel="stylesheet" href="../assets/css/timeToFI.css">
+<script src="../assets/js/theme.js" defer></script>
+<script src="../assets/js/user-profile.js" defer></script>
+<script src="../assets/js/nav.js" defer></script>
+<script src="../assets/js/field-help.js" defer></script>
+<script>
+window.FN_BASE = "../"; window.FN_PAGE = "budget-calculator";
+window.FN_FIELD_HELP = {
+  "title": "About this Tool",
+  "intro": "Every dollar you enter gets sorted straight into Needs, Wants, or Savings & Debt Payoff by which field you put it in — no separate judgment call about what counts as which. Compares the result to the 50/30/20 guideline: roughly 50% needs, 30% wants, 20% savings.",
+  "sections": [
+    { "heading": "Income", "items": [
+      { "label": "Monthly Take-Home Income", "text": "What actually lands in your account each month, after taxes and deductions — not your gross salary. This isn't pulled from your saved profile, since that's stored as annual, pre-tax income and would be the wrong number here." }
+    ]},
+    { "heading": "Needs", "items": [
+      { "label": "Housing", "text": "Rent or mortgage payment." },
+      { "label": "Utilities", "text": "Electricity, gas, water, internet, phone." },
+      { "label": "Groceries", "text": "Food bought to prepare at home." },
+      { "label": "Transportation", "text": "Car payment, gas, transit passes, rideshare to work." },
+      { "label": "Insurance", "text": "Health, auto, renters/home — premiums only." },
+      { "label": "Minimum Debt Payments", "text": "The required minimum on every debt — extra payments belong in Savings & Debt Payoff instead." },
+      { "label": "Healthcare", "text": "Regular medications, co-pays, anything routine." },
+      { "label": "Other", "text": "Any other required, non-discretionary cost — taxes, alimony/child support, mandatory union or professional dues, and the like." }
+    ]},
+    { "heading": "Wants", "items": [
+      { "label": "Dining Out", "text": "Restaurants, takeout, coffee runs." },
+      { "label": "Entertainment & Subscriptions", "text": "Streaming, games, hobbies, memberships." },
+      { "label": "Shopping", "text": "Clothes, gadgets, anything non-essential." },
+      { "label": "Travel", "text": "Vacations and trips." },
+      { "label": "Other Wants", "text": "Anything else that's nice-to-have, not need-to-have." }
+    ]},
+    { "heading": "Savings & Debt Payoff", "items": [
+      { "label": "Retirement Contributions", "text": "401(k), IRA, or other retirement account contributions." },
+      { "label": "Extra Debt Payoff", "text": "Anything beyond the required minimum — accelerating payoff is effectively a guaranteed return equal to that debt's interest rate." },
+      { "label": "Other Savings", "text": "Emergency fund, a house down payment, any other savings goal." }
+    ]},
+    { "heading": "History & trend", "items": [
+      { "label": "Snapshot date", "text": "The date this budget snapshot gets logged under when you click \"Log this month,\" so you can track how it changes over time. Defaults to today." }
+    ]}
+  ]
+};
+</script>
+<style>
+  header{ position:relative; }
+  .bc-help-btn{ position:absolute; right:0; top:8px; }
+
+  .bc-section{ margin-top:48px; }
+  .bc-section:first-of-type{ margin-top:36px; }
+  .bc-section-head{ display:flex; align-items:flex-start; gap:16px; margin-bottom:22px; }
+  .bc-section-num{
+    flex:none; width:34px; height:34px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--mono); font-size:13px; font-weight:700;
+    background:var(--surface-2); border:1px solid var(--line); color:var(--ink-dim);
+  }
+  [data-theme="lcars"] .bc-section-head h2{ font-family:var(--display); letter-spacing:.02em; }
+  .bc-section-head h2{ font-family:var(--serif); font-size:22px; font-weight:500; margin:0 0 4px; color:var(--ink); }
+  .bc-section-head p{ color:var(--ink-dim); font-size:14px; margin:0; line-height:1.55; }
+
+  .bc-panel{
+    background:var(--surface); border:1px solid var(--line); border-top:4px solid var(--gold);
+    border-radius:var(--radius); padding:26px 28px;
+  }
+  .bc-panel.bc-panel-needs{ border-top-color:var(--danger); }
+  .bc-panel.bc-panel-wants{ border-top-color:var(--gold); }
+  .bc-panel.bc-panel-savings{ border-top-color:var(--jade); }
+  @media (max-width:520px){ .bc-panel{ padding:20px 18px; } }
+
+  .bc-fields{ display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:16px 24px; }
+  .bc-field{ display:flex; flex-direction:column; gap:6px; }
+  .bc-field label{ font-size:13px; color:var(--ink-dim); }
+  .bc-amount{
+    display:flex; align-items:center; gap:6px; border-bottom:1px solid var(--line); padding-bottom:6px;
+    transition:border-color .15s ease;
+  }
+  .bc-amount:focus-within{ border-color:var(--gold); }
+  .bc-amount span{ font-family:var(--mono); color:var(--ink-faint); font-size:15px; }
+  .bc-amount input{
+    background:transparent; border:none; outline:none; color:var(--ink);
+    font-family:var(--mono); font-size:16px; width:100%; padding:2px 0;
+    font-variant-numeric:tabular-nums;
+  }
+  .bc-subtotal{
+    display:flex; justify-content:space-between; align-items:baseline; margin-top:20px;
+    padding-top:16px; border-top:1px solid var(--line); font-weight:700; color:var(--ink);
+  }
+  .bc-subtotal .v{ font-family:var(--mono); font-size:18px; }
+
+  .bc-summary-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px; margin-bottom:26px; }
+  .bc-stat .k{ font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:6px; }
+  .bc-stat .v{ font-family:var(--serif); font-size:26px; color:var(--ink); font-weight:500; }
+  .bc-stat .v.bc-negative{ color:var(--danger); }
+  .bc-stat .v.bc-positive{ color:var(--jade); }
+
+  .bc-buckets{ display:flex; flex-direction:column; gap:18px; margin-bottom:22px; }
+  .bc-bucket-head{ display:flex; align-items:baseline; gap:10px; font-size:13.5px; font-weight:600; color:var(--ink); margin-bottom:8px; }
+  .bc-bucket-head .bc-bucket-pct{ font-family:var(--mono); }
+  .bc-bucket-head .bc-bucket-target{ margin-left:auto; font-family:var(--mono); font-size:12px; font-weight:500; color:var(--ink-faint); }
+  .bc-bucket-track{ position:relative; height:10px; border-radius:6px; background:var(--surface-2); overflow:visible; }
+  .bc-bucket-fill{ height:100%; border-radius:6px; width:0%; transition:width .3s ease; }
+  .bc-bucket-fill.bc-needs{ background:var(--danger); }
+  .bc-bucket-fill.bc-wants{ background:var(--gold); }
+  .bc-bucket-fill.bc-savings{ background:var(--jade); }
+  .bc-bucket-target-line{
+    position:absolute; top:-3px; bottom:-3px; width:2px; background:var(--ink);
+    opacity:.4;
+  }
+
+  .bc-verdict{
+    background:var(--surface-2); border:1px solid var(--line); border-radius:10px;
+    padding:14px 18px; font-size:14px; color:var(--ink-dim); line-height:1.6; margin:0;
+  }
+
+  .bc-notes{
+    display:grid; grid-template-columns:repeat(auto-fit, minmax(230px, 1fr));
+    gap:14px; margin-top:16px;
+  }
+  .bc-note{
+    background:var(--surface); border:1px solid var(--line); border-top:3px solid var(--gold);
+    border-radius:var(--radius); padding:16px 18px;
+    color:var(--ink-faint); font-size:13px; line-height:1.55; margin:0;
+  }
+  .bc-note b{ color:var(--ink-dim); }
+  .bc-note[hidden]{ display:none; }
+  .bc-note#bcNoteTrend{ border-top-color:var(--jade); }
+  .bc-note#bcNoteBiggest{ border-top-color:var(--danger); }
+  .bc-note-label{
+    display:block; color:var(--ink); font-weight:700; font-size:10.5px;
+    letter-spacing:0.08em; text-transform:uppercase; margin-bottom:6px;
+  }
+
+  .bc-history-log-row{ display:flex; flex-wrap:wrap; align-items:flex-end; gap:16px; margin-bottom:22px; }
+  .bc-history-log-field{ display:flex; flex-direction:column; gap:6px; }
+  .bc-history-log-field label{ font-size:13px; color:var(--ink-dim); }
+  .bc-history-log-field input{
+    background:var(--surface-2); border:1px solid var(--line); border-radius:7px; color:var(--ink);
+    font-family:var(--mono); font-size:14px; padding:8px 10px; outline:none;
+  }
+  .bc-btn{
+    display:inline-flex; align-items:center; gap:8px;
+    background:linear-gradient(135deg, var(--gold), var(--gold-dim));
+    color:#201205; font-weight:700; font-size:13.5px;
+    padding:10px 20px; border-radius:999px; border:none; cursor:pointer;
+    font-family:var(--sans); transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .bc-btn:hover{ transform:translateY(-1px); box-shadow:0 8px 20px -6px rgba(217,132,15,0.45); }
+
+  .bc-history-empty{ color:var(--ink-faint); font-size:13.5px; font-style:italic; }
+  .bc-history-table{ width:100%; border-collapse:collapse; font-size:13px; }
+  .bc-history-table th{
+    text-align:right; font-family:var(--mono); font-size:10.5px; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--ink-faint); font-weight:600; padding:8px 10px; border-bottom:1px solid var(--line);
+  }
+  .bc-history-table th:first-child{ text-align:left; }
+  .bc-history-table td{
+    text-align:right; padding:8px 10px; border-bottom:1px solid var(--line-soft); color:var(--ink);
+    font-family:var(--mono); white-space:nowrap;
+  }
+  .bc-history-table td:first-child{ text-align:left; color:var(--ink-dim); }
+  .bc-history-scroll{ overflow-x:auto; }
+
+  .bc-footer{
+    margin-top:40px; padding-top:20px; border-top:1px solid var(--line);
+    display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap;
+  }
+  .bc-footer p{ color:var(--ink-faint); font-size:12.5px; max-width:520px; margin:0; }
+  .bc-clear-btn{
+    background:none; border:1px solid var(--danger); color:var(--danger);
+    padding:8px 16px; border-radius:8px; font-family:var(--sans); font-size:13px; font-weight:700;
+    cursor:pointer; transition:background-color .15s ease, color .15s ease; flex:none;
+  }
+  .bc-clear-btn:hover{ background:var(--danger); color:#fff; }
+</style>
+</head>
+<body>
+<div id="fn-site-nav"></div>
+
+<div class="wrap">
+
+  <header>
+    <button type="button" class="fn-help-btn bc-help-btn" aria-label="What do these inputs mean?">?</button>
+    <p class="eyebrow">FireNate — Budget Calculator</p>
+    <h1>Where does it <em>actually</em> go?</h1>
+    <p class="lede">Sort your monthly income into needs, wants, and savings, and see how it stacks up against the 50/30/20 guideline.</p>
+  </header>
+
+  <section class="bc-section" id="bc-income">
+    <div class="bc-section-head">
+      <div class="bc-section-num">01</div>
+      <div>
+        <h2>Monthly Income</h2>
+        <p>What actually lands in your account each month, after taxes.</p>
+      </div>
+    </div>
+    <div class="bc-panel">
+      <div class="bc-fields">
+        <div class="bc-field">
+          <label for="bcIncome">Monthly Take-Home Income</label>
+          <div class="bc-amount"><span>$</span><input type="text" inputmode="decimal" id="bcIncome"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="bc-section" id="bc-needs">
+    <div class="bc-section-head">
+      <div class="bc-section-num">02</div>
+      <div>
+        <h2>Needs</h2>
+        <p>The stuff that has to get paid no matter what. Guideline: about 50% of income.</p>
+      </div>
+    </div>
+    <div class="bc-panel bc-panel-needs">
+      <div class="bc-fields">
+        <div class="bc-field"><label for="n_housing">Housing</label><div class="bc-amount"><span>$</span><input type="text" inputmode="decimal" id="n_housing" data-bucket="needs"></div></div>
+        <div class="bc-field"><label for="n_utilities">Utilities</label><div class="bc-amount"><span>$</span><input type="text" inputmode="decimal" id="n_utilities" data-bucket="needs"></div></div>
+        <div class="bc-field"><label for="n_groceries">Groceries</label><div class="bc-amount"><span>$</span><input type="text" inputmode="decimal" id="n_groceries" data-bucket="needs"></div></div>
+        <div class="bc-field"><label for="n_transportation">Transportation</label><div class="bc-amount"><span>$</span><input type="text" inputmode="decimal" id="n_transportation" data-bucket="needs"></div></div>
+        <div class="bc-field"><label for="n_insurance">Insurance</label><div class="bc-amount"><span>$</span><input type="text" inputmode="decimal" id="n_insurance" data-bucket="needs"></div></div>
+        <div class="bc-field"><label for="n_minDebt">Minimum Debt Payments</label><div class="bc-amount"><span>$</span><input type="text" inputmode="decimal" id="n_minDebt" data-bucket="needs"></div></div>
+        <div class="bc-field"><label for="n_healthcare">Healthcare</label><div class="bc-amount"><span>$</span><input type="text" inputmode="decimal" id="n_healthcare" data-bucket="needs"></div></div>
+        <div class="bc-field"><label for="n_other">Other</label><div class="bc-amount"><span>$</span><input type="text" inputmode="decimal" id="n_other" data-bucket="needs"></div></div>
+      </div>
+      <div class="bc-subtotal"><span>Total Needs</span><span class="v" id="bcNeedsTotal">$0</span></div>
+    </div>
+  </section>
+
+  <section class="bc-section" id="bc-wants">
+    <div class="bc-section-head">
+      <div class="bc-section-num">03</div>
+      <div>
+        <h2>Wants</h2>
+        <p>Nice-to-have, not need-to-have. Guideline: about 30% of income.</p>
+      </div>
+    </div>
+    <div class="bc-panel bc-panel-wants">
+      <div class="bc-fields">
+        <div class="bc-field"><label for="w_dining">Dining Out</label><div class="bc-amount"><span>$</span><input type="text" inputmode="decimal" id="w_dining" data-bucket="wants"></div></div>
+        <div class="bc-field"><label for="w_entertainment">Entertainment &amp; Subscriptions</label><div class="bc-amount"><span>$</span><input type="text" inputmode="decimal" id="w_entertainment" data-bucket="wants"></div></div>
+        <div class="bc-field"><label for="w_shopping">Shopping</label><div class="bc-amount"><span>$</span><input type="text" inputmode="decimal" id="w_shopping" data-bucket="wants"></div></div>
+        <div class="bc-field"><label for="w_travel">Travel</label><div class="bc-amount"><span>$</span><input type="text" inputmode="decimal" id="w_travel" data-bucket="wants"></div></div>
+        <div class="bc-field"><label for="w_other">Other Wants</label><div class="bc-amount"><span>$</span><input type="text" inputmode="decimal" id="w_other" data-bucket="wants"></div></div>
+      </div>
+      <div class="bc-subtotal"><span>Total Wants</span><span class="v" id="bcWantsTotal">$0</span></div>
+    </div>
+  </section>
+
+  <section class="bc-section" id="bc-savings">
+    <div class="bc-section-head">
+      <div class="bc-section-num">04</div>
+      <div>
+        <h2>Savings &amp; Debt Payoff</h2>
+        <p>Money moving toward your future instead of today's spending. Guideline: about 20% of income.</p>
+      </div>
+    </div>
+    <div class="bc-panel bc-panel-savings">
+      <div class="bc-fields">
+        <div class="bc-field"><label for="s_retirement">Retirement Contributions</label><div class="bc-amount"><span>$</span><input type="text" inputmode="decimal" id="s_retirement" data-bucket="savings"></div></div>
+        <div class="bc-field"><label for="s_extraDebt">Extra Debt Payoff</label><div class="bc-amount"><span>$</span><input type="text" inputmode="decimal" id="s_extraDebt" data-bucket="savings"></div></div>
+        <div class="bc-field"><label for="s_other">Other Savings</label><div class="bc-amount"><span>$</span><input type="text" inputmode="decimal" id="s_other" data-bucket="savings"></div></div>
+      </div>
+      <div class="bc-subtotal"><span>Total Savings &amp; Debt Payoff</span><span class="v" id="bcSavingsTotal">$0</span></div>
+    </div>
+  </section>
+
+  <section class="bc-section" id="bc-results">
+    <div class="bc-section-head">
+      <div class="bc-section-num">05</div>
+      <div>
+        <h2>Your Budget Breakdown</h2>
+        <p>How your spending compares to the 50/30/20 guideline.</p>
+      </div>
+    </div>
+    <div class="bc-panel">
+      <div class="bc-summary-grid">
+        <div class="bc-stat"><div class="k">Total Income</div><div class="v" id="bcTotalIncome">$0</div></div>
+        <div class="bc-stat"><div class="k">Total Budgeted</div><div class="v" id="bcTotalExpenses">$0</div></div>
+        <div class="bc-stat"><div class="k">Unallocated</div><div class="v" id="bcSurplus">$0</div></div>
+      </div>
+      <div class="bc-buckets">
+        <div class="bc-bucket">
+          <div class="bc-bucket-head"><span>Needs</span><span class="bc-bucket-pct" id="bcNeedsPct">0%</span><span class="bc-bucket-target">Target 50%</span></div>
+          <div class="bc-bucket-track"><div class="bc-bucket-fill bc-needs" id="bcNeedsFill"></div><div class="bc-bucket-target-line" style="left:50%"></div></div>
+        </div>
+        <div class="bc-bucket">
+          <div class="bc-bucket-head"><span>Wants</span><span class="bc-bucket-pct" id="bcWantsPct">0%</span><span class="bc-bucket-target">Target 30%</span></div>
+          <div class="bc-bucket-track"><div class="bc-bucket-fill bc-wants" id="bcWantsFill"></div><div class="bc-bucket-target-line" style="left:30%"></div></div>
+        </div>
+        <div class="bc-bucket">
+          <div class="bc-bucket-head"><span>Savings &amp; Debt Payoff</span><span class="bc-bucket-pct" id="bcSavingsPct">0%</span><span class="bc-bucket-target">Target 20%</span></div>
+          <div class="bc-bucket-track"><div class="bc-bucket-fill bc-savings" id="bcSavingsFill"></div><div class="bc-bucket-target-line" style="left:20%"></div></div>
+        </div>
+      </div>
+      <p class="bc-verdict" id="bcVerdict">Enter your monthly income to see how your budget compares.</p>
+      <div class="bc-notes" id="bcNotes">
+        <p class="bc-note" id="bcNoteTrend" hidden></p>
+        <p class="bc-note" id="bcNoteBiggest" hidden></p>
+        <p class="bc-note" id="bcNoteTrim" hidden></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="bc-section" id="bc-history">
+    <div class="bc-section-head">
+      <div class="bc-section-num">06</div>
+      <div>
+        <h2>History &amp; Trend</h2>
+        <p>Log a dated snapshot of this month's numbers to track how your budget changes over time.</p>
+      </div>
+    </div>
+    <div class="bc-panel">
+      <div class="bc-history-log-row">
+        <div class="bc-history-log-field">
+          <label for="bcHistoryDate">Snapshot date</label>
+          <input type="date" id="bcHistoryDate">
+        </div>
+        <button type="button" class="bc-btn" id="bcLogBtn">Log this month</button>
+      </div>
+      <div class="bc-history-scroll" id="bcHistoryTableWrap"><p class="bc-history-empty">No snapshots logged yet.</p></div>
+    </div>
+  </section>
+
+  <div class="bc-footer">
+    <p>Nothing you enter is sent anywhere — everything is saved locally in this browser.</p>
+    <button type="button" class="bc-clear-btn" id="bcClearBtn">Clear All Data</button>
+  </div>
+
+</div>
+
+<footer id="site-footer"></footer>
+
+<script>
+var INPUT_KEY = "budgetCalculatorInputs";
+var HISTORY_KEY = "budgetHistory";
+
+var allInputs = Array.prototype.slice.call(document.querySelectorAll('#bcIncome, [data-bucket]'));
+
+var LINE_ITEM_LABELS = {
+  n_housing: "Housing", n_utilities: "Utilities", n_groceries: "Groceries",
+  n_transportation: "Transportation", n_insurance: "Insurance", n_minDebt: "Minimum Debt Payments",
+  n_healthcare: "Healthcare", n_other: "Other", w_dining: "Dining Out", w_entertainment: "Entertainment & Subscriptions",
+  w_shopping: "Shopping", w_travel: "Travel", w_other: "Other Wants",
+  s_retirement: "Retirement Contributions", s_extraDebt: "Extra Debt Payoff", s_other: "Other Savings"
+};
+
+// Fixed prior-day snapshot, captured once at load — matches the "since your
+// last visit" baseline pattern used elsewhere on the site (e.g. TimeToFI,
+// EmergencyFund), so editing fields right now doesn't move the comparison
+// point out from under you.
+var historyBaseline = null;
+(function(){
+  var today = formatDateOnly(new Date());
+  var prior = loadHistory().filter(function(h){ return h.date < today; });
+  historyBaseline = prior.length ? prior[prior.length - 1] : null;
+})();
+
+function parseNum(id){
+  var el = document.getElementById(id);
+  if (!el) return 0;
+  var n = parseFloat(String(el.value).replace(/,/g, ""));
+  return isNaN(n) ? 0 : n;
+}
+
+function fmtMoney(n){
+  var sign = n < 0 ? "-" : "";
+  return sign + "$" + Math.round(Math.abs(n)).toLocaleString();
+}
+
+function fmtPct(n){
+  return Math.round(n) + "%";
+}
+
+function formatFieldOnBlur(el){
+  var n = parseFloat(String(el.value).replace(/,/g, ""));
+  el.value = isNaN(n) || el.value === "" ? "" : n.toLocaleString();
+}
+
+function bucketTotal(bucket){
+  var els = Array.prototype.slice.call(document.querySelectorAll('[data-bucket="' + bucket + '"]'));
+  return els.reduce(function(sum, el){
+    var n = parseFloat(String(el.value).replace(/,/g, ""));
+    return sum + (isNaN(n) ? 0 : n);
+  }, 0);
+}
+
+function computeVerdict(income, needsPct, wantsPct, savingsPct){
+  if (income <= 0) return "Enter your monthly income to see how your budget compares.";
+  var deviations = [
+    { bucket: "needs", label: "Needs", over: needsPct - 50 },
+    { bucket: "wants", label: "Wants", over: wantsPct - 30 },
+    { bucket: "savings", label: "Savings & Debt Payoff", over: 20 - savingsPct }
+  ];
+  var worst = deviations.reduce(function(a, b){ return b.over > a.over ? b : a; });
+  if (worst.over <= 2) {
+    return "You're right on track with the 50/30/20 guideline — nice work.";
+  }
+  if (worst.bucket === "savings") {
+    return "You're saving " + fmtPct(savingsPct) + " of your income — the guideline targets 20%. Even a small increase compounds over time.";
+  }
+  return worst.label + " are taking up " + fmtPct(worst.bucket === "needs" ? needsPct : wantsPct) +
+    " of your income — the guideline targets " + (worst.bucket === "needs" ? "50" : "30") + "%. See if anything here can be trimmed.";
+}
+
+function renderTrendNote(income, savings){
+  var el = document.getElementById("bcNoteTrend");
+  if (!el) return;
+  if (!historyBaseline || income <= 0 || !(historyBaseline.income > 0)){ el.hidden = true; return; }
+  el.hidden = false;
+  var curSavingsPct = (savings / income) * 100;
+  var baseSavingsPct = (historyBaseline.savings / historyBaseline.income) * 100;
+  var deltaPts = curSavingsPct - baseSavingsPct;
+  var baselineLabel = new Date(historyBaseline.date + "T00:00:00").toLocaleDateString("en-US", {month:"short", day:"numeric"});
+  var html = '<span class="bc-note-label">Since ' + baselineLabel + '</span>';
+  if (Math.abs(deltaPts) < 0.5){
+    html += "Your savings rate is holding steady at about " + fmtPct(curSavingsPct) + ".";
+  } else if (deltaPts > 0){
+    html += "Your savings rate is up <b>" + Math.round(Math.abs(deltaPts)) + " points</b>, from " + fmtPct(baseSavingsPct) + " to " + fmtPct(curSavingsPct) + ".";
+  } else {
+    html += "Your savings rate is down <b>" + Math.round(Math.abs(deltaPts)) + " points</b>, from " + fmtPct(baseSavingsPct) + " to " + fmtPct(curSavingsPct) + ".";
+  }
+  el.innerHTML = html;
+}
+
+function renderBiggestItemsNote(income){
+  var el = document.getElementById("bcNoteBiggest");
+  if (!el) return;
+  var items = Object.keys(LINE_ITEM_LABELS).map(function(id){
+    return { label: LINE_ITEM_LABELS[id], amount: parseNum(id) };
+  }).filter(function(it){ return it.amount > 0; });
+  if (!items.length){ el.hidden = true; return; }
+  el.hidden = false;
+  items.sort(function(a, b){ return b.amount - a.amount; });
+  var top = items.slice(0, 3);
+  var rows = top.map(function(it, i){
+    var pctText = income > 0 ? " (" + fmtPct((it.amount / income) * 100) + " of income)" : "";
+    return (i + 1) + ". <b>" + it.label + "</b> &mdash; " + fmtMoney(it.amount) + pctText;
+  }).join("<br>");
+  el.innerHTML = '<span class="bc-note-label">Your biggest line items</span>' + rows;
+}
+
+function renderTrimNote(income, wants, savings){
+  var el = document.getElementById("bcNoteTrim");
+  if (!el) return;
+  if (income <= 0){ el.hidden = true; return; }
+  el.hidden = false;
+  var overage = wants - income * 0.30;
+  if (overage <= 0){
+    el.innerHTML = '<span class="bc-note-label">Trimming Wants</span>Your Wants are already at or under the 30% guideline &mdash; nothing to trim here.';
+    return;
+  }
+  var curSavingsPct = (savings / income) * 100;
+  var newSavingsPct = ((savings + overage) / income) * 100;
+  var html = '<span class="bc-note-label">What trimming Wants would buy you</span>';
+  html += "Wants are running " + fmtMoney(overage) + "/mo over the 30% guideline. Redirecting just that overage to savings would take your savings rate from " + fmtPct(curSavingsPct) + " to <b>" + fmtPct(newSavingsPct) + "</b>.";
+  el.innerHTML = html;
+}
+
+function recalc(){
+  var income = parseNum("bcIncome");
+  var needs = bucketTotal("needs");
+  var wants = bucketTotal("wants");
+  var savings = bucketTotal("savings");
+  var total = needs + wants + savings;
+  var unallocated = income - total;
+
+  document.getElementById("bcNeedsTotal").textContent = fmtMoney(needs);
+  document.getElementById("bcWantsTotal").textContent = fmtMoney(wants);
+  document.getElementById("bcSavingsTotal").textContent = fmtMoney(savings);
+
+  document.getElementById("bcTotalIncome").textContent = fmtMoney(income);
+  document.getElementById("bcTotalExpenses").textContent = fmtMoney(total);
+  var surplusEl = document.getElementById("bcSurplus");
+  surplusEl.textContent = fmtMoney(unallocated);
+  surplusEl.classList.toggle("bc-negative", unallocated < 0);
+  surplusEl.classList.toggle("bc-positive", unallocated > 0);
+
+  var needsPct = income > 0 ? (needs / income) * 100 : 0;
+  var wantsPct = income > 0 ? (wants / income) * 100 : 0;
+  var savingsPct = income > 0 ? (savings / income) * 100 : 0;
+
+  document.getElementById("bcNeedsPct").textContent = fmtPct(needsPct);
+  document.getElementById("bcWantsPct").textContent = fmtPct(wantsPct);
+  document.getElementById("bcSavingsPct").textContent = fmtPct(savingsPct);
+  document.getElementById("bcNeedsFill").style.width = Math.min(100, needsPct) + "%";
+  document.getElementById("bcWantsFill").style.width = Math.min(100, wantsPct) + "%";
+  document.getElementById("bcSavingsFill").style.width = Math.min(100, savingsPct) + "%";
+
+  document.getElementById("bcVerdict").textContent = computeVerdict(income, needsPct, wantsPct, savingsPct);
+
+  renderTrendNote(income, savings);
+  renderBiggestItemsNote(income);
+  renderTrimNote(income, wants, savings);
+}
+
+// ---------- Persistence (current field values) ----------
+var saveTimer = null;
+function saveDebounced(){
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(saveToStorage, 400);
+}
+function saveToStorage(){
+  var data = {};
+  allInputs.forEach(function(el){ data[el.id] = el.value; });
+  localStorage.setItem(INPUT_KEY, JSON.stringify(data));
+}
+function loadFromStorage(){
+  var raw = localStorage.getItem(INPUT_KEY);
+  if (!raw) return;
+  try {
+    var data = JSON.parse(raw);
+    allInputs.forEach(function(el){
+      if (data[el.id] !== undefined) el.value = data[el.id];
+    });
+  } catch (e) {}
+}
+
+// ---------- History ----------
+function loadHistory(){
+  try { return JSON.parse(localStorage.getItem(HISTORY_KEY)) || []; } catch (e) { return []; }
+}
+function saveHistory(list){
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(list));
+}
+function formatDateOnly(d){
+  function pad(n){ return n < 10 ? "0" + n : "" + n; }
+  return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+}
+function logSnapshot(){
+  var dateInput = document.getElementById("bcHistoryDate");
+  var date = dateInput.value || formatDateOnly(new Date());
+  var income = parseNum("bcIncome");
+  var needs = bucketTotal("needs");
+  var wants = bucketTotal("wants");
+  var savings = bucketTotal("savings");
+  var list = loadHistory().filter(function(e){ return e.date !== date; }); // one entry per date — overwrite
+  list.push({
+    date: date, income: income, needs: needs, wants: wants, savings: savings,
+    surplus: income - (needs + wants + savings)
+  });
+  list.sort(function(a, b){ return a.date < b.date ? -1 : 1; });
+  saveHistory(list);
+  refreshHistory();
+}
+function refreshHistory(){
+  var list = loadHistory();
+  var wrap = document.getElementById("bcHistoryTableWrap");
+  if (!list.length) {
+    wrap.innerHTML = '<p class="bc-history-empty">No snapshots logged yet.</p>';
+    return;
+  }
+  var rows = list.map(function(e){
+    return "<tr><td>" + e.date + "</td><td>" + fmtMoney(e.income) + "</td><td>" + fmtMoney(e.needs) +
+      "</td><td>" + fmtMoney(e.wants) + "</td><td>" + fmtMoney(e.savings) + "</td><td>" + fmtMoney(e.surplus) + "</td></tr>";
+  }).join("");
+  wrap.innerHTML =
+    '<table class="bc-history-table"><thead><tr>' +
+      "<th>Date</th><th>Income</th><th>Needs</th><th>Wants</th><th>Savings</th><th>Unallocated</th>" +
+    "</tr></thead><tbody>" + rows + "</tbody></table>";
+}
+
+// ---------- Wire up ----------
+allInputs.forEach(function(inp){
+  inp.addEventListener("input", function(){ recalc(); saveDebounced(); });
+  inp.addEventListener("blur", function(){ formatFieldOnBlur(inp); recalc(); saveDebounced(); });
+});
+
+document.getElementById("bcLogBtn").addEventListener("click", logSnapshot);
+
+var bcClearBtn = document.getElementById("bcClearBtn");
+var bcConfirming = false;
+bcClearBtn.addEventListener("click", function(){
+  if (!bcConfirming) {
+    bcConfirming = true;
+    bcClearBtn.textContent = "Click again to confirm";
+    setTimeout(function(){
+      bcConfirming = false;
+      bcClearBtn.textContent = "Clear All Data";
+    }, 3000);
+  } else {
+    localStorage.removeItem(INPUT_KEY);
+    localStorage.removeItem(HISTORY_KEY);
+    allInputs.forEach(function(el){ el.value = ""; });
+    recalc();
+    refreshHistory();
+    bcConfirming = false;
+    bcClearBtn.textContent = "Clear All Data";
+  }
+});
+
+// Init
+loadFromStorage();
+allInputs.forEach(formatFieldOnBlur);
+recalc();
+refreshHistory();
+document.getElementById("bcHistoryDate").value = formatDateOnly(new Date());
+</script>
+
+</body>
+</html>

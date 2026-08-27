@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script src="../assets/js/theme-init.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FireNate - Car Buying &amp; True Cost of Ownership</title>
+<meta name="description" content="What a car really costs once you fold in the loan, taxes and fees, insurance, fuel, maintenance, and depreciation — plus tips for negotiating with a dealership.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Antonio:wght@400;500;600;700&family=Michroma&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/site.css">
+<link rel="stylesheet" href="../assets/css/timeToFI.css">
+<link rel="stylesheet" href="../assets/css/toolbar.css">
+<script src="../assets/js/theme.js" defer></script>
+<script src="../assets/js/user-profile.js" defer></script>
+<script src="../assets/js/nav.js" defer></script>
+<script src="../assets/js/field-help.js" defer></script>
+<script>
+window.FN_BASE = "../"; window.FN_PAGE = "car-buying";
+window.FN_FIELD_HELP = {
+  "title": "About this Tool",
+  "intro": "This models the true cost of owning a vehicle for the years you'll actually keep it — not just the sticker price.",
+  "sections": [
+    {
+      "heading": "The vehicle",
+      "items": [
+        {
+          "label": "Vehicle Price",
+          "text": "The purchase price before tax, fees, or your down payment."
+        },
+        {
+          "label": "Down Payment / Trade-In",
+          "text": "Cash or trade-in value applied upfront — reduces the amount you finance."
+        },
+        {
+          "label": "Sales Tax",
+          "text": "Your state/local sales tax rate, applied to the purchase price."
+        },
+        {
+          "label": "Title, Doc & Fees",
+          "text": "One-time registration, title, and dealer documentation fees."
+        }
+      ]
+    },
+    {
+      "heading": "The loan",
+      "items": [
+        {
+          "label": "Loan APR",
+          "text": "The annual interest rate on the auto loan financing whatever isn't covered by your down payment."
+        },
+        {
+          "label": "Loan Term",
+          "text": "How many months you'll be paying off the loan."
+        }
+      ]
+    },
+    {
+      "heading": "Ongoing costs",
+      "items": [
+        {
+          "label": "Insurance / Year",
+          "text": "Estimated annual insurance premium for this vehicle."
+        },
+        {
+          "label": "Maintenance / Year",
+          "text": "Estimated annual maintenance and repairs."
+        },
+        {
+          "label": "Fuel / Charging / Year",
+          "text": "Estimated annual fuel or electricity cost."
+        }
+      ]
+    },
+    {
+      "heading": "Ownership horizon",
+      "items": [
+        {
+          "label": "Years You'll Keep It",
+          "text": "How long you plan to own the vehicle before selling or trading it in — spreads the loan and ownership costs over this window."
+        },
+        {
+          "label": "Est. Value When You Sell",
+          "text": "What you expect the vehicle to be worth at the end of that ownership window."
+        }
+      ]
+    },
+    {
+      "heading": "Refinance comparison (optional)",
+      "items": [
+        {
+          "label": "Payments Made",
+          "text": "How many payments into this loan you already are — 0 if you haven't started yet. Sets the remaining balance the refinance comparison is based on."
+        },
+        {
+          "label": "Refinance APR",
+          "text": "The interest rate you'd get on a new loan covering your remaining balance, kept on the same remaining schedule."
+        },
+        {
+          "label": "Refinance Fees",
+          "text": "Any fees for the new loan, as a flat dollar amount — treated as a one-time cost, not rolled into the new balance."
+        }
+      ]
+    }
+  ]
+};
+</script>
+<style>
+
+  /* ---------- COST BREAKDOWN BAR ---------- */
+  .cb-breakdown-card{
+    background:var(--surface); border:1px solid var(--line); border-top:4px solid var(--target);
+    border-radius:var(--radius); padding:24px 26px;
+  }
+  .cb-bar-track{
+    display:flex; width:100%; height:34px; border-radius:8px; overflow:hidden;
+    background:var(--surface-2); border:1px solid var(--line);
+  }
+  .cb-bar-seg{ height:100%; min-width:2px; transition:opacity .15s ease; }
+  .cb-bar-seg:hover{ opacity:0.8; }
+  .cb-bar-seg.gold{ background:var(--gold); }
+  .cb-bar-seg.rust{ background:var(--danger); }
+  .cb-bar-seg.plum{ background:var(--plum); }
+  .cb-bar-seg.target{ background:var(--target); }
+  .cb-bar-seg.jade{ background:var(--jade); }
+
+  .cb-breakdown-rows{ margin-top:18px; display:flex; flex-direction:column; gap:2px; }
+  .cb-breakdown-row{
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    padding:10px 0; border-bottom:1px solid var(--line-soft); font-size:13.5px;
+  }
+  .cb-breakdown-row:last-child{ border-bottom:none; }
+  .cb-breakdown-row .label{ display:flex; align-items:center; gap:10px; color:var(--ink-dim); }
+  .cb-breakdown-row .dot{ width:10px; height:10px; border-radius:3px; flex:none; }
+  .cb-breakdown-row .dot.gold{ background:var(--gold); }
+  .cb-breakdown-row .dot.rust{ background:var(--danger); }
+  .cb-breakdown-row .dot.plum{ background:var(--plum); }
+  .cb-breakdown-row .dot.target{ background:var(--target); }
+  .cb-breakdown-row .dot.jade{ background:var(--jade); }
+  .cb-breakdown-row .amt{ font-family:var(--mono); font-variant-numeric:tabular-nums; color:var(--ink); font-weight:600; }
+  .cb-breakdown-row .amt.credit{ color:var(--jade); }
+  .cb-breakdown-row.total{ margin-top:6px; padding-top:14px; border-top:2px solid var(--line); }
+  .cb-breakdown-row.total .label{ color:var(--ink); font-weight:700; }
+  [data-theme="lcars"] .cb-breakdown-row.total .amt{ font-family:var(--mono); font-variant-numeric:tabular-nums; }
+  .cb-breakdown-row.total .amt{ font-family:var(--serif); font-size:19px; }
+
+  /* ---------- TIPS ---------- */
+  .cb-tips{
+    display:flex; flex-direction:column; gap:16px; margin-top:8px;
+  }
+  .cb-tip{
+    background:var(--surface); border:1px solid var(--line); border-top:4px solid var(--gold);
+    border-radius:var(--radius); padding:24px 26px;
+  }
+  .cb-tip.jade{ border-top-color:var(--jade); }
+  .cb-tip.plum{ border-top-color:var(--plum); }
+  .cb-tip.target{ border-top-color:var(--target); }
+  .cb-tip-head{ display:flex; align-items:flex-start; gap:16px; margin-bottom:12px; }
+  .cb-tip-num{
+    flex:none; width:34px; height:34px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--mono); font-size:13px; font-weight:700;
+    background:var(--surface-2); border:1px solid var(--line); color:var(--ink-dim);
+  }
+  [data-theme="lcars"] .cb-tip h3{ font-family:var(--display); letter-spacing:.02em; }
+  .cb-tip h3{ font-family:var(--serif); font-size:19px; font-weight:500; margin:4px 0 0; color:var(--ink); }
+  .cb-tip ul{ margin:0; padding-left:20px; color:var(--ink-dim); font-size:14px; line-height:1.7; }
+  .cb-tip li{ margin-bottom:8px; }
+  .cb-tip li:last-child{ margin-bottom:0; }
+  .cb-tip li strong{ color:var(--ink); }
+
+  .cb-equity-callout{
+    margin-top:14px; padding:12px 16px; border-radius:8px; font-size:13px;
+    background:var(--surface-2); border:1px solid var(--line); color:var(--ink-dim);
+  }
+  .cb-equity-callout strong.neg{ color:var(--danger); }
+  .cb-equity-callout strong.pos{ color:var(--jade); }
+
+  /* ---------- insight note cards ---------- */
+  .cb-notes{
+    display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:14px; margin-top:16px;
+  }
+  .cb-note-card{
+    background:var(--surface); border:1px solid var(--line); border-top:3px solid var(--target);
+    border-radius:var(--radius); padding:16px 18px; color:var(--ink-faint); font-size:13px; line-height:1.55;
+  }
+  .cb-note-card[hidden]{ display:none; }
+  .cb-note-card.jade{ border-top-color:var(--jade); }
+  .cb-note-card.danger{ border-top-color:var(--danger); }
+  .cb-note-card-label{
+    display:block; color:var(--ink); font-weight:700; font-size:10.5px; letter-spacing:0.08em; text-transform:uppercase; margin-bottom:6px;
+  }
+  .cb-note-card strong{ color:var(--ink); }
+
+  .cb-rule-row{ display:flex; align-items:center; gap:8px; padding:5px 0; }
+  .cb-rule-icon{ flex:none; width:15px; height:15px; }
+  .cb-rule-icon.ok{ color:var(--jade); }
+  .cb-rule-icon.bad{ color:var(--danger); }
+
+  .cb-term-rows{ display:flex; flex-direction:column; gap:2px; margin-top:2px; }
+  .cb-term-row{
+    display:grid; grid-template-columns:1fr auto auto; gap:10px; padding:6px 0;
+    border-bottom:1px solid var(--line-soft); font-family:var(--mono); font-size:12px; color:var(--ink-faint);
+  }
+  .cb-term-row:last-child{ border-bottom:none; }
+  .cb-term-row.current{ color:var(--ink); font-weight:700; }
+
+  .cb-scenario-toggle{
+    display:inline-flex; flex-wrap:wrap; background:var(--surface-2); border:1px solid var(--line);
+    border-radius:999px; padding:3px; gap:2px; margin-bottom:10px;
+  }
+  .cb-scenario-btn{
+    border:none; background:none; cursor:pointer; font-family:var(--mono);
+    font-size:11.5px; font-weight:600; color:var(--ink-faint); padding:6px 12px; border-radius:999px;
+    transition:background-color .15s, color .15s;
+  }
+  .cb-scenario-btn:hover{ color:var(--gold); }
+  .cb-scenario-btn.active{ background:var(--gold); color:#201205; }
+
+  .cb-mini-inputs{ display:flex; flex-wrap:wrap; gap:18px; margin-bottom:12px; }
+  .cb-mini-field{ display:flex; flex-direction:column; gap:4px; font-size:11.5px; color:var(--ink-faint); }
+  .cb-mini-field-row{ display:flex; align-items:baseline; gap:3px; }
+  .cb-mini-input{
+    font-family:var(--mono); background:var(--surface-2); border:1px solid var(--line); border-radius:6px;
+    outline:none; font-size:13px; padding:6px 8px; width:76px; color:var(--ink);
+  }
+  .cb-mini-input:focus{ border-color:var(--gold); }
+</style>
+</head>
+<body>
+<div id="fn-site-nav"></div>
+
+<div class="cb-inputs" id="cbInputs">
+  <div class="wrap cb-summary-row" style="position:relative">
+    <div class="cb-summary" id="cbSummary">&mdash;</div>
+    <button type="button" class="fn-help-btn" style="position:absolute; right:20px; top:50%; transform:translateY(-50%)" aria-label="What do these inputs mean?">?</button>
+  </div>
+  <div class="cb-content" id="cbContent">
+    <div class="wrap cb-inner">
+      <div class="cb-fields">
+        <div class="cb-field">
+          <label for="vehiclePrice">Vehicle Price</label>
+          <div class="cb-input-row"><span class="cb-prefix">$</span><input type="text" inputmode="decimal" pattern="[0-9,.]*" id="vehiclePrice" value="35,000.00"></div>
+        </div>
+        <div class="cb-field">
+          <label for="downPayment">Down Payment / Trade-In</label>
+          <div class="cb-input-row"><span class="cb-prefix">$</span><input type="text" inputmode="decimal" pattern="[0-9,.]*" id="downPayment" value="5,000.00"></div>
+        </div>
+        <div class="cb-field">
+          <label for="taxRate">Sales Tax</label>
+          <div class="cb-input-row"><input class="cb-narrow" type="number" id="taxRate" value="7" min="0" max="15" step="0.1"><span class="cb-suffix">%</span></div>
+        </div>
+        <div class="cb-field">
+          <label for="fees">Title, Doc &amp; Fees</label>
+          <div class="cb-input-row"><span class="cb-prefix">$</span><input class="cb-narrow" type="text" inputmode="decimal" pattern="[0-9,.]*" id="fees" value="600.00"></div>
+        </div>
+        <div class="cb-field">
+          <label for="apr">Loan APR</label>
+          <div class="cb-input-row"><input class="cb-narrow" type="number" id="apr" value="7.5" min="0" max="30" step="0.1"><span class="cb-suffix">%</span></div>
+        </div>
+        <div class="cb-field">
+          <label for="termMonths">Loan Term</label>
+          <div class="cb-input-row"><input class="cb-narrow" type="number" id="termMonths" value="60" min="6" max="96" step="1"><span class="cb-suffix">mo</span></div>
+        </div>
+        <div class="cb-field">
+          <label for="insurance">Insurance / Year</label>
+          <div class="cb-input-row"><span class="cb-prefix">$</span><input type="text" inputmode="decimal" pattern="[0-9,.]*" id="insurance" value="1,400.00"></div>
+        </div>
+        <div class="cb-field">
+          <label for="maintenance">Maintenance / Year</label>
+          <div class="cb-input-row"><span class="cb-prefix">$</span><input type="text" inputmode="decimal" pattern="[0-9,.]*" id="maintenance" value="900.00"></div>
+        </div>
+        <div class="cb-field">
+          <label for="fuel">Fuel / Charging / Year</label>
+          <div class="cb-input-row"><span class="cb-prefix">$</span><input type="text" inputmode="decimal" pattern="[0-9,.]*" id="fuel" value="1,800.00"></div>
+        </div>
+        <div class="cb-field">
+          <label for="horizonYears">Years You'll Keep It</label>
+          <div class="cb-input-row"><input class="cb-narrow" type="number" id="horizonYears" value="5" min="1" max="15" step="1"><span class="cb-suffix">yrs</span></div>
+        </div>
+        <div class="cb-field">
+          <label for="resaleValue">Est. Value When You Sell</label>
+          <div class="cb-input-row"><span class="cb-prefix">$</span><input type="text" inputmode="decimal" pattern="[0-9,.]*" id="resaleValue" value="14,000.00"></div>
+        </div>
+      </div>
+      <div class="cb-save">
+        <span class="save-status" id="cbSaveStatus">Not saved yet</span>
+        <button type="button" id="resetBtn" class="reset-btn">Reset to defaults</button>
+      </div>
+    </div>
+  </div>
+  <div class="wrap cb-toggle-row">
+    <button id="cbToggle" type="button" class="cb-toggle" aria-expanded="true" aria-controls="cbContent">
+      <svg class="cb-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+      <span id="cbToggleLabel">Hide inputs</span>
+    </button>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">FIRE Nate - Car Buying</p>
+    <h1 id="pageTitleHeader">What this car <em>really</em> costs you.</h1>
+    <p class="lede">The sticker price is just the opening number. Fold in the loan, taxes and fees, insurance, fuel, and maintenance — minus what you'll get back when you sell it — and you get the number that actually matters: your true monthly cost of ownership.</p>
+  </header>
+
+  <h2 class="ledger-title" style="margin-top: 40px; margin-bottom: 4px;">Summary</h2>
+  <div class="status" id="statusStrip"></div>
+  <div class="cb-notes" id="cbNotes">
+    <div class="cb-note-card" id="cbNote204010" hidden></div>
+    <div class="cb-note-card" id="cbNoteTermCompare" hidden></div>
+    <div class="cb-note-card" id="cbNoteDownScenario" hidden>
+      <span class="cb-note-card-label">What more money down would save you</span>
+      <div class="cb-scenario-toggle" id="downScenarioToggle">
+        <button type="button" class="cb-scenario-btn" data-amt="1000">+$1,000</button>
+        <button type="button" class="cb-scenario-btn active" data-amt="2500">+$2,500</button>
+        <button type="button" class="cb-scenario-btn" data-amt="5000">+$5,000</button>
+        <button type="button" class="cb-scenario-btn" data-amt="10000">+$10,000</button>
+      </div>
+      <div id="cbDownScenarioText"></div>
+    </div>
+    <div class="cb-note-card" id="cbNoteRefinance" hidden>
+      <span class="cb-note-card-label">Is refinancing worth it?</span>
+      <div class="cb-mini-inputs">
+        <label class="cb-mini-field">
+          <span>Payments made</span>
+          <input class="cb-mini-input" type="number" id="carRefiPayments" min="0" step="1" value="0">
+        </label>
+        <label class="cb-mini-field">
+          <span>Refinance APR</span>
+          <div class="cb-mini-field-row"><input class="cb-mini-input" type="number" id="carRefiRate" min="0" step="0.1" value="6.5" style="width:56px;"><span>%</span></div>
+        </label>
+        <label class="cb-mini-field">
+          <span>Refinance fees</span>
+          <div class="cb-mini-field-row"><span>$</span><input class="cb-mini-input" type="text" inputmode="decimal" pattern="[0-9,.]*" id="carRefiFees" value="0.00" style="width:64px;"></div>
+        </label>
+      </div>
+      <div id="carRefinanceText"></div>
+    </div>
+    <div class="cb-note-card" id="cbNoteCashVsFinance" hidden></div>
+    <div class="cb-note-card" id="cbNoteResaleCheck" hidden></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h2>Where the money goes</h2>
+      <span class="sub" id="breakdownSub">OVER YOUR OWNERSHIP HORIZON</span>
+    </div>
+    <div class="cb-breakdown-card">
+      <div class="cb-bar-track" id="cbBarTrack"></div>
+      <div class="cb-breakdown-rows" id="cbBreakdownRows"></div>
+      <div class="cb-equity-callout" id="cbEquityCallout"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h2>Loan details</h2>
+      <span class="sub">FULL AMORTIZATION, IF KEPT THE ENTIRE TERM</span>
+    </div>
+    <div class="table-card">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th style="text-align:left;">Figure</th>
+              <th>Amount</th>
+            </tr>
+          </thead>
+          <tbody id="loanTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="ledger-title" style="margin-top:48px; margin-bottom:4px;">Working with a dealership</h2>
+  <p class="lede" style="margin-bottom:16px;">General guidance, not a script — every dealership and every deal is different, but these habits tend to hold up.</p>
+
+  <div class="cb-tips">
+    <div class="cb-tip gold">
+      <div class="cb-tip-head">
+        <div class="cb-tip-num">01</div>
+        <h3>Before you go</h3>
+      </div>
+      <ul>
+        <li><strong>Know the fair price first.</strong> Check a couple of independent sources (KBB, Edmunds, TrueCar, manufacturer invoice pricing) so you recognize a fair number when you see one.</li>
+        <li><strong>Get pre-approved financing</strong> from your own bank or credit union before you go. Even if you end up financing through the dealer, having your own rate in hand gives you something real to compare against.</li>
+        <li><strong>Set your out-the-door budget in advance</strong> — one number that already includes tax, title, and fees, not just "the payment."</li>
+      </ul>
+    </div>
+
+    <div class="cb-tip jade">
+      <div class="cb-tip-head">
+        <div class="cb-tip-num">02</div>
+        <h3>At the dealership</h3>
+      </div>
+      <ul>
+        <li><strong>Negotiate the out-the-door price, not the monthly payment.</strong> A lower payment can just mean a longer loan or a worse rate — the total price is what actually matters.</li>
+        <li><strong>Keep price, trade-in, and financing as three separate conversations.</strong> Bundling them together makes it easy to lose track of whether any one of them is actually a good deal.</li>
+        <li><strong>You're allowed to leave.</strong> A "today only" price, a long wait meant to wear you down, or pressure to decide on the spot are common tactics — a good deal is still good tomorrow.</li>
+      </ul>
+    </div>
+
+    <div class="cb-tip plum">
+      <div class="cb-tip-head">
+        <div class="cb-tip-num">03</div>
+        <h3>Financing &amp; the paperwork</h3>
+      </div>
+      <ul>
+        <li><strong>A longer loan term lowers the payment but usually costs more overall</strong> in interest, and it takes longer before you owe less than the car is worth.</li>
+        <li><strong>Watch for "yo-yo financing"</strong> — driving off before financing is fully finalized, then getting a call days later asking you to sign a worse deal. If the financing isn't final, the deal isn't final.</li>
+        <li><strong>Read every line before you sign.</strong> Extended warranties, gap insurance, paint protection, and other add-ons are often pre-checked or bundled in, and can usually be declined or negotiated on their own.</li>
+      </ul>
+    </div>
+
+    <div class="cb-tip target">
+      <div class="cb-tip-head">
+        <div class="cb-tip-num">04</div>
+        <h3>Total cost of ownership</h3>
+      </div>
+      <ul>
+        <li><strong>The sticker price is just the start.</strong> Insurance, fuel, and maintenance over a few years often add up to more than the loan itself — that's what the "True Monthly Cost" above tries to capture.</li>
+        <li><strong>Get an insurance quote before you buy, not after.</strong> Premiums vary a lot by make and model, and a great deal on the car can be erased by a higher-than-expected insurance bill.</li>
+        <li><strong>For a used car, an independent pre-purchase inspection</strong> — from a mechanic you chose, not the seller's — is one of the cheapest ways to avoid a costly surprise.</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+<footer id="site-footer"></footer>
+
+<script src="../assets/js/calc-utils.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const fmtUSD = n => n.toLocaleString('en-US', {style:'currency', currency:'USD', maximumFractionDigits:0});
+const fmtUSD2 = n => n.toLocaleString('en-US', {style:'currency', currency:'USD', maximumFractionDigits:2});
+const fmtNum = n => n.toLocaleString('en-US', {maximumFractionDigits:1});
+const formatCurrencyField = id => {
+  const raw = parseCurrency(id);
+  $(id).value = raw.toLocaleString('en-US', {maximumFractionDigits:2});
+};
+function sanitizeCurrencyInput(id){
+  const el = $(id);
+  const before = el.value;
+  const cursorFromEnd = before.length - (el.selectionStart ?? before.length);
+
+  // keep only digits, commas, and a single decimal point
+  let cleaned = before.replace(/[^0-9.,]/g, '');
+  const parts = cleaned.split('.');
+  if (parts.length > 2){
+    cleaned = parts[0] + '.' + parts.slice(1).join('');
+  }
+
+  if (cleaned !== before){
+    el.value = cleaned;
+    const newPos = Math.max(0, cleaned.length - cursorFromEnd);
+    el.setSelectionRange(newPos, newPos);
+  }
+}
+
+// ---------- loan math ----------
+function monthlyPaymentFor(principal, aprPct, termMonths){
+  const r = (aprPct / 100) / 12;
+  if (principal <= 0 || termMonths <= 0) return 0;
+  if (Math.abs(r) < 1e-9) return principal / termMonths;
+  const factor = Math.pow(1 + r, termMonths);
+  return principal * r * factor / (factor - 1);
+}
+function remainingBalanceAfter(principal, aprPct, termMonths, paymentsMade, payment){
+  const r = (aprPct / 100) / 12;
+  const k = Math.min(paymentsMade, termMonths);
+  if (k >= termMonths) return 0;
+  if (Math.abs(r) < 1e-9) return Math.max(0, principal - payment * k);
+  const balance = principal * Math.pow(1 + r, k) - payment * (Math.pow(1 + r, k) - 1) / r;
+  return Math.max(0, balance);
+}
+
+// ---------- sticky, collapsible input toolbar ----------
+const COLLAPSE_KEY = 'car-buying-inputs-collapsed';
+const cbInputsEl = $('cbInputs');
+const cbToggle = $('cbToggle');
+const cbToggleLabel = $('cbToggleLabel');
+const cbSummary = $('cbSummary');
+const cbSaveStatus = $('cbSaveStatus');
+
+let inputsCollapsed = false;
+function setInputsCollapsed(collapsed){
+  inputsCollapsed = collapsed;
+  if (cbInputsEl) cbInputsEl.classList.toggle('collapsed', collapsed);
+  if (cbToggle) cbToggle.setAttribute('aria-expanded', String(!collapsed));
+  if (cbToggleLabel) cbToggleLabel.textContent = collapsed ? 'Show inputs' : 'Hide inputs';
+  try { localStorage.setItem(COLLAPSE_KEY, collapsed ? '1' : '0'); } catch(e) {}
+}
+if (cbToggle){
+  cbToggle.addEventListener('click', () => setInputsCollapsed(!inputsCollapsed));
+}
+
+function pad2(n){ return String(n).padStart(2, '0'); }
+function updateSaveStatus(){
+  if (!cbSaveStatus) return;
+  const d = new Date();
+  cbSaveStatus.textContent = `Last saved: ${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
+}
+
+function updateCbSummary(m){
+  if (!cbSummary) return;
+  cbSummary.textContent = `Price: ${fmtUSD(m.vehiclePrice)}  |  Payment: ${fmtUSD2(m.payment)}/mo  |  True cost: ${fmtUSD2(m.trueMonthlyCost)}/mo over ${m.horizonYears} yrs`;
+}
+
+// ---------- compute ----------
+function compute(){
+  const vehiclePrice = parseCurrency('vehiclePrice');
+  const downPayment = parseCurrency('downPayment');
+  const taxRate = parseFloat($('taxRate').value) || 0;
+  const fees = parseCurrency('fees');
+  const apr = parseFloat($('apr').value) || 0;
+  const termMonths = Math.max(1, parseInt($('termMonths').value, 10) || 1);
+  const insurance = parseCurrency('insurance');
+  const maintenance = parseCurrency('maintenance');
+  const fuel = parseCurrency('fuel');
+  const horizonYears = Math.max(1, parseInt($('horizonYears').value, 10) || 1);
+  const resaleValue = parseCurrency('resaleValue');
+
+  const salesTax = vehiclePrice * (taxRate / 100);
+  const otdPrice = vehiclePrice + salesTax + fees;
+  const amountFinanced = Math.max(0, otdPrice - downPayment);
+
+  const payment = monthlyPaymentFor(amountFinanced, apr, termMonths);
+  const totalOfPayments = payment * termMonths;
+  const totalInterestFullTerm = Math.max(0, totalOfPayments - amountFinanced);
+
+  const horizonMonths = horizonYears * 12;
+  const paymentsMadeInHorizon = Math.min(horizonMonths, termMonths);
+  const loanCostDuringHorizon = payment * paymentsMadeInHorizon;
+  const remainingBalance = remainingBalanceAfter(amountFinanced, apr, termMonths, horizonMonths, payment);
+
+  // interestPaidDuringHorizon derived so the breakdown always sums exactly —
+  // see the comment on netCostOfOwnership below for why this identity holds
+  const interestPaidDuringHorizon = Math.max(0, loanCostDuringHorizon - amountFinanced + remainingBalance);
+
+  const runningCostsPerYear = insurance + maintenance + fuel;
+  const runningCostsTotal = runningCostsPerYear * horizonYears;
+
+  // netCostOfOwnership = OTD price + interest paid during horizon − resale value + running costs.
+  // (down payment + principal paid during horizon collapses to "OTD price", since
+  // downPayment + amountFinanced === otdPrice, and principal paid + remaining
+  // balance === amountFinanced — the remaining-balance liability cancels out
+  // algebraically, so it never needs to be tracked as its own cost line.)
+  const netCostOfOwnership = otdPrice + interestPaidDuringHorizon - resaleValue + runningCostsTotal;
+  const trueMonthlyCost = netCostOfOwnership / horizonMonths;
+
+  const equityAtSale = resaleValue - remainingBalance;
+
+  return {
+    vehiclePrice, downPayment, taxRate, fees, apr, termMonths, insurance, maintenance, fuel, horizonYears, resaleValue,
+    salesTax, otdPrice, amountFinanced, payment, totalOfPayments, totalInterestFullTerm,
+    horizonMonths, paymentsMadeInHorizon, loanCostDuringHorizon, remainingBalance,
+    interestPaidDuringHorizon, runningCostsPerYear, runningCostsTotal, netCostOfOwnership, trueMonthlyCost, equityAtSale
+  };
+}
+
+// ---------- insight notes: 20/4/10 rule, loan term comparison, down-payment scenario ----------
+const CHECK_SVG = '<svg class="cb-rule-icon ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+const X_SVG = '<svg class="cb-rule-icon bad" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+
+// The classic car-affordability guideline: 20% down, a loan no longer than
+// 4 years, and total transportation costs under 10% of gross income. The
+// income leg only shows when the shared profile has an income set.
+function render204010(m){
+  const el = $('cbNote204010');
+  el.hidden = false;
+
+  const downPct = m.vehiclePrice > 0 ? (m.downPayment / m.vehiclePrice) * 100 : 0;
+  const downOk = downPct >= 20;
+  const termOk = m.termMonths <= 48;
+
+  let incomeRow = '';
+  let incomeOk = null;
+  if (window.FNProfile){
+    const profile = window.FNProfile.get();
+    const monthlyIncome = (parseFloat(profile.currentIncome) || 0) / 12;
+    if (monthlyIncome > 0){
+      const totalMonthlyTransportCost = m.payment + (m.insurance + m.maintenance + m.fuel) / 12;
+      const pctIncome = (totalMonthlyTransportCost / monthlyIncome) * 100;
+      incomeOk = pctIncome <= 10;
+      incomeRow = `<div class="cb-rule-row">${incomeOk ? CHECK_SVG : X_SVG}<span><strong>${fmtNum(pctIncome)}%</strong> of income on this car (loan + insurance + maintenance + fuel) — target &lt;10%</span></div>`;
+    }
+  }
+
+  const allOk = downOk && termOk && (incomeOk === null || incomeOk);
+  el.className = 'cb-note-card' + (allOk ? ' jade' : '');
+  el.innerHTML = `<span class="cb-note-card-label">The 20/4/10 rule</span>` +
+    `<div class="cb-rule-row">${downOk ? CHECK_SVG : X_SVG}<span><strong>${fmtNum(downPct)}%</strong> down — target &ge;20%</span></div>` +
+    `<div class="cb-rule-row">${termOk ? CHECK_SVG : X_SVG}<span><strong>${m.termMonths}-month</strong> loan — target &le;48 months</span></div>` +
+    incomeRow +
+    (incomeRow ? '' : `<div class="cb-rule-row" style="color:var(--ink-faint); font-style:italic;">Set your income in your profile to check the 10% leg too.</div>`);
+}
+
+const COMMON_TERMS = [36, 48, 60, 72, 84];
+function renderTermComparison(m){
+  const el = $('cbNoteTermCompare');
+  if (m.amountFinanced <= 0.5){ el.hidden = true; return; }
+  el.hidden = false;
+  el.className = 'cb-note-card';
+  const terms = Array.from(new Set([...COMMON_TERMS, m.termMonths])).sort((a, b) => a - b);
+  const rows = terms.map(term => {
+    const payment = monthlyPaymentFor(m.amountFinanced, m.apr, term);
+    const totalInterest = Math.max(0, payment * term - m.amountFinanced);
+    const isCurrent = term === m.termMonths;
+    return `<div class="cb-term-row${isCurrent ? ' current' : ''}">
+      <span>${term} mo${isCurrent ? ' (yours)' : ''}</span>
+      <span>${fmtUSD2(payment)}/mo</span>
+      <span>${fmtUSD(totalInterest)} interest</span>
+    </div>`;
+  }).join('');
+  el.innerHTML = `<span class="cb-note-card-label">What loan term changes</span><div class="cb-term-rows">${rows}</div>`;
+}
+
+let downScenarioIncrement = 2500;
+function renderDownPaymentNote(m){
+  const el = $('cbNoteDownScenario');
+  if (m.amountFinanced <= 0.5){ el.hidden = true; return; }
+  el.hidden = false;
+
+  const newDown = m.downPayment + downScenarioIncrement;
+  const newFinanced = Math.max(0, m.otdPrice - newDown);
+  const newPayment = monthlyPaymentFor(newFinanced, m.apr, m.termMonths);
+  const newTotalInterest = Math.max(0, newPayment * m.termMonths - newFinanced);
+  const paymentSaved = Math.max(0, m.payment - newPayment);
+  const interestSaved = Math.max(0, m.totalInterestFullTerm - newTotalInterest);
+
+  $('cbDownScenarioText').innerHTML = `Putting <strong>${fmtUSD(downScenarioIncrement)}</strong> more down (${fmtUSD(newDown)} total) would drop your amount financed to ${fmtUSD(newFinanced)}, lowering your payment to <strong>${fmtUSD2(newPayment)}</strong>/mo (${fmtUSD2(paymentSaved)} less) and saving <strong>${fmtUSD(interestSaved)}</strong> in interest over the full loan term.`;
+}
+
+$('downScenarioToggle').addEventListener('click', (e) => {
+  const btn = e.target.closest('.cb-scenario-btn');
+  if (!btn || btn.classList.contains('active')) return;
+  downScenarioIncrement = Number(btn.dataset.amt);
+  Array.from($('downScenarioToggle').children).forEach(b => b.classList.toggle('active', b === btn));
+  renderDownPaymentNote(compute());
+});
+
+// Remaining balance is read straight off the same remainingBalanceAfter()
+// helper the loan-details table already relies on, so this can never
+// disagree with the rest of the page — then amortizes that balance over
+// the same remaining months at the new rate.
+function computeAutoRefinance(m, paymentsMade, refiAprPct, refiFees){
+  if (m.amountFinanced <= 0.5) return null;
+  const n = m.termMonths;
+  const made = Math.max(0, Math.min(Math.round(paymentsMade) || 0, n));
+  const remainingBalance = remainingBalanceAfter(m.amountFinanced, m.apr, n, made, m.payment);
+  const remainingMonths = n - made;
+  if (remainingBalance <= 0.5 || remainingMonths <= 0) return null;
+
+  const principalPaidSoFar = m.amountFinanced - remainingBalance;
+  const interestPaidSoFar = Math.max(0, (m.payment * made) - principalPaidSoFar);
+  const remainingInterestCurrent = Math.max(0, m.totalInterestFullTerm - interestPaidSoFar);
+
+  const newPayment = monthlyPaymentFor(remainingBalance, refiAprPct, remainingMonths);
+  const totalInterestNew = Math.max(0, newPayment * remainingMonths - remainingBalance);
+  const totalCostNew = totalInterestNew + (refiFees || 0);
+
+  return { remainingBalance, remainingMonths, currentPayment: m.payment, newPayment, remainingInterestCurrent, totalCostNew, savings: remainingInterestCurrent - totalCostNew };
+}
+
+function renderRefinanceNote(m){
+  const el = $('cbNoteRefinance');
+  if (m.amountFinanced <= 0.5){ el.hidden = true; return; }
+  el.hidden = false;
+
+  const paymentsMade = parseFloat($('carRefiPayments').value) || 0;
+  const refiRate = parseFloat($('carRefiRate').value) || 0;
+  const refiFees = parseCurrency('carRefiFees');
+  const result = computeAutoRefinance(m, paymentsMade, refiRate, refiFees);
+  const textEl = $('carRefinanceText');
+
+  if (!result){
+    textEl.innerHTML = `Set "payments made" below your loan's ${m.termMonths}-month term to see a refinance comparison.`;
+    return;
+  }
+  const worksOut = result.savings > 0.5;
+  textEl.innerHTML = `Refinancing your <strong>${fmtUSD(result.remainingBalance)}</strong> remaining balance at ${fmtNum(refiRate)}% APR (same ${result.remainingMonths} months left) would change your payment from <strong>${fmtUSD2(result.currentPayment)}</strong> to <strong>${fmtUSD2(result.newPayment)}</strong>/mo, and ${worksOut ? 'save' : 'cost'} <strong>${fmtUSD(Math.abs(result.savings))}</strong> ${refiFees > 0.5 ? '(after fees) ' : ''}in interest.`;
+}
+
+// Financing only "wins" over paying cash when what the amount financed
+// could earn invested beats what the loan actually costs in interest — a
+// simplified lump-sum comparison (it ignores that the monthly payments
+// themselves come from cash flow either way), disclosed in the note itself.
+function computeCashVsFinance(m){
+  if (!window.FNProfile || m.amountFinanced <= 0.5) return null;
+  const profile = window.FNProfile.get();
+  const expectedReturn = parseFloat(profile.expectedReturn);
+  if (isNaN(expectedReturn)) return null;
+  const years = m.termMonths / 12;
+  const fv = m.amountFinanced * Math.pow(1 + expectedReturn / 100, years);
+  const investmentGain = fv - m.amountFinanced;
+  const financingCost = m.totalInterestFullTerm;
+  return { expectedReturn, years, investmentGain, financingCost, financingWins: investmentGain > financingCost };
+}
+
+function renderCashVsFinanceNote(m){
+  const el = $('cbNoteCashVsFinance');
+  const result = computeCashVsFinance(m);
+  if (!result){ el.hidden = true; return; }
+  el.hidden = false;
+  el.className = 'cb-note-card' + (result.financingWins ? ' jade' : '');
+  el.innerHTML = `<span class="cb-note-card-label">Cash vs. financing</span>` +
+    `Financing costs <strong>${fmtUSD(result.financingCost)}</strong> in interest over ${fmtNum(result.years)} years. Investing that same ${fmtUSD(m.amountFinanced)} instead, at your profile's ${fmtNum(result.expectedReturn)}%/yr, could grow by about <strong>${fmtUSD(result.investmentGain)}</strong> over the same period — ` +
+    (result.financingWins
+      ? `financing and investing the cash instead comes out ahead here, assuming that return holds.`
+      : `paying cash instead would leave you ahead here, since the loan's interest cost beats what the cash is projected to earn.`);
+}
+
+// A rough, widely-cited depreciation curve (~20% in year one, ~15%/yr
+// after) — not specific to any make/model, just a sanity check against an
+// optimistic resale guess quietly understating the true cost above.
+function computeTypicalResaleValue(vehiclePrice, years){
+  if (years <= 0) return vehiclePrice;
+  let value = vehiclePrice * 0.80;
+  for (let y = 2; y <= years; y++) value *= 0.85;
+  return value;
+}
+
+function renderResaleCheckNote(m){
+  const el = $('cbNoteResaleCheck');
+  el.hidden = false;
+  const typical = computeTypicalResaleValue(m.vehiclePrice, m.horizonYears);
+  const diffPct = typical > 0 ? ((m.resaleValue - typical) / typical) * 100 : 0;
+  const optimistic = diffPct > 15;
+  el.className = 'cb-note-card' + (optimistic ? ' danger' : '');
+  el.innerHTML = `<span class="cb-note-card-label">Resale value reality check</span>` +
+    `Typical depreciation (~20% in year 1, ~15%/yr after) puts a car like this around <strong>${fmtUSD(typical)}</strong> after ${m.horizonYears} year${m.horizonYears === 1 ? '' : 's'} — your ${fmtUSD(m.resaleValue)} estimate is ` +
+    (optimistic
+      ? `<strong>${fmtNum(diffPct)}% higher</strong> than that. If it lands closer to typical, your true monthly cost above would be higher than shown.`
+      : `in a reasonable range.`);
+}
+
+// ---------- render ----------
+function render(){
+  const m = compute();
+
+  // status strip
+  const strip = $('statusStrip');
+  strip.innerHTML = '';
+  const add = (k, v, cls) => {
+    const div = document.createElement('div');
+    div.className = 'stat';
+    div.innerHTML = `<div class="k">${k}</div><div class="v ${cls||''}">${v}</div>`;
+    strip.appendChild(div);
+  };
+  add('True monthly cost', fmtUSD2(m.trueMonthlyCost) + '/mo', 'target');
+  add('Loan payment', fmtUSD2(m.payment) + '/mo');
+  add('Out-the-door price', fmtUSD(m.otdPrice));
+  add('Amount financed', fmtUSD(m.amountFinanced));
+  add(`Net cost over ${m.horizonYears} yrs`, fmtUSD(m.netCostOfOwnership), 'jade');
+
+  const breakdownSub = $('breakdownSub');
+  if (breakdownSub) breakdownSub.textContent = `OVER YOUR ${m.horizonYears}-YEAR OWNERSHIP HORIZON`;
+
+  // breakdown bar + rows
+  const segments = [
+    { label: 'Out-the-door price (vehicle + tax + fees)', value: m.otdPrice, cls: 'gold' },
+    { label: `Loan interest paid over ${m.horizonYears} yrs`, value: m.interestPaidDuringHorizon, cls: 'rust' },
+    { label: `Insurance (${m.horizonYears} yrs)`, value: m.insurance * m.horizonYears, cls: 'plum' },
+    { label: `Maintenance (${m.horizonYears} yrs)`, value: m.maintenance * m.horizonYears, cls: 'target' },
+    { label: `Fuel / charging (${m.horizonYears} yrs)`, value: m.fuel * m.horizonYears, cls: 'jade' }
+  ];
+  const grossTotal = segments.reduce((s, seg) => s + Math.max(0, seg.value), 0);
+
+  const track = $('cbBarTrack');
+  track.innerHTML = '';
+  segments.forEach(seg => {
+    if (seg.value <= 0) return;
+    const pct = grossTotal > 0 ? (seg.value / grossTotal) * 100 : 0;
+    const div = document.createElement('div');
+    div.className = 'cb-bar-seg ' + seg.cls;
+    div.style.width = pct + '%';
+    div.title = `${seg.label}: ${fmtUSD(seg.value)}`;
+    track.appendChild(div);
+  });
+
+  const rowsHost = $('cbBreakdownRows');
+  rowsHost.innerHTML = '';
+  const addRow = (label, dotCls, amount, isCredit, isTotal) => {
+    const row = document.createElement('div');
+    row.className = 'cb-breakdown-row' + (isTotal ? ' total' : '');
+    row.innerHTML = `
+      <span class="label">${dotCls ? `<span class="dot ${dotCls}"></span>` : ''}${label}</span>
+      <span class="amt${isCredit ? ' credit' : ''}">${isCredit ? '−' : ''}${fmtUSD(Math.abs(amount))}</span>
+    `;
+    rowsHost.appendChild(row);
+  };
+  segments.forEach(seg => { if (seg.value > 0) addRow(seg.label, seg.cls, seg.value, false, false); });
+  addRow('Value recovered when you sell it', null, m.resaleValue, true, false);
+  addRow(`Net total cost of ownership (${m.horizonYears} yrs)`, null, m.netCostOfOwnership, false, true);
+
+  // equity callout
+  const equityEl = $('cbEquityCallout');
+  if (m.remainingBalance > 0.5){
+    const posOrNeg = m.equityAtSale >= 0 ? 'pos' : 'neg';
+    equityEl.innerHTML = `If you sell after ${m.horizonYears} year${m.horizonYears === 1 ? '' : 's'}, you'll still owe <strong>${fmtUSD(m.remainingBalance)}</strong> on the loan. ` +
+      (m.equityAtSale >= 0
+        ? `At your estimated resale value, you'd walk away with about <strong class="pos">${fmtUSD(m.equityAtSale)}</strong> after paying off the loan.`
+        : `At your estimated resale value, you'd still owe about <strong class="neg">${fmtUSD(Math.abs(m.equityAtSale))}</strong> even after selling it — you'd need to bring cash to close out the loan.`);
+  } else {
+    equityEl.innerHTML = `Your loan is fully paid off by the time you sell — the full <strong class="pos">${fmtUSD(m.resaleValue)}</strong> resale value is yours.`;
+  }
+
+  // loan details table
+  const loanBody = $('loanTableBody');
+  loanBody.innerHTML = '';
+  const addLoanRow = (label, value) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td style="text-align:left;">${label}</td><td>${value}</td>`;
+    loanBody.appendChild(tr);
+  };
+  addLoanRow('Amount financed', fmtUSD(m.amountFinanced));
+  addLoanRow('Monthly payment', fmtUSD2(m.payment));
+  addLoanRow('Loan term', `${m.termMonths} months`);
+  addLoanRow('Total of all payments', fmtUSD(m.totalOfPayments));
+  addLoanRow('Total interest (full term)', fmtUSD(m.totalInterestFullTerm));
+
+  render204010(m);
+  renderTermComparison(m);
+  renderDownPaymentNote(m);
+  renderRefinanceNote(m);
+  renderCashVsFinanceNote(m);
+  renderResaleCheckNote(m);
+
+  updateCbSummary(m);
+}
+
+// ---------- persistence ----------
+const STORAGE_KEY = 'carBuyingInputs';
+const DEFAULTS = {
+  vehiclePrice: '35000', downPayment: '5000', taxRate: '7', fees: '600', apr: '7.5', termMonths: '60',
+  insurance: '1400', maintenance: '900', fuel: '1800', horizonYears: '5', resaleValue: '14000',
+  carRefiPayments: '0', carRefiRate: '6.5', carRefiFees: '0'
+};
+const CURRENCY_FIELDS = ['vehiclePrice', 'downPayment', 'fees', 'insurance', 'maintenance', 'fuel', 'resaleValue', 'carRefiFees'];
+const ALL_FIELDS = ['vehiclePrice', 'downPayment', 'taxRate', 'fees', 'apr', 'termMonths', 'insurance', 'maintenance', 'fuel', 'horizonYears', 'resaleValue', 'carRefiPayments', 'carRefiRate', 'carRefiFees'];
+
+function saveInputs(){
+  const vals = {};
+  ALL_FIELDS.forEach(id => { vals[id] = $(id).value; });
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(vals)); } catch(e) { /* storage unavailable, ignore */ }
+  updateSaveStatus();
+}
+function loadInputs(){
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const vals = JSON.parse(raw);
+    Object.keys(vals).forEach(id => { if ($(id)) $(id).value = vals[id]; });
+  } catch(e) { /* storage unavailable or corrupt, ignore */ }
+}
+
+// Persisting on every keystroke means an interrupted edit — select-all a
+// field to retype it, then get pulled away before finishing — saves
+// whatever partial digits were typed so far as the permanent value.
+// render() still runs on every keystroke for instant visual feedback; only
+// the localStorage write is debounced, so a normal typing pause settles on
+// the finished number instead of a mid-edit fragment. blur still saves
+// immediately (the field is done being edited at that point).
+let saveDebounceTimer = null;
+function scheduleSave(){
+  if (saveDebounceTimer) clearTimeout(saveDebounceTimer);
+  saveDebounceTimer = setTimeout(saveInputs, 500);
+}
+
+ALL_FIELDS.forEach(id => {
+  if (CURRENCY_FIELDS.includes(id)) return; // wired separately below with sanitization
+  $(id).addEventListener('input', () => { scheduleSave(); render(); });
+});
+CURRENCY_FIELDS.forEach(id => {
+  $(id).addEventListener('input', () => { sanitizeCurrencyInput(id); scheduleSave(); render(); });
+  $(id).addEventListener('blur', () => { if (saveDebounceTimer) { clearTimeout(saveDebounceTimer); saveDebounceTimer = null; } formatCurrencyField(id); saveInputs(); });
+});
+
+$('resetBtn').addEventListener('click', () => {
+  Object.keys(DEFAULTS).forEach(id => { $(id).value = DEFAULTS[id]; });
+  CURRENCY_FIELDS.forEach(formatCurrencyField);
+  saveInputs();
+  render();
+});
+
+loadInputs();
+CURRENCY_FIELDS.forEach(formatCurrencyField);
+try { setInputsCollapsed(localStorage.getItem(COLLAPSE_KEY) === '1'); } catch(e) { setInputsCollapsed(false); }
+render();
+
+// This script runs synchronously during parsing, before deferred scripts
+// (including user-profile.js) have executed — re-run once DOMContentLoaded
+// fires so the 20/4/10 note's income leg picks up window.FNProfile instead
+// of silently missing it on first paint.
+document.addEventListener('DOMContentLoaded', render);
+</script>
+</body>
+</html>

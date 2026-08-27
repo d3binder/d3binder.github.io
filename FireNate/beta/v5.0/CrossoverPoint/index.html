@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script src="../assets/js/theme-init.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FireNate - Crossover Point</title>
+<meta name="description" content="The amount you need saved at each age where compounding alone — with no more contributions — carries you to your retirement goal.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Antonio:wght@400;500;600;700&family=Michroma&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/site.css">
+<link rel="stylesheet" href="../assets/css/timeToFI.css">
+<link rel="stylesheet" href="../assets/css/toolbar.css">
+<script src="../assets/js/theme.js" defer></script>
+<script src="../assets/js/user-profile.js" defer></script>
+<script src="../assets/js/nav.js" defer></script>
+<script src="../assets/js/profile-autofill.js" defer></script>
+<script src="../assets/js/field-help.js" defer></script>
+<script>
+window.FN_BASE = "../"; window.FN_PAGE = "crossover-point";
+window.FN_FIELD_HELP = {
+  "title": "About this Tool",
+  "intro": "The crossover point is the age where compounding growth alone — with no more contributions — would carry your current savings the rest of the way to your goal.",
+  "sections": [
+    {
+      "heading": "Inputs",
+      "items": [
+        {
+          "label": "Goal Amount",
+          "text": "The portfolio size you're aiming for."
+        },
+        {
+          "label": "Savings",
+          "text": "What you've already saved toward that goal."
+        },
+        {
+          "label": "Age",
+          "text": "Your age right now."
+        },
+        {
+          "label": "Retirement Age",
+          "text": "The age you'd like to have reached your goal by, for comparison."
+        },
+        {
+          "label": "Annual Return Rate",
+          "text": "The average annual investment growth rate you expect."
+        }
+      ]
+    }
+  ]
+};
+window.FN_PROFILE_FIELDS = {
+  currentAge: "#age",
+  currentSavings: "#currentSavings",
+  goalAmount: "#goal",
+  retireAge: "#targetAge",
+  expectedReturn: "#returnPct"
+};
+window.FN_PROFILE_LEGACY_KEY = "crossoverPointInputs";
+</script>
+<style>
+  /* ---------- toolbar overrides (shared: assets/css/toolbar.css) ---------- */
+  :root{ --toolbar-input-width:112px; --toolbar-narrow-width:66px; }
+
+  .crossover-summary{
+    margin-top:4px; position:relative; overflow:hidden;
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    padding:28px 28px 24px;
+  }
+  .crossover-summary::before{
+    content:''; position:absolute; top:0; left:0; right:0; height:4px;
+    background:linear-gradient(90deg, var(--gold), var(--jade), var(--target), var(--plum));
+  }
+  .crossover-summary .cs-eyebrow{
+    font-family:var(--serif); font-size:clamp(18px,2.6vw,26px); font-weight:600;
+    color:var(--target); margin:0 0 6px;
+  }
+  .crossover-summary .cs-amount-row{
+    display:flex; align-items:baseline; flex-wrap:wrap; gap:12px 14px; margin:0 0 8px;
+  }
+  [data-theme="lcars"] .crossover-summary .cs-eyebrow{ font-family:var(--display); letter-spacing:.02em; }
+  [data-theme="lcars"] .crossover-summary .cs-amount{ font-family:var(--mono); font-variant-numeric:tabular-nums; }
+  .crossover-summary .cs-amount{
+    font-family:var(--serif); font-size:clamp(32px,6vw,52px); font-weight:600; color:var(--gold);
+    margin:0; line-height:1;
+  }
+  .crossover-summary .cs-diff{
+    font-family:var(--mono); font-size:14px; font-weight:600;
+    padding:5px 12px; border-radius:999px; white-space:nowrap;
+  }
+  .crossover-summary .cs-diff.cp-diff-pos{ background:rgba(79,219,143,0.15); color:var(--jade); }
+  .crossover-summary .cs-diff.cp-diff-neg{ background:rgba(255,122,92,0.15); color:var(--danger); }
+  .crossover-summary .cs-sub{ color:var(--ink-dim); font-size:14.5px; line-height:1.55; max-width:64ch; margin:0; }
+  .crossover-summary .cs-sub b{ color:var(--ink); }
+  @media (max-width:640px){ .crossover-summary{ padding:22px 18px 20px; } }
+
+  /* ---------- note cards: below the status strip, one topic per box ---------- */
+  /* Same 4 accent colors as the crossover-summary's own top gradient bar,
+     in the same order, so the two feel like one continuous color system. */
+  .cs-notes{
+    display:grid; grid-template-columns:repeat(auto-fit, minmax(230px, 1fr));
+    gap:14px; margin-top:16px;
+  }
+  .cs-note{
+    background:var(--surface); border:1px solid var(--line); border-top:3px solid var(--target);
+    border-radius:var(--radius); padding:16px 18px;
+    color:var(--ink-faint); font-size:13px; line-height:1.55; margin:0;
+  }
+  .cs-note b{ color:var(--ink-dim); }
+  .cs-note[hidden]{ display:none; }
+  .cs-note#csNoteToday{ border-top-color:var(--gold); }
+  .cs-note#csNoteContribution{ border-top-color:var(--jade); }
+  .cs-note#csNoteCrossover{ border-top-color:var(--target); }
+  .cs-note#csNoteWindfall{ border-top-color:var(--plum); }
+  .cs-note-label{
+    display:block; color:var(--ink); font-weight:700; font-size:10.5px;
+    letter-spacing:0.08em; text-transform:uppercase; margin-bottom:6px;
+  }
+
+  /* ---------- inline SVG bar chart (no external chart library) ---------- */
+  #crossoverChart{ width:100%; height:auto; display:block; overflow:visible; }
+  .cp-bar{ fill:url(#crossoverGradient); transition:opacity .15s ease; cursor:pointer; }
+  .cp-bar:hover{ opacity:0.75; }
+  .cp-bar.is-current{ fill:var(--target); }
+  .cp-bar.is-target{ fill:var(--gold); }
+  .cp-bar-group:focus{ outline:none; }
+  .cp-bar-group:focus-visible .cp-bar{ opacity:0.75; }
+  .cp-bar-group:focus-visible{ outline:2px solid var(--gold); outline-offset:2px; }
+  .cp-hit{ cursor:pointer; }
+  .cp-hit:focus{ outline:none; }
+  .cp-hit:focus-visible{ outline:2px solid var(--gold); outline-offset:-2px; }
+  .cp-grid-line{ stroke:var(--line); stroke-width:1; }
+  .cp-grid-label, .cp-axis-label{
+    font-family:var(--mono); font-size:10px; fill:var(--ink-faint);
+  }
+  #cpTooltip{
+    position:fixed; pointer-events:none; background:var(--surface); border:1px solid var(--line);
+    border-radius:10px; padding:9px 13px; font-family:var(--mono); font-size:12px; color:var(--ink);
+    opacity:0; transform:translate(-50%,-115%); transition:opacity .12s; z-index:50;
+    white-space:nowrap; box-shadow:0 8px 24px -10px rgba(0,0,0,0.45);
+  }
+  #cpTooltip .yr{ color:var(--ink-faint); margin-bottom:3px; }
+  [data-theme="neon"] #cpTooltip .yr{ color:var(--ink-dim); }
+  #cpTooltip b{ color:var(--gold); }
+  .cp-savings-line{ fill:none; stroke:var(--jade); stroke-width:2.5; }
+  .cp-savings-dot{ fill:var(--jade); }
+  .progress-ref-line{ stroke:var(--ink-faint); stroke-width:1.5; stroke-dasharray:5 4; }
+  /* keeps each dot+label pair together when .legend-row wraps, instead of
+     letting the wrap point fall between a dot and its own text */
+  .legend-pair{ display:inline-flex; align-items:center; gap:6px; }
+  .cp-diff-pos{ color:var(--jade); font-weight:600; }
+  .cp-diff-neg{ color:var(--danger); }
+  /* two independent toggle groups (shape, unit) sitting side by side above
+     the chart, rather than one control each occupying its own chart panel */
+  .chart-toggle-row{ display:flex; gap:10px; flex-wrap:wrap; }
+</style>
+</head>
+<body>
+<div id="fn-site-nav"></div>
+
+<div class="cx-inputs" id="cxInputs">
+  <div class="wrap cx-summary-row" style="position:relative">
+    <div class="cx-summary" id="cxSummary">&mdash;</div>
+    <button type="button" class="fn-help-btn" style="position:absolute; right:20px; top:50%; transform:translateY(-50%)" aria-label="What do these inputs mean?">?</button>
+  </div>
+  <div class="cx-content" id="cxContent">
+    <div class="wrap cx-inner">
+      <div class="cx-fields">
+        <div class="cx-field">
+          <label for="goal">Goal Amount</label>
+          <div class="cx-input-row"><span class="cx-prefix">$</span><input type="text" step="1000" inputmode="decimal" pattern="[0-9,.]*" id="goal" value="3,000,000.00"></div>
+        </div>
+        <div class="cx-field">
+          <label for="currentSavings">Savings</label>
+          <div class="cx-input-row"><span class="cx-prefix">$</span><input type="text" step="1000" inputmode="decimal" pattern="[0-9,.]*" id="currentSavings" value="0.00"></div>
+        </div>
+        <div class="cx-field">
+          <label for="age">Age</label>
+          <div class="cx-input-row"><input class="cx-narrow" type="number" id="age" value="24" min="0" max="120" step="1"></div>
+        </div>
+        <div class="cx-field">
+          <label for="targetAge">Retirement Age</label>
+          <div class="cx-input-row"><input class="cx-narrow" type="number" id="targetAge" value="60" min="0" max="120" step="1"></div>
+        </div>
+        <div class="cx-field">
+          <label for="returnPct">Annual Return Rate</label>
+          <div class="cx-input-row"><input class="cx-narrow" type="number" step="0.1" inputmode="decimal" id="returnPct" value="11" min="-20" max="30"><span class="cx-suffix">%</span></div>
+        </div>
+      </div>
+      <div class="cx-save">
+        <span class="save-status" id="cxSaveStatus">Not saved yet</span>
+        <button type="button" id="resetBtn" class="reset-btn">Reset to defaults</button>
+      </div>
+    </div>
+  </div>
+  <div class="wrap cx-toggle-row">
+    <button id="cxToggle" type="button" class="cx-toggle" aria-expanded="true" aria-controls="cxContent">
+      <svg class="cx-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+      <span id="cxToggleLabel">Hide inputs</span>
+    </button>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">FIRE Nate - Crossover Point</p>
+    <h1 id="pageTitleHeader">The age you can <em>stop saving</em> and let compounding finish the job.</h1>
+    <p class="lede">The amount you need to have saved at each age where you could theoretically stop contributing toward your savings goal and just let compounding interest get you there.</p>
+  </header>
+
+  <h2 class="ledger-title" style="margin-top: 40px; margin-bottom: 4px;">Summary</h2>
+  <div class="crossover-summary">
+    <p class="cs-eyebrow" id="csEyebrow">At age &mdash;</p>
+    <div class="cs-amount-row">
+      <p class="cs-amount" id="csAmount">$0</p>
+      <span class="cs-diff" id="csDiff"></span>
+    </div>
+    <p class="cs-sub" id="csSub">&mdash;</p>
+  </div>
+  <div class="status" id="statusStrip" style="margin-top:16px;"></div>
+  <div class="cs-notes" id="csNotes">
+    <p class="cs-note" id="csNoteToday"><span class="cs-note-label">Today</span>&mdash;</p>
+    <p class="cs-note" id="csNoteContribution"><span class="cs-note-label">To close the gap</span>&mdash;</p>
+    <p class="cs-note" id="csNoteCrossover"><span class="cs-note-label">Crossover age</span>&mdash;</p>
+    <p class="cs-note" id="csNoteWindfall"><span class="cs-note-label">A windfall would help</span>&mdash;</p>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h2>Crossover amount by age</h2>
+      <span class="sub">WHAT YOU NEED SAVED, BY AGE, FOR COMPOUNDING ALONE TO FINISH THE JOB</span>
+    </div>
+    <div class="chart-card">
+      <div class="chart-toggle-row">
+        <div class="chart-mode-toggle" id="chartModeToggle" role="group" aria-label="Chart style">
+          <button type="button" class="chart-mode-btn active" data-mode="bars">Bars</button>
+          <button type="button" class="chart-mode-btn" data-mode="line">Line</button>
+        </div>
+        <div class="chart-mode-toggle" id="chartUnitToggle" role="group" aria-label="Units">
+          <button type="button" class="chart-mode-btn active" data-unit="dollars">$</button>
+          <button type="button" class="chart-mode-btn" data-unit="percent">%</button>
+        </div>
+      </div>
+      <svg id="crossoverChart" viewBox="0 0 1120 340"></svg>
+      <div id="cpTooltip"></div>
+      <div class="legend-row">
+        <span class="legend-dot gold"></span> Amount needed at this age
+        <span class="legend-dot" style="background:var(--target);"></span> Your current age
+        <span class="legend-dot jade"></span> Your savings, growing at this rate
+        <span class="legend-pair" id="legendGoalRef" style="display:none;"><span class="legend-dot grey"></span> 100% &mdash; goal reached</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h2>Full ledger</h2>
+      <span class="sub" id="fullLedgerSub">BY AGE</span>
+    </div>
+    <div class="table-card">
+      <div class="table-scroll">
+        <table id="crossoverTable">
+          <thead>
+            <tr>
+              <th>Age</th>
+              <th>Years to Target</th>
+              <th>Amount Needed</th>
+              <th>% of Goal</th>
+              <th>Your Savings</th>
+              <th>Difference</th>
+              <th>% of Goal (w/ Savings)</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer id="site-footer"></footer>
+
+<script src="../assets/js/calc-utils.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const fmtUSD = n => n.toLocaleString('en-US', {style:'currency', currency:'USD', maximumFractionDigits:0});
+const fmtNum = n => n.toLocaleString('en-US', {maximumFractionDigits:1});
+const formatCurrencyField = id => {
+  const raw = parseCurrency(id);
+  $(id).value = raw.toLocaleString('en-US', {maximumFractionDigits:2});
+};
+function sanitizeCurrencyInput(id){
+  const el = $(id);
+  const before = el.value;
+  const cursorFromEnd = before.length - (el.selectionStart ?? before.length);
+
+  // keep only digits, commas, and a single decimal point
+  let cleaned = before.replace(/[^0-9.,]/g, '');
+  const parts = cleaned.split('.');
+  if (parts.length > 2){
+    cleaned = parts[0] + '.' + parts.slice(1).join('');
+  }
+
+  if (cleaned !== before){
+    el.value = cleaned;
+    const newPos = Math.max(0, cleaned.length - cursorFromEnd);
+    el.setSelectionRange(newPos, newPos);
+  }
+}
+
+function fmtUSDShort(n){
+  const abs = Math.abs(n);
+  if (abs >= 1e6) return '$' + (n / 1e6).toFixed(1) + 'M';
+  if (abs >= 1e3) return '$' + Math.round(n / 1e3) + 'K';
+  return '$' + Math.round(n);
+}
+
+// ---------- sticky, collapsible input toolbar ----------
+const CX_COLLAPSE_KEY = 'crossoverPointInputsCollapsed';
+const cxInputsEl = $('cxInputs');
+const cxToggle = $('cxToggle');
+const cxToggleLabel = $('cxToggleLabel');
+const cxSummary = $('cxSummary');
+const cxSaveStatus = $('cxSaveStatus');
+
+let cxInputsCollapsed = false;
+function setCxInputsCollapsed(collapsed){
+  cxInputsCollapsed = collapsed;
+  if (cxInputsEl) cxInputsEl.classList.toggle('collapsed', collapsed);
+  if (cxToggle) cxToggle.setAttribute('aria-expanded', String(!collapsed));
+  if (cxToggleLabel) cxToggleLabel.textContent = collapsed ? 'Show inputs' : 'Hide inputs';
+  try { localStorage.setItem(CX_COLLAPSE_KEY, collapsed ? '1' : '0'); } catch(e) {}
+}
+
+function updateCxSummary(){
+  if (!cxSummary) return;
+  const goal = parseCurrency('goal');
+  const currentSavings = parseCurrency('currentSavings');
+  const age = parseFloat($('age').value) || 0;
+  const targetAge = parseFloat($('targetAge').value);
+  const returnPct = parseFloat($('returnPct').value) || 0;
+  cxSummary.textContent = `Goal: ${fmtUSD(goal)} by age ${isFinite(targetAge) ? fmtNum(targetAge) : '—'}  |  Current age: ${fmtNum(age)}  |  Savings: ${fmtUSD(currentSavings)}  |  Return: ${fmtNum(returnPct)}%/yr`;
+}
+
+function cxPad2(n){ return String(n).padStart(2, '0'); }
+function updateCxSaveStatus(){
+  if (!cxSaveStatus) return;
+  const d = new Date();
+  cxSaveStatus.textContent = `Last saved: ${cxPad2(d.getHours())}:${cxPad2(d.getMinutes())}:${cxPad2(d.getSeconds())}`;
+}
+
+if (cxToggle){
+  cxToggle.addEventListener('click', () => setCxInputsCollapsed(!cxInputsCollapsed));
+}
+
+function crossoverAmount(goal, r, yearsRemaining){
+  const yrs = Math.max(0, yearsRemaining);
+  const base = 1 + r;
+  if (base <= 0) return goal;
+  return goal / Math.pow(base, yrs);
+}
+
+function savingsGrowth(currentSavings, r, yearsElapsed){
+  const yrs = Math.max(0, yearsElapsed);
+  const base = 1 + r;
+  if (base <= 0) return currentSavings;
+  return currentSavings * Math.pow(base, yrs);
+}
+
+// Ordinary-annuity solve: given the same annual return already compounding
+// currentSavings, what fixed extra amount contributed every year (on top of
+// that lump sum, invested at the same rate) closes the gap to goal by the
+// time `years` elapses? Same FV = P(1+r)^t + C[((1+r)^t-1)/r] shape as
+// TimeToFI's own yearsToGoal(), just solved for C instead of t, so the two
+// pages agree on what "contributing steadily" means.
+// The age at which currentSavings alone — compounding at r, no more
+// contributions, ever — would reach goal. Independent of targetAge, unlike
+// the ledger/chart above: those only compare current savings against a
+// single target age's own required-amount curve, and since that curve and
+// the savings curve share the same growth rate, whichever one starts ahead
+// stays ahead at every age in between — they never actually cross
+// mid-range. This solves the real "when does my money alone get there"
+// question directly instead of scanning for a crossing that can't happen.
+function crossoverAgeFor(startingSavings, r, goal, age){
+  if (startingSavings >= goal) return age;
+  if (startingSavings <= 0) return Infinity;
+  const base = 1 + r;
+  if (base <= 1) return Infinity;
+  return age + Math.log(goal / startingSavings) / Math.log(base);
+}
+const WINDFALL = 10000;
+
+function requiredContribution(goal, currentSavings, r, years){
+  if (years <= 0) return null;
+  const base = 1 + r;
+  const fv = base > 0 ? currentSavings * Math.pow(base, years) : currentSavings;
+  const remaining = goal - fv;
+  if (remaining <= 0) return 0;
+  if (Math.abs(r) < 1e-9 || base <= 0) return remaining / years;
+  return remaining * r / (Math.pow(base, years) - 1);
+}
+
+function compute(){
+  const goal = parseCurrency('goal');
+  const currentSavings = parseCurrency('currentSavings');
+  const age = parseFloat($('age').value) || 0;
+  const targetAge = parseFloat($('targetAge').value) || 0;
+  const r = (parseFloat($('returnPct').value) || 0) / 100;
+
+  const startAge = Math.floor(age);
+  const endAge = Math.max(startAge, Math.floor(targetAge));
+  const rows = [];
+  for (let a = startAge; a <= endAge; a++){
+    const yearsRemaining = targetAge - a;
+    const amount = crossoverAmount(goal, r, yearsRemaining);
+    const savings = savingsGrowth(currentSavings, r, a - startAge);
+    rows.push({
+      age: a,
+      yearsRemaining: Math.max(0, yearsRemaining),
+      amount,
+      pct: goal > 0 ? (amount / goal) * 100 : 0,
+      savings,
+      diff: savings - amount,
+      pctWithSavings: goal > 0 ? (savings / goal) * 100 : 0
+    });
+  }
+
+  const currentAmount = crossoverAmount(goal, r, targetAge - age);
+  const yearsToTarget = Math.max(0, targetAge - age);
+  const extraAnnual = requiredContribution(goal, currentSavings, r, targetAge - age);
+  const crossoverAge = crossoverAgeFor(currentSavings, r, goal, age);
+  const boostedCrossoverAge = crossoverAgeFor(currentSavings + WINDFALL, r, goal, age);
+  return {goal, currentSavings, age, targetAge, r, rows, currentAmount, yearsToTarget, startAge, endAge, extraAnnual, crossoverAge, boostedCrossoverAge};
+}
+
+function renderSummary(state){
+  const {goal, currentSavings, age, targetAge, r, currentAmount, extraAnnual, crossoverAge, boostedCrossoverAge} = state;
+  $('csEyebrow').textContent = `At age ${fmtNum(age)}`;
+  $('csAmount').textContent = fmtUSD(currentAmount);
+
+  // same figure as the "Difference" column for this age: savings minus amount needed
+  const diff = currentSavings - currentAmount;
+  const csDiff = $('csDiff');
+  if (csDiff){
+    csDiff.classList.remove('cp-diff-pos', 'cp-diff-neg');
+    csDiff.classList.add(diff >= 0 ? 'cp-diff-pos' : 'cp-diff-neg');
+    const sign = diff > 0 ? '+' : (diff < 0 ? '−' : '');
+    csDiff.textContent = `${sign}${fmtUSD(Math.abs(diff))} ${diff >= 0 ? 'ahead' : 'short'}`;
+  }
+
+  if (age >= targetAge){
+    $('csSub').innerHTML = `You're already at or past your target retirement age of <b>${fmtNum(targetAge)}</b> &mdash; you'd need the full <b>${fmtUSD(goal)}</b> saved now.`;
+  } else {
+    $('csSub').innerHTML = `If you have this saved and keep earning <b>${fmtNum(r * 100)}%</b> annually, compounding alone can carry you to <b>${fmtUSD(goal)}</b> by age <b>${fmtNum(targetAge)}</b> &mdash; you won't need to save anymore to hit your goal.`;
+  }
+
+  // Four short, single-topic notes instead of one run-on paragraph — each
+  // is independently shown/hidden depending on which questions actually
+  // have something to say for the current inputs.
+  const NOTE_LABELS = {
+    csNoteToday: 'Today',
+    csNoteContribution: 'To close the gap',
+    csNoteCrossover: 'Crossover age',
+    csNoteWindfall: 'A windfall would help'
+  };
+  const setNote = (id, bodyHtml) => {
+    const el = $(id);
+    if (!el) return;
+    el.hidden = bodyHtml === null;
+    if (bodyHtml !== null){
+      el.innerHTML = `<span class="cs-note-label">${NOTE_LABELS[id]}</span>${bodyHtml}`;
+    }
+  };
+
+  if (diff >= 0){
+    setNote('csNoteToday', ` You're already <b>${fmtUSD(diff)} ahead</b> of what's needed at this age, compared to your current savings of <b>${fmtUSD(currentSavings)}</b>.`);
+    setNote('csNoteContribution', null);
+  } else {
+    setNote('csNoteToday', ` You're currently <b>${fmtUSD(Math.abs(diff))} short</b> of what's needed at this age, compared to your current savings of <b>${fmtUSD(currentSavings)}</b>.`);
+    if (extraAnnual !== null && extraAnnual > 0){
+      setNote('csNoteContribution', ` Add about <b>${fmtUSD(extraAnnual / 12)}/month</b> (<b>${fmtUSD(extraAnnual)}/year</b>), assuming those contributions also earn <b>${fmtNum(r * 100)}%</b> annually until age <b>${fmtNum(targetAge)}</b>.`);
+    } else {
+      setNote('csNoteContribution', null);
+    }
+  }
+
+  // A different question than the badge above: regardless of the target
+  // age you chose, when would your current savings ALONE — no more
+  // contributions, ever — reach the goal? Compares that age against your
+  // actual target instead of just restating today's gap.
+  if (isFinite(crossoverAge) && crossoverAge > age + 0.01){
+    const yrsVsTarget = targetAge - crossoverAge;
+    const beforeAfter = yrsVsTarget >= 0
+      ? `<b>${fmtNum(Math.abs(yrsVsTarget))} years before</b> your age-${fmtNum(targetAge)} target`
+      : `<b>${fmtNum(Math.abs(yrsVsTarget))} years after</b> your age-${fmtNum(targetAge)} target`;
+    setNote('csNoteCrossover', ` Compounding at <b>${fmtNum(r * 100)}%</b> with no more contributions, your current savings alone would reach your goal by age <b>${fmtNum(crossoverAge)}</b> &mdash; ${beforeAfter}.`);
+    if (isFinite(boostedCrossoverAge) && boostedCrossoverAge < crossoverAge - 0.01){
+      setNote('csNoteWindfall', ` An extra <b>${fmtUSD(WINDFALL)}</b> saved today would move your crossover age up to <b>${fmtNum(boostedCrossoverAge)}</b> &mdash; about <b>${fmtNum(crossoverAge - boostedCrossoverAge)} years sooner</b>.`);
+    } else {
+      setNote('csNoteWindfall', null);
+    }
+  } else if (!isFinite(crossoverAge) && isFinite(boostedCrossoverAge)){
+    setNote('csNoteCrossover', ` At <b>$0</b> saved, compounding alone would never reach your goal.`);
+    setNote('csNoteWindfall', ` But an extra <b>${fmtUSD(WINDFALL)}</b> today would put your crossover age at <b>${fmtNum(boostedCrossoverAge)}</b>.`);
+  } else {
+    setNote('csNoteCrossover', null);
+    setNote('csNoteWindfall', null);
+  }
+}
+
+function renderStatusStrip(state){
+  const {goal, age, targetAge, r, yearsToTarget, extraAnnual, crossoverAge} = state;
+  const strip = $('statusStrip');
+  strip.innerHTML = '';
+  const add = (k, v, cls) => {
+    const div = document.createElement('div');
+    div.className = 'stat';
+    div.innerHTML = `<div class="k">${k}</div><div class="v ${cls || ''}">${v}</div>`;
+    strip.appendChild(div);
+  };
+
+  // The page's own namesake number, front and center: the age your current
+  // savings alone — no more contributions — would reach the goal.
+  if (!isFinite(crossoverAge)){
+    add('Crossover age', 'Never at this rate', 'danger');
+  } else if (crossoverAge <= age + 0.01){
+    add('Crossover age', 'Already there', 'jade');
+  } else {
+    const projectedDate = new Date();
+    projectedDate.setMonth(projectedDate.getMonth() + Math.round((crossoverAge - age) * 12));
+    const dateLabel = projectedDate.toLocaleDateString('en-US', {month:'short', year:'numeric'});
+    add('Crossover age', `${fmtNum(crossoverAge)} (~${dateLabel})`, crossoverAge <= targetAge ? 'jade' : 'danger');
+  }
+
+  add('Goal amount', fmtUSD(goal), 'gold');
+  add('Target retirement age', fmtNum(targetAge));
+  add('Anticipated return', fmtNum(r * 100) + '%', 'jade');
+  add('Years remaining', fmtNum(yearsToTarget), 'target');
+
+  if (extraAnnual === null){
+    add('Monthly top-up needed', '—');
+  } else if (extraAnnual <= 0){
+    add('Monthly top-up needed', 'None — on track', 'jade');
+  } else {
+    add('Monthly top-up needed', fmtUSD(extraAnnual / 12), 'danger');
+  }
+}
+
+function renderTable(state){
+  const {rows, startAge, endAge} = state;
+  $('fullLedgerSub').textContent = `AGE ${startAge} — ${endAge}`;
+  const tbody = $('tableBody');
+  tbody.innerHTML = '';
+  rows.forEach(row => {
+    const tr = document.createElement('tr');
+    if (row.age === startAge) tr.classList.add('target-row');
+    if (row.age >= endAge) tr.classList.add('milestone');
+    const diffCls = row.diff >= 0 ? 'cp-diff-pos' : 'cp-diff-neg';
+    const diffSign = row.diff > 0 ? '+' : (row.diff < 0 ? '−' : '');
+    tr.innerHTML = `
+      <td>${row.age}</td>
+      <td>${row.yearsRemaining <= 0 ? 'Reached' : fmtNum(row.yearsRemaining)}</td>
+      <td>${fmtUSD(row.amount)}</td>
+      <td>${fmtNum(row.pct)}%</td>
+      <td>${fmtUSD(row.savings)}</td>
+      <td class="${diffCls}">${diffSign}${fmtUSD(Math.abs(row.diff))}</td>
+      <td>${fmtNum(row.pctWithSavings)}%</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// ---------- inline SVG bar chart (no external chart library) ----------
+const svgNS = 'http://www.w3.org/2000/svg';
+const cpSvg = $('crossoverChart');
+const cpTooltip = $('cpTooltip');
+
+function niceCeil(v){
+  if (v <= 0) return 1;
+  const mag = Math.pow(10, Math.floor(Math.log10(v)));
+  const norm = v / mag;
+  let step;
+  if (norm <= 1) step = 1; else if (norm <= 2) step = 2; else if (norm <= 5) step = 5; else step = 10;
+  return step * mag;
+}
+
+let chartMode = 'bars';
+let chartUnit = 'dollars';
+let lastChartState = null;
+
+// One chart, two independent toggles: Bars/Line controls the shape,
+// $/% controls which pair of columns (amount/savings vs. their pct of
+// goal) get plotted — dollars and percent are a straight linear rescale of
+// each other, so this used to be two separate panels showing the same
+// curve twice. amountKey/savingsKey below is the only thing that changes
+// between them; everything else (bars vs. line, tooltips, current/target
+// highlighting) is shared.
+function renderChart(state){
+  lastChartState = state;
+  const {rows, startAge, endAge} = state;
+  const W = 1120, H = 340;
+  const isPct = chartUnit === 'percent';
+  const padL = isPct ? 60 : 74, padR = 10, padT = 16, padB = 34;
+  const plotW = W - padL - padR;
+  const plotH = H - padT - padB;
+
+  const amountKey = isPct ? 'pct' : 'amount';
+  const savingsKey = isPct ? 'pctWithSavings' : 'savings';
+  const fmtAxisVal = isPct ? (v => Math.round(v) + '%') : fmtUSDShort;
+  const fmtTooltip = (row) => isPct
+    ? `<div class="yr">Age ${row.age}</div>Needed <b>${fmtNum(row.pct)}%</b><br>Your savings <b>${fmtNum(row.pctWithSavings)}%</b>`
+    : `<div class="yr">Age ${row.age}</div>Amount needed <b>${fmtUSD(row.amount)}</b><br>Your savings <b>${fmtUSD(row.savings)}</b>`;
+  const fmtAria = (row) => isPct
+    ? `Age ${row.age}: needed ${fmtNum(row.pct)}%, your savings ${fmtNum(row.pctWithSavings)}%.`
+    : `Age ${row.age}: amount needed ${fmtUSD(row.amount)}, your savings ${fmtUSD(row.savings)}.`;
+
+  // Shared by every hit-target's mouse and keyboard handlers — positions
+  // the tooltip either at the cursor (mouse) or centered above the
+  // element's own rendered position (keyboard focus has no cursor
+  // coordinates).
+  function showCpTooltip(el, html){
+    const r = el.getBoundingClientRect();
+    cpTooltip.style.opacity = 1;
+    cpTooltip.style.left = (r.left + r.width / 2) + 'px';
+    cpTooltip.style.top = r.top + 'px';
+    cpTooltip.innerHTML = html;
+  }
+
+  const rawMax = Math.max(...rows.map(r => r[amountKey]), ...rows.map(r => r[savingsKey]), isPct ? 100 : 1);
+  const niceMax = niceCeil(isPct ? rawMax * 1.08 : rawMax);
+
+  cpSvg.innerHTML = '';
+  const defs = document.createElementNS(svgNS, 'defs');
+  defs.innerHTML =
+    '<linearGradient id="crossoverGradient" x1="0" y1="1" x2="0" y2="0">' +
+      '<stop offset="0%" stop-color="#A66A0C"/>' +
+      '<stop offset="100%" stop-color="#F3B23A"/>' +
+    '</linearGradient>';
+  cpSvg.appendChild(defs);
+
+  // gridlines
+  const steps = 5;
+  for (let i = 0; i <= steps; i++){
+    const val = niceMax * i / steps;
+    const y = padT + plotH - (val / niceMax) * plotH;
+    const line = document.createElementNS(svgNS, 'line');
+    line.setAttribute('x1', padL); line.setAttribute('x2', W - padR);
+    line.setAttribute('y1', y); line.setAttribute('y2', y);
+    line.setAttribute('class', 'cp-grid-line');
+    cpSvg.appendChild(line);
+
+    const label = document.createElementNS(svgNS, 'text');
+    label.setAttribute('x', padL - 10);
+    label.setAttribute('y', y + 4);
+    label.setAttribute('text-anchor', 'end');
+    label.setAttribute('class', 'cp-grid-label');
+    label.textContent = fmtAxisVal(val);
+    cpSvg.appendChild(label);
+  }
+
+  const n = rows.length;
+  const barGap = n > 40 ? 3 : n > 20 ? 5 : 8;
+  const barW = Math.max((plotW / n) - barGap, 1);
+  const labelStep = n <= 20 ? 1 : n <= 40 ? 2 : 5;
+  const xCenter = (i) => padL + i * (barW + barGap) + barW / 2;
+  const yFor = (v) => padT + plotH - (v / niceMax) * plotH;
+
+  // "goal reached" reference line — only meaningful once amounts are
+  // expressed as a percent of goal (in dollar terms the goal is just a
+  // fixed number the amount-needed curve already trends toward).
+  const legendGoalRef = $('legendGoalRef');
+  if (isPct && niceMax > 100){
+    const y100 = yFor(100);
+    const refLine = document.createElementNS(svgNS, 'line');
+    refLine.setAttribute('x1', padL); refLine.setAttribute('x2', W - padR);
+    refLine.setAttribute('y1', y100); refLine.setAttribute('y2', y100);
+    refLine.setAttribute('class', 'progress-ref-line');
+    cpSvg.appendChild(refLine);
+    if (legendGoalRef) legendGoalRef.style.display = '';
+  } else if (legendGoalRef){
+    legendGoalRef.style.display = 'none';
+  }
+
+  // axis labels — shared between both modes
+  rows.forEach((row, i) => {
+    if (row.age % labelStep === 0 || row.age === startAge || row.age === endAge){
+      const lbl = document.createElementNS(svgNS, 'text');
+      lbl.setAttribute('x', xCenter(i));
+      lbl.setAttribute('y', H - padB + 16);
+      lbl.setAttribute('text-anchor', 'middle');
+      lbl.setAttribute('class', 'cp-axis-label');
+      lbl.textContent = row.age;
+      cpSvg.appendChild(lbl);
+    }
+  });
+
+  const savingsPoints = [];
+
+  if (chartMode === 'line'){
+    const amountPoints = [];
+    rows.forEach((row, i) => {
+      const cx = xCenter(i);
+      amountPoints.push([cx, yFor(row[amountKey])]);
+      savingsPoints.push([cx, yFor(row[savingsKey])]);
+
+      const hit = document.createElementNS(svgNS, 'rect');
+      hit.setAttribute('class', 'cp-hit');
+      hit.setAttribute('x', padL + i * (barW + barGap));
+      hit.setAttribute('y', padT);
+      hit.setAttribute('width', barW + barGap);
+      hit.setAttribute('height', plotH);
+      hit.setAttribute('fill', 'transparent');
+      hit.setAttribute('tabindex', '0');
+      hit.setAttribute('role', 'img');
+      hit.setAttribute('aria-label', fmtAria(row));
+      hit.addEventListener('mousemove', (e) => {
+        cpTooltip.style.opacity = 1;
+        cpTooltip.style.left = e.clientX + 'px';
+        cpTooltip.style.top = e.clientY + 'px';
+        cpTooltip.innerHTML = fmtTooltip(row);
+      });
+      hit.addEventListener('mouseleave', () => { cpTooltip.style.opacity = 0; });
+      hit.addEventListener('focus', () => { showCpTooltip(hit, fmtTooltip(row)); });
+      hit.addEventListener('blur', () => { cpTooltip.style.opacity = 0; });
+      cpSvg.appendChild(hit);
+    });
+
+    if (amountPoints.length){
+      const areaD = amountPoints.map((p, i) => (i === 0 ? 'M' : 'L') + p[0] + ',' + p[1]).join(' ')
+        + ` L${amountPoints[amountPoints.length - 1][0]},${yFor(0)} L${amountPoints[0][0]},${yFor(0)} Z`;
+      const area = document.createElementNS(svgNS, 'path');
+      area.setAttribute('d', areaD);
+      area.setAttribute('fill', 'url(#crossoverGradient)');
+      area.setAttribute('opacity', '0.16');
+      cpSvg.appendChild(area);
+
+      const line = document.createElementNS(svgNS, 'path');
+      const lineD = amountPoints.map((p, i) => (i === 0 ? 'M' : 'L') + p[0] + ',' + p[1]).join(' ');
+      line.setAttribute('d', lineD);
+      line.setAttribute('class', 'chart-line');
+      line.style.stroke = 'var(--gold)';
+      cpSvg.appendChild(line);
+    }
+
+    rows.forEach((row, i) => {
+      if (row.age !== startAge && row.age !== endAge) return;
+      const dot = document.createElementNS(svgNS, 'circle');
+      dot.setAttribute('cx', xCenter(i));
+      dot.setAttribute('cy', yFor(row[amountKey]));
+      dot.setAttribute('r', 5);
+      dot.setAttribute('fill', row.age === startAge ? 'var(--target)' : 'var(--gold)');
+      cpSvg.appendChild(dot);
+    });
+  } else {
+    rows.forEach((row, i) => {
+      const x = padL + i * (barW + barGap);
+      const barH = Math.max((row[amountKey] / niceMax) * plotH, 1);
+      const y = padT + plotH - barH;
+      const cx = xCenter(i);
+      savingsPoints.push([cx, yFor(row[savingsKey])]);
+
+      const group = document.createElementNS(svgNS, 'g');
+      group.setAttribute('class', 'cp-bar-group');
+      group.setAttribute('tabindex', '0');
+      group.setAttribute('role', 'img');
+      group.setAttribute('aria-label', fmtAria(row));
+
+      const rect = document.createElementNS(svgNS, 'rect');
+      rect.setAttribute('class', 'cp-bar' + (row.age === startAge ? ' is-current' : row.age >= endAge ? ' is-target' : ''));
+      rect.setAttribute('x', x);
+      rect.setAttribute('y', y);
+      rect.setAttribute('width', barW);
+      rect.setAttribute('height', barH);
+      rect.setAttribute('rx', 1.5);
+      group.appendChild(rect);
+
+      group.addEventListener('mousemove', (e) => {
+        cpTooltip.style.opacity = 1;
+        cpTooltip.style.left = e.clientX + 'px';
+        cpTooltip.style.top = e.clientY + 'px';
+        cpTooltip.innerHTML = fmtTooltip(row);
+      });
+      group.addEventListener('mouseleave', () => { cpTooltip.style.opacity = 0; });
+      group.addEventListener('focus', () => { showCpTooltip(group, fmtTooltip(row)); });
+      group.addEventListener('blur', () => { cpTooltip.style.opacity = 0; });
+
+      cpSvg.appendChild(group);
+    });
+  }
+
+  // ---- savings growth line, overlaid in both modes ----
+  if (savingsPoints.length){
+    const path = document.createElementNS(svgNS, 'path');
+    const d = savingsPoints.map((p, i) => (i === 0 ? 'M' : 'L') + p[0] + ',' + p[1]).join(' ');
+    path.setAttribute('d', d);
+    path.setAttribute('class', 'cp-savings-line');
+    cpSvg.appendChild(path);
+
+    savingsPoints.forEach(([px, py]) => {
+      const dot = document.createElementNS(svgNS, 'circle');
+      dot.setAttribute('class', 'cp-savings-dot');
+      dot.setAttribute('cx', px);
+      dot.setAttribute('cy', py);
+      dot.setAttribute('r', 2.5);
+      cpSvg.appendChild(dot);
+    });
+  }
+}
+
+function render(){
+  const state = compute();
+  renderSummary(state);
+  renderStatusStrip(state);
+  renderTable(state);
+  renderChart(state);
+  updateCxSummary();
+}
+
+document.querySelectorAll('#chartModeToggle .chart-mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (btn.classList.contains('active')) return;
+    chartMode = btn.dataset.mode;
+    btn.parentElement.querySelectorAll('.chart-mode-btn').forEach(b => b.classList.toggle('active', b === btn));
+    if (lastChartState) renderChart(lastChartState);
+  });
+});
+
+document.querySelectorAll('#chartUnitToggle .chart-mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (btn.classList.contains('active')) return;
+    chartUnit = btn.dataset.unit;
+    btn.parentElement.querySelectorAll('.chart-mode-btn').forEach(b => b.classList.toggle('active', b === btn));
+    if (lastChartState) renderChart(lastChartState);
+  });
+});
+
+const STORAGE_KEY = 'crossoverPointInputs';
+const DEFAULTS = {goal:'3000000', currentSavings:'0', age:'24', targetAge:'60', returnPct:'11'};
+const CURRENCY_FIELDS = ['goal', 'currentSavings'];
+const ALL_FIELDS = ['goal', 'currentSavings', 'age', 'targetAge', 'returnPct'];
+
+function saveInputs(){
+  const vals = {};
+  ALL_FIELDS.forEach(id => { vals[id] = $(id).value; });
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(vals)); } catch(e) { /* storage unavailable, ignore */ }
+  updateCxSaveStatus();
+}
+function loadInputs(){
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const vals = JSON.parse(raw);
+    Object.keys(vals).forEach(id => { if ($(id)) $(id).value = vals[id]; });
+  } catch(e) { /* storage unavailable or corrupt, ignore */ }
+}
+
+// Persisting on every keystroke means an interrupted edit — select-all a
+// field to retype it, then get pulled away before finishing — saves
+// whatever partial digits were typed so far as the permanent value.
+// render() still runs on every keystroke for instant visual feedback; only
+// the localStorage write is debounced, so a normal typing pause settles on
+// the finished number instead of a mid-edit fragment. blur still saves
+// immediately (the field is done being edited at that point).
+let saveDebounceTimer = null;
+function scheduleSave(){
+  if (saveDebounceTimer) clearTimeout(saveDebounceTimer);
+  saveDebounceTimer = setTimeout(saveInputs, 500);
+}
+
+ALL_FIELDS.forEach(id => {
+  if (CURRENCY_FIELDS.includes(id)) return; // wired separately below with sanitization
+  $(id).addEventListener('input', () => { scheduleSave(); render(); });
+});
+CURRENCY_FIELDS.forEach(id => {
+  $(id).addEventListener('input', () => { sanitizeCurrencyInput(id); scheduleSave(); render(); });
+  $(id).addEventListener('blur', () => { if (saveDebounceTimer) { clearTimeout(saveDebounceTimer); saveDebounceTimer = null; } formatCurrencyField(id); saveInputs(); });
+});
+
+$('resetBtn').addEventListener('click', () => {
+  Object.keys(DEFAULTS).forEach(id => { $(id).value = DEFAULTS[id]; });
+  if (window.FNProfileAutofill) window.FNProfileAutofill.apply(true);
+  CURRENCY_FIELDS.forEach(formatCurrencyField);
+  saveInputs();
+  render();
+});
+
+loadInputs();
+CURRENCY_FIELDS.forEach(formatCurrencyField);
+try { setCxInputsCollapsed(localStorage.getItem(CX_COLLAPSE_KEY) === '1'); } catch(e) { setCxInputsCollapsed(false); }
+render();
+</script>
+</body>
+</html>

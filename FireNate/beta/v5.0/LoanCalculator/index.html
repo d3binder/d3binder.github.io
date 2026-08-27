@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<script src="../assets/js/theme-init.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>FireNate - Loan Ledger &mdash; Amortization Calculator</title>
+<meta name="description" content="A full amortization schedule for any loan — monthly payment, total interest, and how much of each payment goes to principal vs. interest over time.">
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Antonio:wght@400;500;600;700&family=Michroma&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="../assets/css/site.css">
+<link rel="stylesheet" href="style.css" />
+<script src="../assets/js/theme.js" defer></script>
+<script src="../assets/js/user-profile.js" defer></script>
+<script src="../assets/js/nav.js" defer></script>
+<script src="../assets/js/field-help.js" defer></script>
+<script>
+window.FN_BASE = "../"; window.FN_PAGE = "loan-calculator";
+window.FN_FIELD_HELP = {
+  "title": "About this Tool",
+  "intro": "A standard amortization calculator — enter the loan terms to see the monthly payment, total interest, and full payment schedule.",
+  "sections": [
+    { "heading": "Inputs", "items": [
+      { "label": "Loan amount", "text": "The principal being borrowed." },
+      { "label": "Annual interest rate", "text": "The loan's APR." },
+      { "label": "Loan period", "text": "How long you have to repay the loan — toggle between entering it in years or months." },
+      { "label": "Start date", "text": "When the first payment is due — used to date every entry in the payment schedule." }
+    ]},
+    { "heading": "Refinance comparison (optional)", "items": [
+      { "label": "Loan Payments Already Made", "text": "How many payments you've already made on this loan — 0 if you haven't started yet. For example, if you've been paying monthly for 3 years, enter 36. Sets the remaining balance the refinance comparison is based on." },
+      { "label": "Refinance APR", "text": "The interest rate you'd get on a new loan covering your remaining balance, kept on the same remaining schedule." },
+      { "label": "Refinance fees", "text": "Any closing costs for the new loan, as a flat dollar amount — treated as a one-time cost, not rolled into the new balance." }
+    ]}
+  ]
+};
+</script>
+</head>
+<body>
+<div id="fn-site-nav"></div>
+
+  <header class="hero">
+    <div class="wrap">
+      <div class="eyebrow">Amortization &middot; Ledger No. 001</div>
+      <h1>What this loan really costs you.</h1>
+      <p class="sub">Adjust the terms below. Every payment, every dollar of interest, laid out month by month &mdash; the same way a bank sees it.</p>
+
+      <div class="hero-stats">
+        <div>
+          <div class="label">Monthly payment</div>
+          <div class="num big" id="heroPayment">&mdash;</div>
+        </div>
+        <div>
+          <div class="label">Total interest</div>
+          <div class="num big rust" id="heroInterest">&mdash;</div>
+        </div>
+        <div>
+          <div class="label">Total cost of loan</div>
+          <div class="num big sage" id="heroTotal">&mdash;</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap main">
+
+    <!-- INPUTS -->
+    <section class="card inputs-card">
+      <button type="button" class="fn-help-btn" style="position:absolute; right:20px; top:20px;" aria-label="What do these inputs mean?">?</button>
+      <label>
+        <div class="field-label">Loan amount</div>
+        <div class="field-row">
+          <span class="num prefix">$</span>
+          <input class="ll-input" type="text" inputmode="decimal" id="loanAmountInput" placeholder="0" />
+        </div>
+      </label>
+
+      <label>
+        <div class="field-label">Annual interest rate</div>
+        <div class="field-row">
+          <input class="ll-input" type="number" id="rateInput" min="0" step="0.05" />
+          <span class="num suffix">%</span>
+        </div>
+      </label>
+
+      <label>
+        <div class="field-label-row">
+          <div class="field-label">Loan period</div>
+          <div class="segmented" id="termToggle">
+            <button type="button" class="seg-btn" data-unit="years">Yrs</button>
+            <button type="button" class="seg-btn" data-unit="months">Mos</button>
+          </div>
+        </div>
+        <div class="field-row">
+          <input class="ll-input" type="number" id="termInput" min="1" step="1" />
+          <span class="num suffix" id="termUnitLabel">years</span>
+        </div>
+      </label>
+
+      <label>
+        <div class="field-label">Start date</div>
+        <input class="ll-input" type="date" id="startDateInput" />
+      </label>
+
+      <span class="save-status" id="lcSaveStatus">Not saved yet</span>
+    </section>
+
+    <!-- STAT STRIP -->
+    <section class="stat-strip" id="statStrip"></section>
+
+    <!-- EXTRA PAYMENT SCENARIO -->
+    <section class="card insight-card" id="extraPaymentCard" hidden>
+      <div class="insight-label">What extra payments would save you</div>
+      <div class="scenario-toggle" id="extraToggle">
+        <button type="button" class="scenario-btn" data-amt="50">+$50</button>
+        <button type="button" class="scenario-btn active" data-amt="100">+$100</button>
+        <button type="button" class="scenario-btn" data-amt="200">+$200</button>
+        <button type="button" class="scenario-btn" data-amt="500">+$500</button>
+        <button type="button" class="scenario-btn" data-amt="1000">+$1,000</button>
+        <button type="button" class="scenario-btn" data-amt="1500">+$1,500</button>
+        <button type="button" class="scenario-btn" data-amt="2000">+$2,000</button>
+      </div>
+      <div id="extraPaymentText"></div>
+    </section>
+
+    <!-- CHART -->
+    <section class="card chart-card">
+      <div class="chart-head">
+        <div class="card-title">The burn-down</div>
+        <p class="card-sub">Your balance falls in a straight-looking line, but what you're actually paying down shifts underneath it &mdash; mostly interest at first, mostly principal by the end.</p>
+      </div>
+      <div class="chart-wrap">
+        <svg id="chartSvg" viewBox="0 0 760 320" preserveAspectRatio="none"></svg>
+        <div class="tooltip" id="tooltip"></div>
+      </div>
+      <div class="legend">
+        <span><i class="swatch sage"></i>Principal paid</span>
+        <span><i class="swatch rust"></i>Interest paid</span>
+        <span><i class="swatch line"></i>Remaining balance</span>
+      </div>
+    </section>
+
+    <!-- LEDGER -->
+    <section class="card ledger-card">
+      <div class="ledger-head" id="ledgerToggle">
+        <div>
+          <div class="card-title">Payment schedule</div>
+          <div class="ledger-sub" id="ledgerSub">&mdash;</div>
+        </div>
+        <div class="num toggle-label" id="toggleLabel">view all &#9662;</div>
+      </div>
+      <div class="table-scroll" id="tableWrap" hidden>
+        <table>
+          <thead>
+            <tr>
+              <th class="left">No.</th>
+              <th class="left">Date</th>
+              <th>Beginning</th>
+              <th>Payment</th>
+              <th>Principal</th>
+              <th>Interest</th>
+              <th>Ending</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- REFINANCE COMPARISON -->
+    <section class="card insight-card" id="refinanceCard" hidden>
+      <div class="insight-label">Is refinancing worth it?</div>
+      <div class="refi-inputs">
+        <label class="mini-field">
+          <span class="hint-text" title="How many payments you've already made on this loan. For example, if you've been paying monthly for 3 years, enter 36.">Loan payments already made</span>
+          <input class="mini-input" type="number" id="refiPaymentsInput" min="0" step="1" value="0" title="How many payments you've already made on this loan. For example, if you've been paying monthly for 3 years, enter 36." />
+        </label>
+        <label class="mini-field">
+          <span>Refinance APR</span>
+          <div class="mini-field-row"><input class="mini-input" type="number" id="refiRateInput" min="0" step="0.05" /><span class="num suffix">%</span></div>
+        </label>
+        <label class="mini-field">
+          <span>Refinance fees</span>
+          <div class="mini-field-row"><span class="num prefix">$</span><input class="mini-input" type="text" inputmode="decimal" id="refiFeesInput" value="0" /></div>
+        </label>
+      </div>
+      <div id="refinanceText"></div>
+      <div class="refi-chart-wrap" id="refiChartWrap" hidden>
+        <svg id="refiChartSvg" viewBox="0 0 760 260"></svg>
+        <div class="legend">
+          <span><i class="swatch sage"></i>Keep current loan</span>
+          <span><i class="swatch rust"></i>Refinance</span>
+        </div>
+      </div>
+    </section>
+
+    <p class="footnote">Figures are estimates &middot; assumes fixed rate, no extra payments, no fees.</p>
+  </main>
+
+  <footer id="site-footer"></footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

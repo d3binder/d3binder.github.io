@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script src="../assets/js/theme-init.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FireNate - FI Snapshot</title>
+<meta name="description" content="Your financial-independence status at a glance, pulled straight from your saved profile — progress, Coast-FI status, and saved what-if scenarios.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Antonio:wght@400;500;600;700&family=Michroma&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/site.css">
+<link rel="stylesheet" href="../assets/css/timeToFI.css">
+<script src="../assets/js/theme.js" defer></script>
+<script src="../assets/js/user-profile.js" defer></script>
+<script src="../assets/js/nav.js" defer></script>
+<script>
+window.FN_BASE = "../"; window.FN_PAGE = "fi-snapshot";
+</script>
+<style>
+  .fs-empty{
+    margin-top:24px; text-align:center; padding:56px 28px;
+    background:var(--surface); border:1px solid var(--line); border-top:4px solid var(--plum);
+    border-radius:var(--radius);
+  }
+  [data-theme="lcars"] .fs-empty h2{ font-family:var(--display); letter-spacing:.02em; }
+  .fs-empty h2{ font-family:var(--serif); font-size:26px; margin:0 0 10px; }
+  .fs-empty p{ color:var(--ink-dim); font-size:15px; max-width:48ch; margin:0 auto 22px; }
+  .fs-btn{
+    display:inline-flex; align-items:center; gap:8px;
+    background:linear-gradient(135deg, var(--gold), var(--gold-dim));
+    color:#201205; font-weight:700; font-size:13.5px;
+    padding:11px 22px; border-radius:999px; border:none; cursor:pointer;
+    font-family:var(--sans); transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .fs-btn:hover{ transform:translateY(-1px); box-shadow:0 8px 20px -6px rgba(217,132,15,0.45); }
+  .fs-btn:active{ transform:translateY(0); }
+  .fs-btn.fs-btn-ghost{
+    background:none; border:1px solid var(--line); color:var(--ink-dim); font-weight:600;
+  }
+  .fs-btn.fs-btn-ghost:hover{ border-color:var(--gold-dim); color:var(--gold); box-shadow:none; }
+  .fs-btn.fs-btn-danger{
+    background:none; border:1px solid var(--danger); color:var(--danger); font-weight:600; padding:7px 14px; font-size:12px;
+  }
+  .fs-btn.fs-btn-danger:hover{ background:var(--danger); color:#fff; }
+
+  .fs-editnote{
+    display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+    margin-top:4px; padding:14px 22px; background:var(--surface-2); border:1px solid var(--line);
+    border-radius:var(--radius); color:var(--ink-dim); font-size:13.5px;
+  }
+
+  /* ---------- STAT GRID ---------- */
+  .fs-grid{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:16px;
+    margin-top:24px;
+  }
+  .fs-card{
+    background:var(--surface); border:1px solid var(--line); border-top:4px solid var(--gold);
+    border-radius:var(--radius); padding:20px 22px;
+  }
+  .fs-card.jade{ border-top-color:var(--jade); }
+  .fs-card.target{ border-top-color:var(--target); }
+  .fs-card.plum{ border-top-color:var(--plum); }
+  .fs-card .k{ font-family:var(--mono); font-size:10.5px; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:8px; }
+  [data-theme="lcars"] .fs-card .v{ font-family:var(--mono); font-variant-numeric:tabular-nums; }
+  .fs-card .v{ font-family:var(--serif); font-size:26px; color:var(--ink); font-weight:500; line-height:1.15; }
+  .fs-card .v.gold{ color:var(--gold); }
+  .fs-card .v.jade{ color:var(--jade); }
+  .fs-card .v.target{ color:var(--target); }
+  .fs-card .sub{ font-size:12px; color:var(--ink-faint); margin-top:6px; }
+
+  /* ---------- insight note cards ---------- */
+  .fs-notes{
+    display:grid; grid-template-columns:repeat(auto-fit, minmax(230px, 1fr)); gap:14px; margin-top:16px;
+  }
+  .fs-note-card{
+    background:var(--surface); border:1px solid var(--line); border-top:3px solid var(--target);
+    border-radius:var(--radius); padding:16px 18px; color:var(--ink-faint); font-size:13px; line-height:1.55;
+  }
+  .fs-note-card[hidden]{ display:none; }
+  .fs-note-card.jade{ border-top-color:var(--jade); }
+  .fs-note-card.danger{ border-top-color:var(--danger); }
+  .fs-note-card-label{
+    display:block; color:var(--ink); font-weight:700; font-size:10.5px; letter-spacing:0.08em; text-transform:uppercase; margin-bottom:6px;
+  }
+  .fs-note-card strong{ color:var(--ink); }
+
+  /* ---------- PROGRESS ---------- */
+  .fs-progress-wrap{ margin-top:8px; }
+  .fs-progress-track{
+    position:relative; height:26px; background:var(--surface-2); border:1px solid var(--line);
+    border-radius:999px; overflow:hidden;
+  }
+  .fs-progress-fill{
+    height:100%; border-radius:999px;
+    background:linear-gradient(90deg, var(--jade-dim), var(--jade));
+    transition:width .3s ease;
+  }
+
+  /* ---------- TRAJECTORY CHART ---------- */
+  #fsChart{ width:100%; height:auto; display:block; overflow:visible; }
+  .fs-chart-area{ fill:var(--jade); opacity:0.14; }
+  .fs-chart-line{ stroke:var(--jade); }
+  .fs-chart-dot{ fill:var(--surface); stroke:var(--jade); cursor:pointer; }
+  .fs-chart-hit{ cursor:pointer; }
+  .fs-chart-hit:focus{ outline:none; }
+  .fs-chart-hit:focus-visible{ outline:2px solid var(--jade); outline-offset:-2px; }
+  .fs-chart-grid{ stroke:var(--line); stroke-width:1; }
+  .fs-chart-grid-label, .fs-chart-axis-label{ font-family:var(--mono); font-size:10px; fill:var(--ink-faint); }
+  #fsChartTooltip{
+    position:fixed; pointer-events:none; background:var(--surface); border:1px solid var(--line);
+    border-radius:10px; padding:9px 13px; font-family:var(--mono); font-size:12px; color:var(--ink);
+    opacity:0; transform:translate(-50%,-115%); transition:opacity .12s; z-index:50;
+    white-space:nowrap; box-shadow:0 8px 24px -10px rgba(0,0,0,0.45);
+  }
+  #fsChartTooltip .yr{ color:var(--ink-faint); margin-bottom:3px; }
+  #fsChartTooltip .row{ display:flex; justify-content:space-between; gap:14px; }
+
+  /* ---------- MILESTONE CHIPS ---------- */
+  .fs-milestone-row{
+    display:flex; flex-wrap:wrap; gap:10px; margin-top:16px; padding-top:16px;
+    border-top:1px solid var(--line-soft);
+  }
+  .fs-milestone-row[hidden]{ display:none; }
+  .fs-milestone-chip{
+    font-family:var(--mono); font-size:12px; color:var(--ink-dim);
+    background:var(--surface-2); border:1px solid var(--line); border-radius:999px; padding:5px 12px;
+    white-space:nowrap;
+  }
+  .fs-milestone-chip b{ color:var(--ink); }
+  .fs-milestone-chip.reached{ border-color:var(--jade); color:var(--jade); }
+
+  /* ---------- COAST-FI CARD ---------- */
+  .fs-coast-card{
+    margin-top:24px; position:relative; overflow:hidden;
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    padding:28px 28px 24px;
+  }
+  .fs-coast-card::before{
+    content:''; position:absolute; top:0; left:0; right:0; height:4px;
+    background:linear-gradient(90deg, var(--target), var(--jade), var(--gold));
+  }
+  .fs-coast-card .fc-row{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:10px; }
+  [data-theme="lcars"] .fs-coast-card h3{ font-family:var(--display); letter-spacing:.02em; }
+  .fs-coast-card h3{ font-family:var(--serif); font-size:22px; font-weight:600; margin:0; }
+  .fs-coast-badge{
+    font-family:var(--mono); font-size:13px; font-weight:600;
+    padding:5px 14px; border-radius:999px; white-space:nowrap;
+  }
+  .fs-coast-badge.yes{ background:rgba(79,219,143,0.15); color:var(--jade); }
+  .fs-coast-badge.no{ background:rgba(255,122,92,0.15); color:var(--danger); }
+  .fs-coast-card p{ color:var(--ink-dim); font-size:14.5px; line-height:1.6; max-width:70ch; margin:0; }
+  .fs-coast-card p b{ color:var(--ink); }
+
+  /* ---------- QUICK LINKS ---------- */
+  .fs-links{ display:flex; flex-wrap:wrap; gap:12px; margin-top:24px; }
+  .fs-link-pill{
+    display:inline-flex; align-items:center; gap:8px;
+    background:var(--surface-2); border:1px solid var(--line); color:var(--ink);
+    text-decoration:none; font-size:13px; font-weight:600; padding:9px 16px; border-radius:999px;
+    transition:border-color .15s, color .15s, transform .15s;
+  }
+  .fs-link-pill:hover{ border-color:var(--gold); color:var(--gold); transform:translateY(-1px); }
+</style>
+</head>
+<body>
+<div id="fn-site-nav"></div>
+
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">FIRE Nate - FI Snapshot</p>
+    <h1 id="pageTitleHeader">Where you stand, <em>at a glance</em>.</h1>
+    <p class="lede">A single dashboard pulled straight from your saved profile — no re-entering numbers. Save labeled what-if scenarios below to compare side by side.</p>
+  </header>
+
+  <div id="fsEmptyState" class="fs-empty" style="display:none;">
+    <h2>Let's set up your profile first</h2>
+    <p>This snapshot pulls your age, savings, goal, and target retirement age from your profile. Add those once and every calculator on the site — including this one — will use them.</p>
+    <button type="button" class="fs-btn" id="fsOpenProfileBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>Set up my profile</button>
+  </div>
+
+  <div id="fsDashboard" style="display:none;">
+    <div class="fs-editnote">
+      <span>Pulled from your saved profile.</span>
+      <button type="button" class="fs-btn fs-btn-ghost" id="fsEditProfileBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>Edit my profile &rarr;</button>
+    </div>
+
+    <div class="fs-grid" id="fsStatGrid"></div>
+
+    <div class="fs-notes" id="fsNotes">
+      <p class="fs-note-card" id="fsNoteRequired" hidden></p>
+      <p class="fs-note-card" id="fsNoteGap" hidden></p>
+      <p class="fs-note-card" id="fsNoteCoastHorizon" hidden></p>
+    </div>
+
+    <h2 class="ledger-title" style="margin-top:40px; margin-bottom:12px;">Progress toward your goal</h2>
+    <div class="fs-progress-wrap">
+      <div class="fs-progress-track">
+        <div class="fs-progress-fill" id="fsProgressFill" style="width:0%"></div>
+      </div>
+    </div>
+
+    <div class="panel" id="fsChartPanel" style="margin-top:32px; display:none;">
+      <div class="panel-head">
+        <h2>Path to your goal</h2>
+        <span class="sub">PROJECTED BALANCE FROM TODAY TO YOUR TARGET RETIREMENT AGE</span>
+      </div>
+      <div class="chart-card">
+        <svg id="fsChart" viewBox="0 0 700 320"></svg>
+        <div id="fsChartTooltip"></div>
+        <div class="legend-row">
+          <span class="legend-dot jade"></span> Projected balance
+          <span class="legend-dot grey"></span> Goal amount
+        </div>
+        <div class="fs-milestone-row" id="fsMilestoneRow" hidden></div>
+      </div>
+    </div>
+
+    <div class="fs-coast-card">
+      <div class="fc-row">
+        <h3 id="fsCoastTitle">Coast-FI status</h3>
+        <span class="fs-coast-badge" id="fsCoastBadge">&mdash;</span>
+      </div>
+      <p id="fsCoastText">&mdash;</p>
+    </div>
+
+    <div class="fs-links">
+      <a class="fs-link-pill" href="../TimeToFI/index.html"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>Time to FI &rarr;</a>
+      <a class="fs-link-pill" href="../CrossoverPoint/index.html"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>Crossover Point &rarr;</a>
+      <a class="fs-link-pill" href="../ReverseTimeToFI/index.html"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>Reverse Time to FI &rarr;</a>
+      <a class="fs-link-pill" href="../SafeWithdrawalRate/index.html"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><polyline points="9 12 12 15 16 10"></polyline></svg>Safe Withdrawal Rate &rarr;</a>
+    </div>
+
+    <h2 class="ledger-title" style="margin-top:48px; margin-bottom:4px;">Saved scenarios</h2>
+    <p class="lede" style="margin-bottom:16px;">Duplicate your current profile into a labeled snapshot, then compare them side by side — or try a different return rate, retirement age, or savings goal.</p>
+    <a class="fs-btn" href="../ProfileManager/index.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>Manage saved profiles &rarr;</a>
+  </div>
+</div>
+
+<footer id="site-footer"></footer>
+
+<script>
+const $ = id => document.getElementById(id);
+const fmtUSD = n => n.toLocaleString('en-US', {style:'currency', currency:'USD', maximumFractionDigits:0});
+const fmtNum = n => n.toLocaleString('en-US', {maximumFractionDigits:1});
+
+function crossoverAmount(goal, r, yearsRemaining){
+  const yrs = Math.max(0, yearsRemaining);
+  const base = 1 + r;
+  if (base <= 0) return goal;
+  return goal / Math.pow(base, yrs);
+}
+function growAmount(principal, r, years){
+  const yrs = Math.max(0, years);
+  const base = 1 + r;
+  if (base <= 0) return principal;
+  return principal * Math.pow(base, yrs);
+}
+
+// Level annual contribution (ordinary annuity) needed on top of the
+// lump-sum's own growth to reach target by the given horizon.
+function requiredContribution(target, principal, r, years){
+  if (!(years > 0)) return null;
+  const fv = principal * Math.pow(1 + r, years);
+  const remaining = target - fv;
+  if (remaining <= 0) return 0;
+  if (r === 0) return remaining / years;
+  const factor = (Math.pow(1 + r, years) - 1) / r;
+  if (factor <= 0) return remaining;
+  return remaining / factor;
+}
+
+// Years of compounding alone (no more contributions) for principal to reach
+// target — null when it mathematically never would (no/negative return, or
+// already past target).
+function yearsToCompoundTo(principal, target, r){
+  if (!(principal > 0) || !(target > principal) || !(r > 0)) return null;
+  return Math.log(target / principal) / Math.log(1 + r);
+}
+
+function deriveMetrics(profile){
+  const age = window.FNProfile.getAge(profile);
+  const income = parseFloat(profile.currentIncome) || 0;
+  const savings = parseFloat(profile.currentSavings) || 0;
+  const goal = parseFloat(profile.goalAmount) || 0;
+  const retireAge = parseFloat(profile.retireAge) || 0;
+  const r = (parseFloat(profile.expectedReturn) || 0) / 100;
+
+  const yearsToRetire = age !== null ? Math.max(0, retireAge - age) : null;
+  const progressPct = goal > 0 ? (savings / goal) * 100 : 0;
+  const requiredNow = (age !== null && yearsToRetire !== null) ? crossoverAmount(goal, r, yearsToRetire) : null;
+  const coastFI = requiredNow !== null ? savings >= requiredNow : null;
+  const coastDiff = requiredNow !== null ? savings - requiredNow : null;
+  const projectedAtRetirement = yearsToRetire !== null ? growAmount(savings, r, yearsToRetire) : null;
+
+  const gapAmount = Math.max(0, goal - savings);
+  const requiredAnnual = (yearsToRetire !== null) ? requiredContribution(goal, savings, r, yearsToRetire) : null;
+  const requiredMonthly = requiredAnnual !== null ? requiredAnnual / 12 : null;
+  const incomePct = (requiredAnnual !== null && income > 0) ? (requiredAnnual / income) * 100 : null;
+  const yearsToCoastAlone = yearsToCompoundTo(savings, goal, r);
+
+  return {
+    age, income, savings, goal, retireAge, r, yearsToRetire, progressPct, requiredNow, coastFI, coastDiff, projectedAtRetirement,
+    gapAmount, requiredAnnual, requiredMonthly, incomePct, yearsToCoastAlone
+  };
+}
+
+function renderNotes(m){
+  // 1) Required savings to close the gap.
+  const reqEl = $('fsNoteRequired');
+  reqEl.hidden = false;
+  if (m.yearsToRetire === 0){
+    reqEl.className = 'fs-note-card danger';
+    reqEl.innerHTML = `<span class="fs-note-card-label">Required savings to close the gap</span>` +
+      `You're already at your target retirement age — there's no time left for contributions or compounding to close any remaining gap.`;
+  } else if (m.requiredAnnual === null){
+    reqEl.hidden = true;
+  } else if (m.requiredAnnual <= 0.5){
+    reqEl.className = 'fs-note-card jade';
+    reqEl.innerHTML = `<span class="fs-note-card-label">Required savings to close the gap</span>` +
+      `Compounding alone gets you to your goal by age ${fmtNum(m.retireAge)} — you don't need to save anything more to get there.`;
+  } else {
+    reqEl.className = 'fs-note-card';
+    let benchmarkNote = '';
+    if (m.incomePct !== null){
+      if (m.incomePct < 15) benchmarkNote = ` That's below the commonly-cited 15&ndash;25% FIRE savings-rate guideline — you have room to spare.`;
+      else if (m.incomePct <= 25) benchmarkNote = ` That's right in the commonly-cited 15&ndash;25% range for FIRE savers.`;
+      else benchmarkNote = ` That's above the commonly-cited 15&ndash;25% range — an aggressive pace, but common among early retirees.`;
+    }
+    reqEl.innerHTML = `<span class="fs-note-card-label">Required savings to close the gap</span>` +
+      `Closing the gap by age ${fmtNum(m.retireAge)} takes about <strong>${fmtUSD(m.requiredMonthly)}</strong>/mo (${fmtUSD(m.requiredAnnual)}/yr)` +
+      (m.incomePct !== null ? ` — about <strong>${fmtNum(m.incomePct)}%</strong> of your ${fmtUSD(m.income)} income.` : `.`) +
+      benchmarkNote;
+  }
+
+  // 2) Dollar gap remaining.
+  const gapEl = $('fsNoteGap');
+  gapEl.hidden = false;
+  if (m.gapAmount <= 0.5){
+    gapEl.className = 'fs-note-card jade';
+    gapEl.innerHTML = `<span class="fs-note-card-label">Gap to goal</span>` +
+      `You've already reached your goal amount — <strong>${fmtUSD(m.savings)}</strong> saved against a ${fmtUSD(m.goal)} goal.`;
+  } else {
+    gapEl.className = 'fs-note-card';
+    gapEl.innerHTML = `<span class="fs-note-card-label">Gap to goal</span>` +
+      `You're <strong>${fmtUSD(m.gapAmount)}</strong> away from your ${fmtUSD(m.goal)} goal, with ${fmtUSD(m.savings)} saved so far.`;
+  }
+
+  // 3) If not yet Coast-FI, the pure-compounding horizon.
+  const horizonEl = $('fsNoteCoastHorizon');
+  if (m.coastFI !== false){
+    horizonEl.hidden = true;
+  } else if (m.yearsToCoastAlone === null){
+    horizonEl.hidden = false;
+    horizonEl.className = 'fs-note-card danger';
+    horizonEl.innerHTML = `<span class="fs-note-card-label">Compounding-only horizon</span>` +
+      (m.savings <= 0
+        ? `You haven't saved anything yet, so compounding has nothing to work with — contributions are doing all the work here.`
+        : `At a ${fmtNum(m.r * 100)}%/yr return, compounding alone would never reach your goal — ongoing contributions are doing the work here, not growth.`);
+  } else {
+    horizonEl.hidden = false;
+    horizonEl.className = 'fs-note-card danger';
+    const coastAge = m.age + m.yearsToCoastAlone;
+    horizonEl.innerHTML = `<span class="fs-note-card-label">Compounding-only horizon</span>` +
+      `Left alone with no more contributions, your savings would still reach your goal — just later, around age <strong>${fmtNum(coastAge)}</strong> (about ${fmtNum(m.yearsToCoastAlone)} years from now), versus your age ${fmtNum(m.retireAge)} target.`;
+  }
+}
+
+function profileComplete(profile){
+  return !!(profile && profile.birthday && profile.goalAmount && profile.retireAge && profile.currentSavings !== undefined && profile.currentSavings !== '');
+}
+
+function renderStatGrid(m){
+  const grid = $('fsStatGrid');
+  grid.innerHTML = '';
+  const add = (k, v, cls, sub) => {
+    const div = document.createElement('div');
+    div.className = 'fs-card' + (cls ? ' ' + cls : '');
+    div.innerHTML = `<div class="k">${k}</div><div class="v${cls ? ' ' + cls : ''}">${v}</div>` + (sub ? `<div class="sub">${sub}</div>` : '');
+    grid.appendChild(div);
+  };
+  add('Age', m.age === null ? '—' : fmtNum(m.age));
+  add('Savings', fmtUSD(m.savings), 'jade');
+  add('Goal Amount', fmtUSD(m.goal), 'gold');
+  add('Retirement Age', fmtNum(m.retireAge), '', m.yearsToRetire === null ? '' : `${fmtNum(m.yearsToRetire)} years away`);
+  add('Annual Return Rate', fmtNum(m.r * 100) + '%', 'target');
+  add('Progress to goal', fmtNum(Math.max(0, m.progressPct)) + '%', 'jade');
+}
+
+function renderCoastCard(m){
+  const badge = $('fsCoastBadge');
+  const text = $('fsCoastText');
+  badge.classList.remove('yes', 'no');
+  if (m.coastFI === null){
+    badge.classList.add('no');
+    badge.textContent = 'Incomplete profile';
+    text.innerHTML = `Add your retirement age and expected return to see whether your current savings alone, left to compound, would carry you to your goal.`;
+    return;
+  }
+  if (m.coastFI){
+    badge.classList.add('yes');
+    badge.textContent = 'Coast-FI ✓';
+    text.innerHTML = `If you stopped contributing today, your <b>${fmtUSD(m.savings)}</b> would compound to about <b>${fmtUSD(m.projectedAtRetirement)}</b> by age <b>${fmtNum(m.retireAge)}</b> at <b>${fmtNum(m.r * 100)}%</b>/yr &mdash; already <b>${fmtUSD(Math.abs(m.coastDiff))}</b> ahead of the <b>${fmtUSD(m.requiredNow)}</b> you'd need right now to coast the rest of the way to <b>${fmtUSD(m.goal)}</b>.`;
+  } else {
+    badge.classList.add('no');
+    badge.textContent = 'Not yet Coast-FI';
+    text.innerHTML = `You'd need <b>${fmtUSD(m.requiredNow)}</b> saved right now for compounding alone to reach <b>${fmtUSD(m.goal)}</b> by age <b>${fmtNum(m.retireAge)}</b> &mdash; you're currently <b>${fmtUSD(Math.abs(m.coastDiff))} short</b> of that. Keep contributing, or see the <a href="../CrossoverPoint/index.html">Crossover Point</a> calculator for the full curve.`;
+  }
+}
+
+// ---------- trajectory chart + milestone dates ----------
+function dateLabelForYears(years){
+  if (!(years > 0)) return null;
+  const d = new Date();
+  d.setFullYear(d.getFullYear() + Math.round(years));
+  return d.toLocaleDateString('en-US', {month:'short', year:'numeric'});
+}
+
+// Balance year-by-year, starting from today's savings, growing at r, with
+// the required annual contribution added at each year-end — by
+// construction this lands at (or, if already Coast-FI, passes) the goal.
+function buildTrajectory(savings, requiredAnnual, r, years){
+  const points = [{ year: 0, balance: savings }];
+  let balance = savings;
+  for (let y = 1; y <= years; y++){
+    balance = balance * (1 + r) + requiredAnnual;
+    points.push({ year: y, balance });
+  }
+  return points;
+}
+
+// Reads the crossing point straight off the same trajectory points used to
+// draw the chart, so the milestone dates and the curve can never disagree.
+function yearsToReachFraction(points, goal, fraction){
+  const target = goal * fraction;
+  if (points[0].balance >= target - 0.5) return 0;
+  for (let i = 1; i < points.length; i++){
+    if (points[i].balance >= target - 0.5){
+      const prev = points[i - 1].balance, cur = points[i].balance;
+      const frac = cur === prev ? 0 : (target - prev) / (cur - prev);
+      return (i - 1) + Math.max(0, Math.min(1, frac));
+    }
+  }
+  return null;
+}
+
+const fsSvgNS = 'http://www.w3.org/2000/svg';
+function fsNiceCeil(v){
+  if (v <= 0) return 1;
+  const mag = Math.pow(10, Math.floor(Math.log10(v)));
+  const norm = v / mag;
+  let step;
+  if (norm <= 1) step = 1; else if (norm <= 2) step = 2; else if (norm <= 5) step = 5; else step = 10;
+  return step * mag;
+}
+
+function renderTrajectoryChart(points, goal, m){
+  const svg = $('fsChart');
+  const tooltip = $('fsChartTooltip');
+  const W = 700, H = 320;
+  const padL = 66, padR = 16, padT = 16, padB = 34;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  svg.innerHTML = '';
+
+  const maxVal = Math.max(goal, ...points.map(p => p.balance), 1);
+  const niceMax = fsNiceCeil(maxVal * 1.08);
+  const n = points.length;
+  const xFor = (i) => padL + (n === 1 ? 0.5 : i / (n - 1)) * plotW;
+  const yFor = (v) => padT + plotH - (Math.max(0, v) / niceMax) * plotH;
+  const baseY = padT + plotH;
+
+  const steps = 5;
+  for (let i = 0; i <= steps; i++){
+    const val = niceMax * i / steps;
+    const y = yFor(val);
+    const line = document.createElementNS(fsSvgNS, 'line');
+    line.setAttribute('x1', padL); line.setAttribute('x2', W - padR);
+    line.setAttribute('y1', y); line.setAttribute('y2', y);
+    line.setAttribute('class', 'fs-chart-grid');
+    svg.appendChild(line);
+    const label = document.createElementNS(fsSvgNS, 'text');
+    label.setAttribute('x', padL - 8); label.setAttribute('y', y + 4);
+    label.setAttribute('text-anchor', 'end'); label.setAttribute('class', 'fs-chart-grid-label');
+    label.textContent = fmtUSD(val);
+    svg.appendChild(label);
+  }
+
+  const xLabelToday = document.createElementNS(fsSvgNS, 'text');
+  xLabelToday.setAttribute('x', xFor(0)); xLabelToday.setAttribute('y', baseY + 20);
+  xLabelToday.setAttribute('text-anchor', 'start'); xLabelToday.setAttribute('class', 'fs-chart-axis-label');
+  xLabelToday.textContent = 'Today (age ' + fmtNum(m.age) + ')';
+  svg.appendChild(xLabelToday);
+
+  const xLabelEnd = document.createElementNS(fsSvgNS, 'text');
+  xLabelEnd.setAttribute('x', xFor(n - 1)); xLabelEnd.setAttribute('y', baseY + 20);
+  xLabelEnd.setAttribute('text-anchor', 'end'); xLabelEnd.setAttribute('class', 'fs-chart-axis-label');
+  xLabelEnd.textContent = 'Age ' + fmtNum(m.retireAge);
+  svg.appendChild(xLabelEnd);
+
+  const refY = yFor(goal);
+  const refLine = document.createElementNS(fsSvgNS, 'line');
+  refLine.setAttribute('x1', padL); refLine.setAttribute('x2', W - padR);
+  refLine.setAttribute('y1', refY); refLine.setAttribute('y2', refY);
+  refLine.setAttribute('class', 'chart-ref-line');
+  svg.appendChild(refLine);
+  const refLabel = document.createElementNS(fsSvgNS, 'text');
+  refLabel.setAttribute('x', W - padR); refLabel.setAttribute('y', refY - 6);
+  refLabel.setAttribute('text-anchor', 'end'); refLabel.setAttribute('class', 'chart-ref-label');
+  refLabel.textContent = 'Goal: ' + fmtUSD(goal);
+  svg.appendChild(refLabel);
+
+  const pts = points.map((p, i) => [xFor(i), yFor(p.balance)]);
+  const areaD = pts.map((p, i) => (i === 0 ? 'M' : 'L') + p[0].toFixed(2) + ',' + p[1].toFixed(2)).join(' ')
+    + ` L${pts[pts.length - 1][0].toFixed(2)},${yFor(0)} L${pts[0][0].toFixed(2)},${yFor(0)} Z`;
+  const area = document.createElementNS(fsSvgNS, 'path');
+  area.setAttribute('d', areaD);
+  area.setAttribute('class', 'fs-chart-area');
+  svg.appendChild(area);
+
+  const line = document.createElementNS(fsSvgNS, 'path');
+  line.setAttribute('d', pts.map((p, i) => (i === 0 ? 'M' : 'L') + p[0].toFixed(2) + ',' + p[1].toFixed(2)).join(' '));
+  line.setAttribute('class', 'chart-line fs-chart-line');
+  svg.appendChild(line);
+
+  const slotW = n > 1 ? plotW / (n - 1) : plotW;
+  points.forEach((p, i) => {
+    const hit = document.createElementNS(fsSvgNS, 'rect');
+    hit.setAttribute('class', 'fs-chart-hit');
+    hit.setAttribute('x', xFor(i) - slotW / 2); hit.setAttribute('y', padT);
+    hit.setAttribute('width', slotW); hit.setAttribute('height', plotH);
+    hit.setAttribute('fill', 'transparent');
+    hit.setAttribute('tabindex', '0');
+    hit.setAttribute('role', 'img');
+    hit.setAttribute('aria-label', `Age ${fmtNum(m.age + p.year)}: balance ${fmtUSD(p.balance)}.`);
+    const hitHtml = `<div class="yr">Age ${fmtNum(m.age + p.year)}</div>` +
+      `<div class="row">Balance <b>${fmtUSD(p.balance)}</b></div>`;
+    hit.addEventListener('mousemove', (e) => {
+      tooltip.style.opacity = 1;
+      tooltip.style.left = e.clientX + 'px';
+      tooltip.style.top = e.clientY + 'px';
+      tooltip.innerHTML = hitHtml;
+    });
+    hit.addEventListener('mouseleave', () => { tooltip.style.opacity = 0; });
+    hit.addEventListener('focus', () => {
+      const r = hit.getBoundingClientRect();
+      tooltip.style.opacity = 1;
+      tooltip.style.left = (r.left + r.width / 2) + 'px';
+      tooltip.style.top = r.top + 'px';
+      tooltip.innerHTML = hitHtml;
+    });
+    hit.addEventListener('blur', () => { tooltip.style.opacity = 0; });
+    svg.appendChild(hit);
+  });
+}
+
+const MILESTONE_FRACTIONS = [0.25, 0.5, 0.75, 1.0];
+function renderMilestones(points, m){
+  const row = $('fsMilestoneRow');
+  row.innerHTML = '';
+  row.hidden = false;
+  MILESTONE_FRACTIONS.forEach(fraction => {
+    const years = yearsToReachFraction(points, m.goal, fraction);
+    const chip = document.createElement('span');
+    const pctLabel = Math.round(fraction * 100) + '%';
+    if (years === null){
+      chip.className = 'fs-milestone-chip';
+      chip.innerHTML = `${pctLabel} <b>&mdash;</b>`;
+    } else if (years <= 0.02){
+      chip.className = 'fs-milestone-chip reached';
+      chip.innerHTML = `${pctLabel} <b>Reached</b>`;
+    } else {
+      chip.className = 'fs-milestone-chip';
+      const label = dateLabelForYears(years) || `~${fmtNum(years)} yrs`;
+      chip.innerHTML = `${pctLabel} <b>${label}</b>`;
+    }
+    row.appendChild(chip);
+  });
+}
+
+function renderDashboard(){
+  const profile = window.FNProfile.get();
+  const complete = profileComplete(profile);
+  $('fsEmptyState').style.display = complete ? 'none' : '';
+  $('fsDashboard').style.display = complete ? '' : 'none';
+  if (!complete) return;
+
+  const m = deriveMetrics(profile);
+  renderStatGrid(m);
+  $('fsProgressFill').style.width = Math.max(0, Math.min(100, m.progressPct)) + '%';
+  renderCoastCard(m);
+  renderNotes(m);
+
+  const chartPanel = $('fsChartPanel');
+  if (m.requiredAnnual === null){
+    chartPanel.style.display = 'none';
+  } else {
+    chartPanel.style.display = '';
+    const chartYears = Math.max(1, Math.round(m.yearsToRetire));
+    const points = buildTrajectory(m.savings, m.requiredAnnual, m.r, chartYears);
+    renderTrajectoryChart(points, m.goal, m);
+    renderMilestones(points, m);
+  }
+}
+
+// pop + color-cycle glow on the profile icon and panel so the jump from
+// this page over to the nav actually catches the eye, instead of a dropdown
+// silently appearing somewhere the user wasn't looking
+function pulseAttention(el){
+  if (!el) return;
+  el.classList.remove('fn-attn');
+  void el.offsetWidth; // force reflow so the animation restarts on repeat clicks
+  el.classList.add('fn-attn');
+  // animationend is the normal cleanup path, but it can go missing if the
+  // tab loses focus/visibility mid-animation (browsers throttle or pause
+  // rAF/animations in background tabs) — a timeout fallback guarantees the
+  // class always comes back off instead of leaving a stray one-time class
+  // sitting there silently doing nothing on a later, unrelated open.
+  var cleared = false;
+  var clear = function(){
+    if (cleared) return;
+    cleared = true;
+    el.classList.remove('fn-attn');
+  };
+  el.addEventListener('animationend', clear, { once: true });
+  setTimeout(clear, 1400);
+}
+function openProfilePanelWithAttention(){
+  const toggle = document.querySelector('.fn-profile-toggle');
+  if (toggle) toggle.click();
+  pulseAttention(document.querySelector('.fn-profile-toggle'));
+  pulseAttention(document.querySelector('.fn-profile-panel'));
+}
+
+// stopPropagation matters here: these buttons live outside #fn-site-nav, so
+// once the nested .click() below opens the profile panel, letting this
+// original click event keep bubbling to document would hit nav.js's own
+// "click outside the nav closes every panel" listener — which sees this
+// button (outside the nav) as the click target and immediately closes the
+// panel that was just opened.
+$('fsOpenProfileBtn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  openProfilePanelWithAttention();
+});
+$('fsEditProfileBtn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  openProfilePanelWithAttention();
+});
+
+document.addEventListener('fn-profile-change', renderDashboard);
+
+function init(){
+  renderDashboard();
+}
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", init);
+} else {
+  init();
+}
+</script>
+</body>
+</html>

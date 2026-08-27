@@ -4,6 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>F.I.R.E. Nate — Site Versions</title>
+<!-- VT323: used only by the v5.0+ Change Log modal for its CRT-terminal
+     look (see the ".changelog-modal" rules) — nowhere else on this page. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg-1: #0f1420;
@@ -200,11 +205,50 @@
     50% { box-shadow: 0 4px 18px rgba(var(--live-rgb), 0.16), 0 0 0 7px rgba(var(--live-rgb), 0); }
   }
 
-  .version-card.is-active .vc-link::after {
-    content: "→";
-    font-size: 20px;
+  /* a real element (not ::after generated content) specifically so it can
+     carry its own independent :hover state — a pseudo-element can only
+     ever react to its host being hovered, not to the mouse being over
+     just its own rendered box, and the color-swap below needs exactly
+     that: hovering the circle itself, not the whole colored zone. */
+  .vc-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    font-size: 18px;
     font-weight: 700;
-    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    border: 2px solid currentColor;
+    border-radius: 50%;
+    background: transparent;
+    --vc-arrow-x: 0px;
+    animation: vc-arrow-throb 2s ease-in-out infinite;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+
+  /* hovering the circle itself swaps it to a dark chip with the card's
+     own theme color for the arrow, instead of the usual dark-ink-on-live
+     coloring — a distinct "you're right on the button" cue */
+  .vc-arrow:hover {
+    background: #0a0a0a;
+    color: var(--live);
+  }
+
+  /* subtle pulse on the circled arrow — a plain attention cue that this
+     zone is clickable, distinct from the whole-card hover lift. Hover
+     nudges it sideways via the --vc-arrow-x custom property rather than a
+     separate transform rule, so the throb (still running) and the nudge
+     combine in the same transform instead of one fighting the other for
+     control of the property. */
+  @keyframes vc-arrow-throb {
+    0%, 100% { transform: translateX(var(--vc-arrow-x)) scale(1); opacity: 0.75; }
+    50% { transform: translateX(var(--vc-arrow-x)) scale(1.12); opacity: 1; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .vc-arrow {
+      animation: none;
+    }
   }
 
   /* :has() so the lift/glow reacts only to hovering the actual link (the
@@ -212,16 +256,16 @@
   .version-card.is-active:has(.vc-link:hover) {
     animation-play-state: paused;
     border-color: rgba(var(--live-rgb), 0.7);
-    transform: translateY(-4px) scale(1.02) rotate(-0.5deg);
+    transform: translateY(-4px) scale(1.02);
     box-shadow: 0 14px 32px rgba(var(--live-rgb), 0.22);
   }
 
-  .version-card.is-active:has(.vc-link:hover) .vc-link::after {
-    transform: translateX(6px);
+  .version-card.is-active:has(.vc-link:hover) .vc-arrow {
+    --vc-arrow-x: 6px;
   }
 
   .version-card.is-active:has(.vc-link:active) {
-    transform: translateY(-1px) scale(0.99) rotate(0deg);
+    transform: translateY(-1px) scale(0.99);
   }
 
   .cta-hint {
@@ -271,6 +315,86 @@
     justify-content: center;
     font-size: 20px;
     font-weight: 700;
+  }
+
+  /* v5.0+ badge treatment — the version's own color fills a full-height
+     rail down the card's LEFT edge (a mirror of .vc-link's colored zone
+     on the right) instead of a small inline icon box, with a bigger
+     version-number-forward stack (small "Beta" caption over large digits)
+     replacing the "B.4.9"-style abbreviation every earlier version still
+     uses. A plain div, not a link — .vc-link on the right stays the only
+     navigable/clickable zone on the card. */
+  .vc-badge {
+    flex-shrink: 0;
+    width: 110px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 12px 16px;
+    text-align: center;
+    box-shadow: 7px 0 16px -3px rgba(0, 0, 0, 0.45);
+    transition: filter 0.2s ease;
+  }
+
+  /* label + number center within whatever vertical space is left above
+     the status pill, which the flex:1 on this wrapper pushes to the
+     bottom of the badge */
+  .vc-badge-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+  }
+
+  /* plain label, not a chip — the pill look (background/border/padding)
+     only makes sense riding on top of .vc-link's solid color; here it
+     sits directly on the badge's own color, so just the text remains */
+  .vc-badge .status-pill {
+    margin-top: 10px;
+    background: none;
+    border: none;
+    padding: 0;
+    border-radius: 0;
+    color: inherit;
+    opacity: 0.85;
+    font-size: 11.5px;
+    white-space: normal;
+    text-align: center;
+  }
+
+  .version-card.is-active .vc-badge {
+    background: linear-gradient(135deg, var(--live), color-mix(in srgb, var(--live) 55%, black));
+    color: #0a2417;
+  }
+
+  .version-card.is-active:has(.vc-link:hover) .vc-badge {
+    filter: brightness(1.08);
+  }
+
+  .version-card.is-disabled .vc-badge,
+  .version-card.is-deleted .vc-badge,
+  .version-card.is-soon .vc-badge {
+    background: #2a3346;
+    color: var(--text-dim);
+  }
+
+  .vc-badge .vi-label {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    line-height: 1;
+    text-transform: uppercase;
+    opacity: 0.85;
+  }
+
+  .vc-badge .vi-num {
+    font-size: 32px;
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums;
   }
 
   .is-active .version-icon {
@@ -622,6 +746,354 @@
     opacity: 0.8;
   }
 
+  /* ---------- v5.0+ Change Log modal ----------
+     Replaces the inline <details> notes box (still used by every card
+     older than v5.0) with a real closable/resizable window — the
+     changelog is long enough now that a fixed-height scroll box inside
+     the card reads as cramped. One shared overlay/panel in the DOM,
+     content swapped in from each card's own <template> on open. */
+  .changelog-modal-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-dim);
+    background: var(--card-hover);
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    padding: 6px 14px 6px 12px;
+    cursor: pointer;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+  .changelog-modal-trigger:hover {
+    color: var(--text-main);
+    border-color: var(--text-dim);
+  }
+  .changelog-modal-trigger::before {
+    content: '';
+    flex-shrink: 0;
+    width: 6px;
+    height: 6px;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: rotate(-45deg);
+  }
+
+  .changelog-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(2, 6, 4, 0.82);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .changelog-modal-overlay.is-open {
+    display: flex;
+  }
+
+  /* CRT-terminal look — Pip-Boy/Apple IIe by way of a phosphor-green
+     palette, VT323 (a pixel terminal face), scanlines as a background
+     layer, and a soft screen-glow box-shadow. Scoped entirely to this
+     modal via its own --term-* custom properties, so nothing else on the
+     page (or the plain trigger button that opens it) picks up the vibe. */
+  .changelog-modal {
+    --term-bg: #030f08;
+    --term-green: #3dff7a;
+    --term-green-dim: #1f9a4d;
+    --term-green-bright: #b6ffce;
+    --term-glow: rgba(61, 255, 122, 0.55);
+    width: min(760px, 100%);
+    max-height: min(680px, 85vh);
+    background-color: var(--term-bg);
+    background-image: repeating-linear-gradient(
+      0deg,
+      rgba(0, 0, 0, 0) 0px,
+      rgba(0, 0, 0, 0) 2px,
+      rgba(0, 0, 0, 0.28) 3px
+    );
+    border: 2px solid var(--term-green-dim);
+    border-radius: 10px;
+    box-shadow:
+      0 0 0 1px rgba(61, 255, 122, 0.15),
+      0 0 34px rgba(61, 255, 122, 0.25),
+      0 24px 60px -12px rgba(0, 0, 0, 0.85),
+      inset 0 0 60px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    font-family: 'VT323', ui-monospace, Menlo, Consolas, monospace;
+    color: var(--term-green);
+    animation: term-flicker 6s ease-in-out infinite;
+  }
+
+  @keyframes term-flicker {
+    0%, 91%, 100% { opacity: 1; }
+    93% { opacity: 0.94; }
+    95% { opacity: 1; }
+  }
+
+  @keyframes term-blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .changelog-modal { animation: none; }
+    .changelog-modal-title::after { animation: none; }
+  }
+
+  /* resizable on desktop only — mirrors the same pointer:fine gate used
+     elsewhere on the live site's own resizable windows; touch devices
+     get no resize handle to fight with, just the fixed max-height */
+  @media (min-width: 768px) and (pointer: fine) {
+    .changelog-modal {
+      resize: both;
+      overflow: auto;
+      min-width: 340px;
+      min-height: 220px;
+    }
+    /* the default max-height/width exist to keep the un-maximized modal
+       from looming too large on its own — maximize sets an explicit
+       inline width/height and needs those caps out of the way, or the
+       old max-height wins and the modal stalls well short of full size */
+    .changelog-modal.is-maximized {
+      max-width: none;
+      max-height: none;
+    }
+  }
+
+  .changelog-modal-titlebar {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--term-green-dim);
+    background: rgba(0, 0, 0, 0.28);
+    position: relative;
+    z-index: 1;
+  }
+
+  .changelog-modal-title {
+    font-family: inherit;
+    font-size: 20px;
+    font-weight: 400;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--term-green-bright);
+    text-shadow: 0 0 6px var(--term-glow), 0 0 16px rgba(61, 255, 122, 0.3);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .changelog-modal-title::before {
+    content: '>_ ';
+    opacity: 0.85;
+  }
+  .changelog-modal-title::after {
+    content: '_';
+    animation: term-blink 1s steps(1) infinite;
+  }
+
+  .changelog-modal-titlebar-actions {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .changelog-modal-close,
+  .changelog-modal-maximize {
+    flex-shrink: 0;
+    width: 30px;
+    height: 26px;
+    border-radius: 4px;
+    border: 1px solid var(--term-green-dim);
+    background: transparent;
+    color: var(--term-green);
+    font-family: inherit;
+    font-size: 17px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .changelog-modal-close:hover,
+  .changelog-modal-maximize:hover,
+  .changelog-modal-maximize:focus-visible {
+    color: var(--term-green-bright);
+    border-color: var(--term-green);
+    box-shadow: 0 0 9px rgba(61, 255, 122, 0.5);
+    outline: none;
+  }
+
+  /* maximize is a desktop-only affordance, same reasoning/gate as the
+     resize handle itself — there's no meaningful "restore" size to speak
+     of on a phone viewport that's already close to fullscreen */
+  .changelog-modal-maximize {
+    display: none;
+  }
+  @media (min-width: 768px) and (pointer: fine) {
+    .changelog-modal-maximize {
+      display: flex;
+    }
+    .changelog-modal.is-maximized {
+      resize: none;
+    }
+  }
+
+  /* a plain (non-flex) positioning wrapper — .changelog-modal-body stays a
+     normal in-flow flex:1 child of .changelog-modal itself (not of this
+     wrap) so its real content height still feeds the modal's own
+     max-height clamp like it did before the scroll-arrows were added;
+     making the body position:absolute here instead silently broke that
+     (an out-of-flow child contributes nothing to auto-sizing), so the
+     modal always collapsed to its resize-floor instead of growing to
+     fill its default size. This wrap exists purely so the two scroll
+     arrows below have something the exact size of the body to pin to. */
+  .changelog-modal-body-wrap {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    position: relative;
+  }
+
+  .changelog-modal-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 16px 20px 22px;
+    font-family: inherit;
+    font-size: 19px;
+    line-height: 1.45;
+    color: var(--term-green);
+    background: transparent;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* fade + chevron hinting there's more log text that direction — same
+     idea as .notes-scroll-arrow on the old inline changelog box, restyled
+     green/glowing to match this modal's terminal look. Shown/hidden by
+     JS (updateChangelogScrollArrows) based on actual scroll position. */
+  .changelog-modal-scroll-arrow {
+    position: absolute;
+    left: 1px;
+    right: 12px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    color: var(--term-green-bright);
+    z-index: 2;
+  }
+  .changelog-modal-scroll-arrow.is-visible {
+    opacity: 1;
+    pointer-events: auto;
+    cursor: pointer;
+  }
+  .changelog-modal-scroll-arrow::before {
+    content: '';
+    width: 9px;
+    height: 9px;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    filter: drop-shadow(0 0 4px var(--term-glow));
+  }
+  .changelog-modal-scroll-arrow-top {
+    top: 0;
+    background: linear-gradient(to bottom, var(--term-bg) 30%, transparent);
+    padding-bottom: 8px;
+  }
+  .changelog-modal-scroll-arrow-top::before {
+    transform: rotate(-135deg);
+    margin-top: 2px;
+  }
+  .changelog-modal-scroll-arrow-top.is-visible::before {
+    animation: notes-arrow-throb-top 1.6s ease-in-out infinite;
+  }
+  .changelog-modal-scroll-arrow-bottom {
+    bottom: 0;
+    background: linear-gradient(to top, var(--term-bg) 30%, transparent);
+    padding-top: 8px;
+  }
+  .changelog-modal-scroll-arrow-bottom::before {
+    transform: rotate(45deg);
+    margin-bottom: 2px;
+  }
+  .changelog-modal-scroll-arrow-bottom.is-visible::before {
+    animation: notes-arrow-throb-bottom 1.6s ease-in-out infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .changelog-modal-scroll-arrow-top.is-visible::before,
+    .changelog-modal-scroll-arrow-bottom.is-visible::before {
+      animation: none;
+    }
+  }
+
+  .changelog-modal-body ul {
+    margin: 0;
+    padding-left: 0;
+    list-style: none;
+  }
+
+  .changelog-modal-body li {
+    padding-left: 24px;
+    position: relative;
+  }
+  .changelog-modal-body li::before {
+    content: '>';
+    position: absolute;
+    left: 2px;
+    color: var(--term-green-bright);
+    text-shadow: 0 0 6px var(--term-glow);
+  }
+
+  .changelog-modal-body li + li {
+    margin-top: 10px;
+  }
+
+  .changelog-modal-body code {
+    font-family: inherit;
+    font-size: 1em;
+    color: var(--term-green-bright);
+  }
+
+  .changelog-modal-body ::selection {
+    background: var(--term-green);
+    color: #04120a;
+  }
+
+  .changelog-modal-body::-webkit-scrollbar {
+    width: 11px;
+  }
+  .changelog-modal-body::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.35);
+  }
+  .changelog-modal-body::-webkit-scrollbar-thumb {
+    background: var(--term-green-dim);
+    border-radius: 6px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  .changelog-modal-body::-webkit-scrollbar-thumb:hover {
+    background: var(--term-green);
+    background-clip: padding-box;
+  }
+
   footer {
     text-align: center;
     color: var(--text-dim);
@@ -640,41 +1112,214 @@
     </header>
 
     <div class="versions">
+<!-- Card-->
+      <div class="version-card is-disabled">
+        <div class="vc-badge">
+          <div class="vc-badge-main"><span class="vi-label">Beta</span><span class="vi-num">5.1</span></div>
+          <span class="status-pill disabled">🚧 In Progress</span>
+        </div>
+        <div class="vc-main">
+          <div class="vc-main-row">
+            <div class="version-info">
+              <p class="name">Beta 5.1 - Neon Ninja</p>
+              <p class="path">/beta/v5.1</p>
+              <p class="version-dates">Created: 2026-08-26 18:03:22<br>Updated: 2026-08-26 18:04:25</p>
+            </div>
+          </div>
+          <button type="button" class="changelog-modal-trigger" data-changelog-title="Beta 5.1 &mdash; Change Log" data-changelog-target="changelog-v5-1">Show Change Log</button>
+          <template id="changelog-v5-1">
+            <ul>
+              <li>Branched from v5.0</li>
+              <li>Work in progress — nothing to preview yet</li>
+            </ul>
+            [EOF]
+          </template>
+        </div>
+        <a class="vc-link" href="v5.1/index.html" aria-disabled="true" tabindex="-1" onclick="return false;">
+            <p class="cta-hint">Not ready to preview yet</p>
+        </a>
+      </div>
+<!-- /Card-->
 
+<!-- Card-->
+      <div class="version-card is-active is-live-green">
+        <div class="vc-badge">
+          <div class="vc-badge-main"><span class="vi-label">Beta</span><span class="vi-num">5.0</span></div>
+          <span class="status-pill active">✔ Current</span>
+        </div>
+        <div class="vc-main">
+          <div class="vc-main-row">
+            <div class="version-info">
+              <p class="name">Beta 5.0 — NaN Nate</p>
+              <p class="path">/beta/v5.0</p>
+              <p class="version-dates">Created: 2026-08-23 16:05:37<br>Updated: 2026-08-26 17:57:48</p>
+            </div>
+          </div>
+          <button type="button" class="changelog-modal-trigger" data-changelog-title="Beta 5.0 &mdash; Change Log (everything since v4.8)" data-changelog-target="changelog-v5-0">Show Change Log</button>
+          <template id="changelog-v5-0">
+            <ul>
+            <li>Branched from v4.11 (via v4.8 -> v4.9 -> v4.10 -> v4.11) — this was a big one: days of real work touching nearly every page on the site, not just a handful of headline features</li>
+            <li>New: Journey Progress Dashboard - A new dashboard accessible from the main menu using a compass icon aggregating data across calculators to try and provive current progress towards goals, actionable information and insights, and next steps. </li>
+            <li>New: "Notifications" bell in the nav bar &mdash; merges an admin-editable JSON feed (<code>assets/data/notifications.json</code>) with system-generated alerts (Journey Progress milestones, an RMD age reminder, a Social Security/Pension Bridge "funded" check, etc.) behind an unread-count badge, with read state and the whole feed carried along in your saved-data exports</li>
+            <li>New calculator: Contribution Limits — a full IRS annual-limit tracker for 401(k)/403(b)/457(b), HSA, and IRA accounts, including SECURE 2.0's 2025+ age-60&ndash;63 "super catch-up." Shows your limits at a glance, tracks year-to-date progress toward the max with remaining-per-paycheck math, flags free employer-match money left on the table, estimates your tax savings, warns on limit overages, and projects your contributions to retirement with its own growth chart &mdash; plus a second chart showing how every limit has grown 2023&ndash;2026</li>
+            <li>Journey Progress dashboard grew from 6 cards to 8 (added Budget Calculator and FIRE Milestones), and the modal itself is now resizable, movable, and has a maximize/restore button on desktop, with a persistent titlebar</li>
+            <li>Journey Progress's Financial Foundations checklist upgraded from a plain done/not-done marker to a 3-state red/yellow/green health indicator, plus a wave of accuracy fixes: the catch-up-contribution reminder now persists instead of firing once on your exact birthday year, Net Worth and Budget Calculator cards no longer miss live-but-unsaved data, the Debt card's cold-start messaging was corrected, and a 5th accent color ("azure") was activated so two cards stop sharing a color</li> 
+            <li>Every calculator's chart hover-tooltips are now keyboard-accessible instead of mouse-only &mdash; bars, dots, and hit-targets are focusable with proper labels and a visible focus ring, and TimeToFI's and Loan Calculator's line charts support full arrow-key scrubbing (12 pages touched: TimeToFI, Loan Calculator, Coast &amp; Barista FIRE, Crossover Point, Emergency Fund, FI Snapshot, Monte Carlo, RMD, Rent vs. Buy, Roth Conversion Ladder, SS &amp; Pension Bridge, and Compound Interest &amp; Wealth Multiplier)</li>
+            <li>New shared Bars &harr; Line/Area chart-mode toggle, rolled out to TimeToFI, RMD, Roth Conversion Ladder, SS &amp; Pension Bridge, Compound Interest &amp; Wealth Multiplier, and Crossover Point</li>
+            <li>TimeToFI: Line mode is a new continuous every-1% (not just every-5%) two-series trend chart with a life-expectancy reference line; added a separate "marginal years saved" diminishing-returns chart, a marginal-dollar picker (what an extra $100&ndash;$500/mo buys you), a return-rate sensitivity note, a plain-English "what your goal actually buys" translation, a highlighted current-savings-rate row, and a "since your last visit" trend history</li>
+            <li>FIRE Milestones: new "Up next" callout banner for your nearest unreached milestone, a gap-between-milestones chip row, dates shown alongside ages everywhere, a Coast FI reality check, a Barista-income scenario picker, a safe-withdrawal-rate sensitivity note, and a visual redesign of the milestone cards; fixed a bug where a low-contribution Coast FI age landing after your target retirement age broke the "on schedule" messaging, and another where a card with no reached milestones showed literal "null" text</li>
+            <li>Budget Calculator: added a since-last-snapshot trend indicator, a biggest-line-items breakdown, a trim-the-wants note, and a new "Other" field in the Needs section (wired into saved data, exports, and Profile Manager's example generator)</li>
+            <li>Emergency Fund: two new inputs (expected expense growth and expected income during an emergency), a new "Time to Reach" table column, a drawdown scenario note ($1,000 / $2,500 / half the fund), a "since your last visit" trend history, and six more insight notes covering interest-vs-contributions, rate sensitivity, inflation-adjusted timelines, what to do once you're funded, a rate-competitiveness benchmark, and a partial-income runway</li>
+            <li>Net Worth: two new insight cards (liquidity mix, and debt composition by short-term/high-interest vs. long-term), plus a trend note in your History section showing your overall dollar change, annualized growth rate, and a straight-line projected date to hit your net-worth goal</li>
+            <li>Car Buying: a refinance-comparison section, a 20/4/10 affordability check, a loan-term comparison table, a "+$1k/$2.5k/$5k/$10k more down" scenario picker, a refinance worth-it note, a cash-vs-finance opportunity-cost note, and a resale-value reality check against a realistic depreciation curve</li>
+            <li>Cash Out or Hold: a new cumulative-advantage chart with a crossover marker, plus exact-sell-amount, break-even-return, and extended-time-horizon notes</li>
+            <li>Debt Snowball renamed to Debt Payoff Planner, with a debt-consolidation-loan comparison and its own chart, a "+$50/$100/$200/$500 more/mo" scenario picker, payoff-milestone chips, a debt-to-income note, a "what debt freedom is worth" projection, a snowball-vs-avalanche time/interest comparison, and a "what your extra payment buys you" note</li>
+            <li>Healthcare &amp; ACA Bridge: new notes on your headroom to the subsidy cliff, the marginal cost of your next $1,000 of income, and the total subsidy value over your whole bridge period</li>
+            <li>Payoff or Invest: a new investment-balance-over-time chart with a crossover marker, plus break-even-return, extended-horizon, and 25/50/75%-hybrid-split notes</li>
+            <li>Homes vs. Stocks: added a 20-year loan-term option, a "how fragile is this verdict" sensitivity check, net-of-selling-costs equity, and a rent-offset note correcting an implicit $0-rent assumption</li>
+            <li>Reverse Time to FI: new notes on the value of working one more year, what your guaranteed income is worth to the plan, and your cushion against a 2-point-lower return</li>
+            <li>Safe Withdrawal Rate: a new "max 100%-safe rate" stat, plus notes on the toughest historical retirement cohort and the cost of fees</li>
+            <li>Variable Withdrawal Rate: the same three-note treatment as Safe Withdrawal Rate, comparing against a fixed baseline and quantifying the strategy's own spending volatility</li>
+            <li>Coast &amp; Barista FIRE: new "a windfall today" and Barista-phase flexibility notes</li>
+            <li>Crossover Point: your old single note split into four targeted ones, a new "crossover age" concept and status-strip stat, a required-contribution-to-close-the-gap figure, and a $10k-windfall what-if</li>
+            <li>FI Snapshot: three new insight cards &mdash; coast-only horizon, gap to goal, and required savings to close it, benchmarked against a 15&ndash;25% FIRE savings rate</li>
+            <li>Monte Carlo: new notes on when failures typically happen, the cost of fees, and the withdrawal rate needed to hit a target success rate</li>
+            <li>RMD: new notes on the cost of being forced onto the RMD schedule, a comparison against a plain 4% withdrawal, and your pre-RMD window</li>
+            <li>Rent vs. Buy: new notes on your true break-even point, a sensitivity check, and the cost of moving</li>
+            <li>Roth Conversion Ladder: new notes on your bridge cushion, the minimum conversion needed to avoid a shortfall, and when the ladder runs dry</li>
+            <li>SS &amp; Pension Bridge: new notes on how your bridge fund would've performed against real historical markets, the delay-to-claim-later break-even, and whether you're on track</li>
+            <li>Compound Interest &amp; Wealth Multiplier: a new "Rule of 72" quick-doubling-time note and a chart note explaining its steep-final-years behavior</li>
+            <li>Loan Calculator: a new "total cost as a multiple of what you borrowed" stat, an extra-payment scenario note, and a refinance comparison with its own chart</li>
+            <li>Getting Started: new step introducing the Journey Progress dashboard</li>
+            <li>Profile Manager: fixed "Load Example Data" duplicating a snapshot on repeat clicks instead of replacing it, and extended the example data to cover Contribution Limits</li>
+            <li>Nav bar polish: hover/focus tooltips on every icon-only button, a small "(i)" info-dot pattern for short stat explanations, and a table &Delta;-column color rework that stays legible in every theme instead of assuming a light background</li>
+            <li>Fixed two broken Glossary deep-links on the F.A.Q. page, removed a stray unreferenced React draft file from Loan Calculator, removed a couple of unnecessary script includes, and cleaned out some dead CSS</li>
+            <li>and more good stuff...</li> 
+           </ul>
+            [EOF]
+          </template>
+        </div>
+        <a class="vc-link" href="v5.0/index.html">
+            <p class="cta-hint">Click to open the current build</p>
+          <span class="vc-arrow" aria-hidden="true">&rarr;</span>
+        </a>
+      </div>
+<!-- /Card-->
+
+    </div>
+
+    <details class="archive-toggle">
+      <summary>Archive <span class="archive-count">(v4.11 and earlier)</span></summary>
+      <div class="versions">
+
+<!-- Card-->
+      <div class="version-card is-disabled">
+        <div class="vc-main">
+          <div class="vc-main-row">
+            <div class="version-icon">B.4.11</div>
+            <div class="version-info">
+              <p class="name">Beta 4.11 - Paused Proton</p>
+              <p class="path">/beta/v4.11</p>
+              <p class="version-dates">Created: 2026-08-23 17:16:45<br>Updated: 2026-08-25 23:29:50</p>
+            </div>
+          </div>
+          <details class="changelog-toggle" onclick="toggleChangeLog(event)">
+            <summary>Show Change Log</summary>
+            <div class="notes">
+              ---- v4.10 Change Log ----
+              <ul>
+            <li>Branched from v4.10</li>
+            <li>Superseded by v5.0 — see its Change Log for everything that shipped in this branch</li>
+          </ul>
+        [EOF]</div>
+          </details>
+        </div>
+        <a class="vc-link" href="v4.9/index.html" aria-disabled="true" tabindex="-1" onclick="return false;">
+          <span class="status-pill disabled">⛔ Disabled</span>
+            <p class="cta-hint">Superseded by v5.0</p>
+        </a>
+      </div>
+<!-- /Card-->
+
+
+
+
+<!-- Card-->
+      <div class="version-card is-disabled">
+        <div class="vc-main">
+          <div class="vc-main-row">
+            <div class="version-icon">B.4.10</div>
+            <div class="version-info">
+              <p class="name">Beta 4.10 - Rascally Robot</p>
+              <p class="path">/beta/v4.10</p>
+              <p class="version-dates">Created: 2026-08-23 17:16:45<br>Updated: 2026-08-25 23:29:50</p>
+            </div>
+          </div>
+          <details class="changelog-toggle" onclick="toggleChangeLog(event)">
+            <summary>Show Change Log</summary>
+            <div class="notes">
+              ---- v4.10 Change Log ----
+              <ul>
+            <li>Branched from v4.9</li>
+            <li>Superseded by v5.0 — see its Change Log for everything that shipped in this branch</li>
+          </ul>
+        [EOF]</div>
+          </details>
+        </div>
+        <a class="vc-link" href="v4.9/index.html" aria-disabled="true" tabindex="-1" onclick="return false;">
+          <span class="status-pill disabled">⛔ Disabled</span>
+            <p class="cta-hint">Superseded by v5.0</p>
+        </a>
+      </div>
+<!-- /Card-->
+
+
+
+<!-- Card-->
       <div class="version-card is-disabled">
         <div class="vc-main">
           <div class="vc-main-row">
             <div class="version-icon">B.4.9</div>
             <div class="version-info">
-              <p class="name">Beta 4.9</p>
+              <p class="name">Beta 4.9 - Running Rock</p>
               <p class="path">/beta/v4.9</p>
-              <p class="version-dates">Created: &lt;Not Recorded&gt;<br>Updated: &lt;Not Recorded&gt;</p>
+              <p class="version-dates">Created: 2026-08-23 17:16:45<br>Updated: 2026-08-25 23:29:50</p>
             </div>
           </div>
           <details class="changelog-toggle" onclick="toggleChangeLog(event)">
             <summary>Show Change Log</summary>
-            <div class="notes">In Development.</div>
+            <div class="notes">
+              ---- v4.9 Change Log ----
+              <ul>
+            <li>Branched from v4.8</li>
+            <li>Superseded by v5.0 — see its Change Log for everything that shipped in this branch</li>
+          </ul>
+        [EOF]</div>
           </details>
         </div>
-        <a class="vc-link" href="#" aria-disabled="true" tabindex="-1" onclick="return false;">
-          <span class="status-pill planning">🚧 In Development</span>
-            <p class="cta-hint">Not available yet</p>
+        <a class="vc-link" href="v4.9/index.html" aria-disabled="true" tabindex="-1" onclick="return false;">
+          <span class="status-pill disabled">⛔ Disabled</span>
+            <p class="cta-hint">Superseded by v5.0</p>
         </a>
       </div>
+<!-- /Card-->
 
-      <div class="version-card is-active is-live-green">
+<!-- Card-->
+      <div class="version-card is-active is-live-orange">
         <div class="vc-main">
           <div class="vc-main-row">
             <div class="version-icon">B.4.8</div>
             <div class="version-info">
-              <p class="name">Beta 4.8 — Current</p>
+              <p class="name">Beta 4.8 - Wandering Wall</p>
               <p class="path">/beta/v4.8</p>
               <p class="version-dates">Created: 2026-08-21 20:48:26<br>Updated: 2026-08-23 16:03:35</p>
             </div>
           </div>
           <details class="changelog-toggle" onclick="toggleChangeLog(event)">
             <summary>Show Change Log</summary>
-            <div class="notes"><ul>
+            <div class="notes">
+              ---- v4.8 Change Log ----
+              <ul>
             <li>Branched from v4.7</li>
             <li>Bug Fixes to some data persistence on a couple calculators.</li>
             <li>Homepage nav bar and hamburger menu section labels shortened: "Basics", "Independence", "Retirement", "Daily Decisions"</li>
@@ -698,27 +1343,25 @@
             <li>Moved Compound Interest &amp; Wealth Multiplier's saved inputs off a cookie and onto localStorage, and gave Loan Calculator and Homes vs. Stocks their own localStorage persistence (with a "Last saved" indicator) — both previously reset every time you reloaded</li>
             <li>Registered all three of the above in the shared saved-data list, and filled in the last gaps in Profile Manager's example-data generator (it was missing sample data for Cash Out or Hold, Compound Interest, Loan Calculator, and Homes vs. Stocks)</li>
             <li>Profile Manager: new "Full raw backup" button that exports every single key saved in local storage, exactly as stored — a debugging/backup copy separate from the curated profile export</li>
-          </ul></div>
+          </ul>
+        [EOF]</div>
           </details>
         </div>
         <a class="vc-link" href="v4.8/index.html">
-          <span class="status-pill active">✔ Current</span>
-            <p class="cta-hint">Click to open the current build</p>
+          <span class="status-pill active">View</span>
+            <p class="cta-hint">Click to open </p>
+          <span class="vc-arrow" aria-hidden="true">&rarr;</span>
         </a>
       </div>
+<!-- /Card-->
 
-    </div>
-
-    <details class="archive-toggle">
-      <summary>Archive <span class="archive-count">(v4.7 and earlier)</span></summary>
-      <div class="versions">
-
+<!-- Card-->
       <div class="version-card is-active is-live-orange">
         <div class="vc-main">
           <div class="vc-main-row">
             <div class="version-icon">B.4.7</div>
             <div class="version-info">
-              <p class="name">Beta 4.7</p>
+              <p class="name">Beta 4.7 - Orange Octopus</p>
               <p class="path">/beta/v4.7</p>
               <p class="version-dates">Created: 2026-08-20 17:56:20<br>Updated: 2026-08-21 20:13:25</p>
             </div>
@@ -744,15 +1387,18 @@
         <a class="vc-link" href="v4.7/index.html">
           <span class="status-pill active">View</span>
             <p class="cta-hint">Click to open </p>
+          <span class="vc-arrow" aria-hidden="true">&rarr;</span>
         </a>
       </div>
+<!-- /Card-->
 
+<!-- Card-->
       <div class="version-card is-active is-live-orange">
         <div class="vc-main">
           <div class="vc-main-row">
             <div class="version-icon">B.4.6</div>
             <div class="version-info">
-              <p class="name">Beta 4.6</p>
+              <p class="name">Beta 4.6 - Silly Snake</p>
               <p class="path">/beta/v4.6</p>
               <p class="version-dates">Created: 2026-08-16 20:21:38<br>Updated: 2026-08-20 16:55:20</p>
             </div>
@@ -778,15 +1424,18 @@
         <a class="vc-link" href="v4.6/index.html">
           <span class="status-pill active">View</span>
             <p class="cta-hint">Click to open </p>
+          <span class="vc-arrow" aria-hidden="true">&rarr;</span>
         </a>
       </div>
+<!-- /Card-->
 
+<!-- Card-->
       <div class="version-card is-active is-live-orange">
         <div class="vc-main">
           <div class="vc-main-row">
             <div class="version-icon">B.4.5</div>
             <div class="version-info">
-              <p class="name">Beta 4.5</p>
+              <p class="name">Beta 4.5 - Flying Fox</p>
               <p class="path">/beta/v4.5</p>
               <p class="version-dates">Created: 2026-08-16 17:00:18<br>Updated: 2026-08-16 20:21:38</p>
             </div>
@@ -813,16 +1462,18 @@
         <a class="vc-link" href="v4.5/index.html">
           <span class="status-pill active">View</span>
             <p class="cta-hint">Click to open </p>
+          <span class="vc-arrow" aria-hidden="true">&rarr;</span>
         </a>
       </div>
+<!-- /Card-->
 
-
+<!-- Card-->
         <div class="version-card is-disabled">
         <div class="vc-main">
           <div class="vc-main-row">
             <div class="version-icon">B.4.4</div>
             <div class="version-info">
-              <p class="name">Beta 4.4</p>
+              <p class="name">Beta 4.4 - Jumping Jelly</p>
               <p class="path">/beta/v4.4</p>
               <p class="version-dates">Created: 2026-08-15 21:45:42<br>Updated: 2026-08-15 23:21:23</p>
             </div>
@@ -840,13 +1491,15 @@
             <p class="cta-hint">Click to open </p>
         </a>
       </div>
+<!-- /Card-->
 
+<!-- Card-->
       <div class="version-card is-active is-live-orange">
         <div class="vc-main">
           <div class="vc-main-row">
             <div class="version-icon">B.4.3</div>
             <div class="version-info">
-              <p class="name">Beta 4.3</p>
+              <p class="name">Beta 4.3 - Bouncing Banana</p>
               <p class="path">/beta/v4.3</p>
               <p class="version-dates">Created: 2026-08-15 09:46:45<br>Updated: 2026-08-15 18:49:24</p>
             </div>
@@ -870,15 +1523,18 @@
         <a class="vc-link" href="v4.3/index.html">
           <span class="status-pill active">View</span>
             <p class="cta-hint">Click to open </p>
+          <span class="vc-arrow" aria-hidden="true">&rarr;</span>
         </a>
       </div>
+<!-- /Card-->
 
+<!-- Card-->
       <div class="version-card is-active is-live-orange">
         <div class="vc-main">
           <div class="vc-main-row">
             <div class="version-icon">B.4.2</div>
             <div class="version-info">
-              <p class="name">Beta 4.2</p>
+              <p class="name">Beta 4.2 - Salty Sugar</p>
               <p class="path">/beta/v4.2</p>
               <p class="version-dates">Created: 2026-08-14 17:52:21<br>Updated: 2026-08-15 09:34:48</p>
             </div>
@@ -895,17 +1551,18 @@
         <a class="vc-link" href="v4.2/index.html">
           <span class="status-pill active">View</span>
             <p class="cta-hint">Click to open </p>
+          <span class="vc-arrow" aria-hidden="true">&rarr;</span>
         </a>
       </div>
+<!-- /Card-->
 
-
-
+<!-- Card-->
       <div class="version-card is-active is-live-orange">
         <div class="vc-main">
           <div class="vc-main-row">
             <div class="version-icon">B.4.1</div>
             <div class="version-info">
-              <p class="name">Beta 4.1 </p>
+              <p class="name">Beta 4.1 - Peppy Pepper</p>
               <p class="path">/beta/v4.1</p>
               <p class="version-dates">Created: 2026-08-14 04:50:38<br>Updated: 2026-08-14 16:51:42</p>
             </div>
@@ -925,15 +1582,18 @@
         <a class="vc-link" href="v4.1/index.html">
           <span class="status-pill active">View</span>
             <p class="cta-hint">Click to open </p>
+          <span class="vc-arrow" aria-hidden="true">&rarr;</span>
         </a>
       </div>
+<!-- /Card-->
 
+<!-- Card-->
       <div class="version-card is-active is-live-orange">
         <div class="vc-main">
           <div class="vc-main-row">
             <div class="version-icon">B.4.0</div>
             <div class="version-info">
-              <p class="name">Version 4.0</p>
+              <p class="name">Beta 4.0 - Vanilla Vespa</p>
               <p class="path">/beta/v4.0</p>
               <p class="version-dates">Created: 2026-08-13 05:38:14<br>Updated: 2026-08-13 18:53:47</p>
             </div>
@@ -952,15 +1612,18 @@
         <a class="vc-link" href="v4.0/index.html">
           <span class="status-pill active">View</span>
             <p class="cta-hint">Click to open </p>
+          <span class="vc-arrow" aria-hidden="true">&rarr;</span>
         </a>
       </div>
+<!-- /Card-->
 
+<!-- Card-->
       <div class="version-card is-active is-live-orange">
         <div class="vc-main">
           <div class="vc-main-row">
             <div class="version-icon">B.3.1</div>
             <div class="version-info">
-              <p class="name">Beta 3.1</p>
+              <p class="name">Beta 3.1 - Crazy Calvin</p>
               <p class="path">/beta/v3.1</p>
               <p class="version-dates">Created: 2026-08-09 20:18:50<br>Updated: 2026-08-13 05:33:14</p>
             </div>
@@ -982,17 +1645,18 @@
         <a class="vc-link" href="v3.1/index.html">
           <span class="status-pill active">View</span>
             <p class="cta-hint">Click to open </p>
+          <span class="vc-arrow" aria-hidden="true">&rarr;</span>
         </a>
       </div>
+<!-- /Card-->
 
-
-
+<!-- Card-->
       <div class="version-card is-active is-live-red">
         <div class="vc-main">
           <div class="vc-main-row">
             <div class="version-icon">B.3.0</div>
             <div class="version-info">
-              <p class="name">Beta 3.0</p>
+              <p class="name">Beta 3.0 - Black Pearl</p>
               <p class="path">/beta/v3</p>
               <p class="version-dates">Created: 2026-08-09 20:18:50<br>Updated: 2026-08-11 18:58:20</p>
             </div>
@@ -1005,15 +1669,18 @@
         <a class="vc-link" href="v3/index.html">
           <span class="status-pill active">View</span>
             <p class="cta-hint">Click to open </p>
+          <span class="vc-arrow" aria-hidden="true">&rarr;</span>
         </a>
       </div>
+<!-- /Card-->
 
+<!-- Card-->
       <div class="version-card is-disabled">
         <div class="vc-main">
           <div class="vc-main-row">
             <div class="version-icon">B.2</div>
             <div class="version-info">
-              <p class="name">Beta 2.0</p>
+              <p class="name">Beta 2.0 - Breaking Badger </p>
               <p class="path">/beta/v2</p>
               <p class="version-dates">Created: 2026-08-09 20:20:58<br>Updated: 2026-08-09 22:31:13</p>
             </div>
@@ -1027,13 +1694,15 @@
           <span class="status-pill disabled">⛔ Disabled</span>
         </a>
       </div>
+<!-- /Card-->
 
+<!-- Card-->
       <div class="version-card is-deleted">
         <div class="vc-main">
           <div class="vc-main-row">
             <div class="version-icon">A.1</div>
             <div class="version-info">
-              <p class="name">Alpha 1.0</p>
+              <p class="name">Alpha 1.0 - Alf Alpha</p>
               <p class="path">/beta/v1</p>
               <p class="version-dates">Created: 2026-08-08 20:37:52<br>Updated: 2026-08-09 20:20:56</p>
             </div>
@@ -1047,6 +1716,7 @@
           <span class="status-pill deleted">🗑 Deleted</span>
         </a>
       </div>
+<!-- /Card-->
 
       </div>
     </details>
@@ -1101,9 +1771,26 @@
           <li style="color:var(--accent)">No promises are made or implied.</li>
           <li style="color:var(--text-dim)">Always consult a licensed professional before making any changes, decisions, or actions.</li>
           <li style="color:goldenrod;">This site uses cookies, but no information is used for tracking purposes, and all information stays on your local device.</li>
-          <li style="color:var(--green-bright);">Page Last Updated: 2026-08-21</li>
+          <li style="color:var(--green-bright);">Page Last Updated: 2026-08-26</li>
       </ul>
       </footer>
+
+    <div class="changelog-modal-overlay" id="changelogModalOverlay">
+      <div class="changelog-modal" id="changelogModal">
+        <div class="changelog-modal-titlebar">
+          <span class="changelog-modal-title" id="changelogModalTitle">Change Log</span>
+          <div class="changelog-modal-titlebar-actions">
+            <button type="button" class="changelog-modal-maximize" id="changelogModalMaximize" aria-label="Maximize" aria-pressed="false"></button>
+            <button type="button" class="changelog-modal-close" id="changelogModalClose" aria-label="Close change log">&times;</button>
+          </div>
+        </div>
+        <div class="changelog-modal-body-wrap">
+          <div class="changelog-modal-body" id="changelogModalBody"></div>
+          <div class="changelog-modal-scroll-arrow changelog-modal-scroll-arrow-top" id="changelogArrowTop"></div>
+          <div class="changelog-modal-scroll-arrow changelog-modal-scroll-arrow-bottom" id="changelogArrowBottom"></div>
+        </div>
+      </div>
+    </div>
   </div>
   <script>
     // every version card is itself a link (an <a>) to that build — any click
@@ -1194,6 +1881,144 @@
         notes.scrollBy({ top: direction * notes.clientHeight * 0.7, behavior: "smooth" });
       });
     }
+
+    // v5.0+ Change Log modal — a real closable/resizable window (see the
+    // "v5.0+ Change Log modal" CSS section above) replacing the inline
+    // <details> notes box every earlier version still uses. One shared
+    // overlay/panel; each trigger button just points at its own
+    // <template> of changelog <li>s to clone in on open.
+    var changelogOverlay = document.getElementById("changelogModalOverlay");
+    var changelogModal = document.getElementById("changelogModal");
+    var changelogTitle = document.getElementById("changelogModalTitle");
+    var changelogBody = document.getElementById("changelogModalBody");
+    var changelogClose = document.getElementById("changelogModalClose");
+    var changelogMaximizeBtn = document.getElementById("changelogModalMaximize");
+    var changelogArrowTop = document.getElementById("changelogArrowTop");
+    var changelogArrowBottom = document.getElementById("changelogArrowBottom");
+    var CHANGELOG_MAXIMIZE_SVG = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"></rect></svg>';
+    var CHANGELOG_RESTORE_SVG = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="7" width="13" height="13" rx="2"></rect><path d="M4 17V6a2 2 0 0 1 2-2h11"></path></svg>';
+    changelogMaximizeBtn.innerHTML = CHANGELOG_MAXIMIZE_SVG;
+    var changelogMaximized = false;
+    var changelogSavedSize = null;
+
+    function restoreChangelogModal() {
+      if (!changelogMaximized) return;
+      if (changelogSavedSize) {
+        changelogModal.style.width = changelogSavedSize.width;
+        changelogModal.style.height = changelogSavedSize.height;
+        changelogModal.style.resize = changelogSavedSize.resize;
+      }
+      changelogModal.classList.remove("is-maximized");
+      changelogMaximizeBtn.setAttribute("aria-label", "Maximize");
+      changelogMaximizeBtn.setAttribute("aria-pressed", "false");
+      changelogMaximizeBtn.innerHTML = CHANGELOG_MAXIMIZE_SVG;
+      changelogMaximized = false;
+    }
+
+    changelogMaximizeBtn.addEventListener("click", function () {
+      if (!changelogMaximized) {
+        changelogSavedSize = {
+          width: changelogModal.style.width,
+          height: changelogModal.style.height,
+          resize: changelogModal.style.resize
+        };
+        changelogModal.style.width = "calc(100vw - 32px)";
+        changelogModal.style.height = "calc(100vh - 32px)";
+        changelogModal.style.resize = "none";
+        changelogModal.classList.add("is-maximized");
+        changelogMaximizeBtn.setAttribute("aria-label", "Restore");
+        changelogMaximizeBtn.setAttribute("aria-pressed", "true");
+        changelogMaximizeBtn.innerHTML = CHANGELOG_RESTORE_SVG;
+        changelogMaximized = true;
+      } else {
+        restoreChangelogModal();
+      }
+    });
+
+    // top/bottom fade+arrow pair for the modal body — same idea as the
+    // old inline changelog's .notes-scroll-arrow, just targeting a
+    // permanent DOM element (the wrap) instead of one rebuilt per
+    // <details>, since this modal's body content is swapped in/out on
+    // every open rather than existing once per card.
+    function updateChangelogScrollArrows() {
+      var canScroll = changelogBody.scrollHeight > changelogBody.clientHeight + 1;
+      changelogArrowTop.classList.toggle("is-visible", canScroll && changelogBody.scrollTop > 4);
+      changelogArrowBottom.classList.toggle("is-visible", canScroll && changelogBody.scrollTop < changelogBody.scrollHeight - changelogBody.clientHeight - 4);
+    }
+    var changelogArrowTimer = null;
+    function stopChangelogArrowScroll() {
+      if (changelogArrowTimer) {
+        clearInterval(changelogArrowTimer);
+        changelogArrowTimer = null;
+      }
+    }
+    function wireChangelogScrollArrow(arrow, direction) {
+      arrow.addEventListener("mouseenter", function () {
+        stopChangelogArrowScroll();
+        changelogArrowTimer = setInterval(function () {
+          changelogBody.scrollTop += direction * 10;
+        }, 16);
+      });
+      arrow.addEventListener("mouseleave", stopChangelogArrowScroll);
+      arrow.addEventListener("touchstart", function (e) {
+        e.preventDefault();
+        stopChangelogArrowScroll();
+        changelogArrowTimer = setInterval(function () {
+          changelogBody.scrollTop += direction * 10;
+        }, 16);
+      }, { passive: false });
+      arrow.addEventListener("touchend", stopChangelogArrowScroll);
+      arrow.addEventListener("touchcancel", stopChangelogArrowScroll);
+      arrow.addEventListener("click", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        changelogBody.scrollBy({ top: direction * changelogBody.clientHeight * 0.7, behavior: "smooth" });
+      });
+    }
+    changelogBody.addEventListener("scroll", updateChangelogScrollArrows);
+    wireChangelogScrollArrow(changelogArrowTop, -1);
+    wireChangelogScrollArrow(changelogArrowBottom, 1);
+    // re-check whenever the modal's own size changes — native resize-drag
+    // or the maximize/restore toggle both change how much of the log fits
+    // without the body's content (and thus scrollHeight) changing at all
+    if (window.ResizeObserver) {
+      new ResizeObserver(updateChangelogScrollArrows).observe(changelogBody);
+    }
+
+    function openChangelogModal(trigger) {
+      var template = document.getElementById(trigger.getAttribute("data-changelog-target"));
+      if (!template) return;
+      changelogTitle.innerHTML = trigger.getAttribute("data-changelog-title") || "Change Log";
+      changelogBody.innerHTML = "";
+      changelogBody.appendChild(template.content.cloneNode(true));
+      changelogBody.scrollTop = 0;
+      changelogOverlay.classList.add("is-open");
+      document.body.style.overflow = "hidden";
+      changelogClose.focus();
+      updateChangelogScrollArrows();
+    }
+
+    function closeChangelogModal() {
+      changelogOverlay.classList.remove("is-open");
+      document.body.style.overflow = "";
+      restoreChangelogModal();
+    }
+
+    document.querySelectorAll(".changelog-modal-trigger").forEach(function (btn) {
+      btn.addEventListener("click", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        openChangelogModal(btn);
+      });
+    });
+
+    changelogClose.addEventListener("click", closeChangelogModal);
+    changelogOverlay.addEventListener("click", function (e) {
+      if (e.target === changelogOverlay) closeChangelogModal();
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && changelogOverlay.classList.contains("is-open")) closeChangelogModal();
+    });
   </script>
 </body>
 </html>
