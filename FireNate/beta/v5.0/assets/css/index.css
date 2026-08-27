@@ -387,6 +387,23 @@
     padding:4px 0; box-shadow:0 3px 10px rgba(0,0,0,0.28);
     pointer-events:none; z-index:2;
   }
+
+  /* small corner badge — not a diagonal ribbon, since a single glyph
+     doesn't suit that wide banner shape — marking the handful of
+     calculators most people end up using regularly (a flagship/dashboard
+     tool, or one built around repeat check-ins). Deliberately a different
+     shape from New!/Updated so it reads as "a pick," not a recency status. */
+  .hp-card-star::after{
+    content:"★";
+    position:absolute; top:14px; right:14px; width:26px; height:26px;
+    display:flex; align-items:center; justify-content:center;
+    border-radius:50%;
+    background:linear-gradient(135deg, var(--hp-gold), #ffe08a);
+    color:#201205;
+    font-size:14px; line-height:1;
+    box-shadow:0 3px 10px rgba(0,0,0,0.28);
+    pointer-events:none; z-index:2;
+  }
   :root[data-theme="dark"] .hp-card-sponsor::after{
     background:linear-gradient(135deg, #6B2A7A, #10707E);
   }
