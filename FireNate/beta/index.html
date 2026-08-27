@@ -752,33 +752,37 @@
      changelog is long enough now that a fixed-height scroll box inside
      the card reads as cramped. One shared overlay/panel in the DOM,
      content swapped in from each card's own <template> on open. */
+  /* same little CRT-terminal palette as .changelog-modal itself, just
+     hardcoded rather than shared via custom properties — this button
+     lives outside that modal's DOM subtree, so it can't inherit its
+     --term-* vars, and duplicating 4 color values here is simpler than
+     hoisting them to a shared ancestor for one other consumer. */
   .changelog-modal-trigger {
     display: inline-flex;
     align-items: center;
-    gap: 7px;
-    font: inherit;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text-dim);
-    background: var(--card-hover);
-    border: 1px solid var(--border-color);
-    border-radius: 999px;
-    padding: 6px 14px 6px 12px;
+    gap: 6px;
+    font-family: 'VT323', ui-monospace, Menlo, Consolas, monospace;
+    font-size: 16px;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: #3dff7a;
+    background: #030f08;
+    border: 1px solid #1f9a4d;
+    border-radius: 4px;
+    padding: 5px 12px 4px;
     cursor: pointer;
-    transition: color 0.15s ease, border-color 0.15s ease;
+    text-shadow: 0 0 5px rgba(61, 255, 122, 0.5);
+    transition: color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
   }
   .changelog-modal-trigger:hover {
-    color: var(--text-main);
-    border-color: var(--text-dim);
+    color: #b6ffce;
+    border-color: #3dff7a;
+    box-shadow: 0 0 8px rgba(61, 255, 122, 0.45);
   }
   .changelog-modal-trigger::before {
-    content: '';
+    content: '>_';
     flex-shrink: 0;
-    width: 6px;
-    height: 6px;
-    border-right: 2px solid currentColor;
-    border-bottom: 2px solid currentColor;
-    transform: rotate(-45deg);
+    opacity: 0.85;
   }
 
   .changelog-modal-overlay {
@@ -847,23 +851,28 @@
     .changelog-modal-title::after { animation: none; }
   }
 
-  /* resizable on desktop only — mirrors the same pointer:fine gate used
-     elsewhere on the live site's own resizable windows; touch devices
-     get no resize handle to fight with, just the fixed max-height */
+  /* the default max-height/width exist to keep the un-maximized modal
+     from looming too large on its own — maximize (available on every
+     device, not just desktop) sets an explicit inline width/height and
+     needs those caps out of the way, or the old max-height wins and the
+     modal stalls well short of full size. Unconditional (not behind the
+     resize media query below) since maximize itself isn't desktop-only. */
+  .changelog-modal.is-maximized {
+    max-width: none;
+    max-height: none;
+  }
+
+  /* the DRAG-resize handle stays desktop-only — mirrors the same
+     pointer:fine gate used elsewhere on the live site's own resizable
+     windows, since dragging a small corner handle isn't a practical touch
+     interaction. Maximize is a single tap and works everywhere (see the
+     unconditional .changelog-modal-maximize rules below). */
   @media (min-width: 768px) and (pointer: fine) {
     .changelog-modal {
       resize: both;
       overflow: auto;
       min-width: 340px;
       min-height: 220px;
-    }
-    /* the default max-height/width exist to keep the un-maximized modal
-       from looming too large on its own — maximize sets an explicit
-       inline width/height and needs those caps out of the way, or the
-       old max-height wins and the modal stalls well short of full size */
-    .changelog-modal.is-maximized {
-      max-width: none;
-      max-height: none;
     }
   }
 
@@ -937,19 +946,10 @@
     outline: none;
   }
 
-  /* maximize is a desktop-only affordance, same reasoning/gate as the
-     resize handle itself — there's no meaningful "restore" size to speak
-     of on a phone viewport that's already close to fullscreen */
+  /* unlike the drag-resize handle, maximize is a single tap and works
+     fine on any device — available everywhere, not gated to desktop */
   .changelog-modal-maximize {
-    display: none;
-  }
-  @media (min-width: 768px) and (pointer: fine) {
-    .changelog-modal-maximize {
-      display: flex;
-    }
-    .changelog-modal.is-maximized {
-      resize: none;
-    }
+    display: flex;
   }
 
   /* a plain (non-flex) positioning wrapper — .changelog-modal-body stays a
