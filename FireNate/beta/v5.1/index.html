@@ -2,826 +2,2075 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<script src="assets/js/theme-init.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FireNate — Financial Independence Calculators</title>
-<meta name="description" content="A small toolset for financial-independence planning: time to FI, loan and amortization math, buy-vs-invest trade-offs, and the long arc of compounding.">
+<title>F.I.R.E. Nate — Site Versions</title>
+<!-- VT323: used only by the v5.0+ Change Log modal for its CRT-terminal
+     look (see the ".changelog-modal" rules) — nowhere else on this page. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Antonio:wght@400;500;600;700&family=Michroma&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/site.css">
-<link rel="stylesheet" href="assets/css/index.css">
-<script src="assets/js/theme.js" defer></script>
-<script src="assets/js/user-profile.js" defer></script>
-<script src="assets/js/nav.js" defer></script>
-<script src="assets/js/profile-autofill.js" defer></script>
-<script>window.FN_BASE = ""; window.FN_PAGE = "home";</script>
+<link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
 <style>
-  @media (prefers-reduced-motion: no-preference){
-    html{ scroll-behavior:smooth; }
+  :root {
+    --bg-1: #0f1420;
+    --bg-2: #1a2233;
+    --card: #1e2738;
+    --card-hover: #253044;
+    --accent: #ff7a3d;
+    --accent-2: #ffb347;
+    --accent-3: #47b3ff;
+    --text-main: #eef1f6;
+    --text-dim: #9aa5b8;
+    --border-color: #2c364c;
+    --red: #ff5c5c;
+    --green: #3ddc84;
+    --green-bright: #5cffa3;
+    --blue: #3d84dc;
+    --blue-bright: #5ca3ff;
+    
+    /* default "live" accent for .is-active cards — overridden per-card by
+       .is-live-green / .is-live-orange / .is-live-red so the same pulse,
+       glow, and pill rules can be reused with a different color per version */
+    --live-rgb: 61, 220, 132;
+    --live: var(--green);
+    --live-bright: var(--green-bright);
   }
-  .hp-section{ scroll-margin-top:130px; }
 
-  /* ---------- STICKY "JUMP TO SECTION" BAR ---------- */
-  .hp-quicklinks{
-    position:sticky; top:60px; z-index:38;
-    padding:14px 0 0;
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: radial-gradient(circle at 20% -10%, #2a2140 0%, transparent 45%),
+                radial-gradient(circle at 90% 0%, #3a1f1f 0%, transparent 40%),
+                linear-gradient(180deg, var(--bg-1) 0%, var(--bg-2) 100%);
+    color: var(--text-main);
+    padding: 56px 24px 80px;
   }
-  .hp-quicklinks-inner{
-    display:flex; flex-wrap:nowrap; gap:6px; overflow-x:auto;
-    padding:9px; border-radius:999px;
-    background:var(--hp-panel);
-    border:1px solid transparent;
-    background-image:
-      linear-gradient(var(--hp-panel), var(--hp-panel)),
-      linear-gradient(90deg, var(--hp-gold), var(--hp-rust));
-    background-origin:border-box; background-clip:padding-box, border-box;
-    box-shadow:0 14px 32px -14px rgba(0,0,0,0.45);
-    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
-    scrollbar-width:none;
+
+  .wrap {
+    max-width: 640px;
+    margin: 0 auto;
   }
-  .hp-quicklinks-inner::-webkit-scrollbar{ display:none; }
-  .hp-quicklinks a{
-    flex:none;
-    font-family:var(--fn-sans); font-size:13px; font-weight:700;
-    color:var(--hp-text-dim); text-decoration:none;
-    padding:9px 18px; border-radius:999px; white-space:nowrap;
-    transition:background-color .15s ease, color .15s ease, transform .15s ease;
+
+  header {
+    text-align: center;
+    margin-bottom: 44px;
   }
-  .hp-quicklinks a:hover{ background:var(--hp-gold-soft); color:var(--hp-gold); transform:translateY(-1px); }
-  .hp-quicklinks a.active{
-    background:linear-gradient(90deg, var(--hp-gold), var(--hp-rust));
-    color:#201205;
-    box-shadow:0 6px 16px -6px rgba(217,132,15,0.55);
+
+  header .badge {
+    display: flex;
+    width: fit-content;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #201205;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 6px 14px;
+    border-radius: 999px;
+    margin: 0 auto 18px;
   }
-  /* below this width, the pill row no longer fits every section on one
-     line — wrap onto multiple rows instead of relying on horizontal
-     scroll, so every option stays visible instead of getting clipped
-     behind the pill's own rounded edge with no hint more is scrollable */
-  @media (max-width:700px){
-    .hp-quicklinks-inner{
-      flex-wrap:wrap;
-      overflow-x:visible;
-      border-radius:16px;
-      justify-content:center;
+
+  header .fun-badge {
+    display: flex;
+    width: fit-content;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, var(--red), #ff914d);
+    color: #2a0a0a;
+    font-weight: 800;
+    font-size: 13px;
+    padding: 8px 18px;
+    border-radius: 999px;
+    margin: 4px auto 18px;
+    box-shadow: 0 8px 20px rgba(255, 92, 92, 0.3);
+  }
+
+  header h1 {
+    font-size: clamp(26px, 4vw, 36px);
+    margin: 0 0 10px;
+    letter-spacing: -0.02em;
+  }
+
+  header p {
+    color: var(--text-dim);
+    font-size: 15px;
+    margin: 0;
+  }
+
+  header p.tagline {
+    color: var(--accent-2);
+    /* font-weight: 600; */
+    margin-top: 6px;
+  }
+
+  .versions {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .version-card {
+    display: flex;
+    align-items: stretch;
+    background: var(--card);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    overflow: hidden;
+    transition: border-color 0.2s ease, transform 0.2s ease, background 0.2s ease;
+  }
+
+  .vc-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 20px 22px;
+  }
+
+  .vc-main-row {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+  }
+
+  /* the actual navigable region — a distinct colored zone on the card's
+     right edge, structurally outside the Change Log toggle (a sibling
+     inside .vc-main, not an ancestor) so a click anywhere in the
+     changelog — the toggle button or its expanded notes — can never
+     bubble into the card's own navigation, on any browser. Nesting
+     <details>/<summary> inside <a> is invalid content to begin with, so
+     rather than keep suppressing default navigation with preventDefault,
+     there's simply no ancestor link to suppress — and confining the click
+     target to this zone (rather than the whole card) makes it visually
+     obvious which part actually navigates. */
+  .vc-link {
+    flex-shrink: 0;
+    width: 132px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 20px 16px;
+    text-align: center;
+    text-decoration: none;
+    color: inherit;
+    position: relative;
+    /* cast onto .vc-main to its left, so the colored zone reads as a
+       raised button sitting slightly above the rest of the card */
+    box-shadow: -7px 0 16px -3px rgba(0, 0, 0, 0.45);
+    transition: box-shadow 0.2s ease;
+  }
+
+  .version-card.is-active {
+    position: relative;
+    border-color: rgba(var(--live-rgb), 0.4);
+    box-shadow: 0 4px 18px rgba(var(--live-rgb), 0.1);
+    animation: live-pulse 2.6s ease-in-out infinite;
+    transition: border-color 0.25s ease, background 0.25s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease;
+  }
+
+  .version-card.is-active .vc-link {
+    cursor: pointer;
+    background: var(--live);
+    color: #0a2417;
+    transition: filter 0.15s ease, box-shadow 0.2s ease;
+  }
+
+  .version-card.is-active:has(.vc-link:hover) .vc-link {
+    filter: brightness(1.08);
+    box-shadow: -9px 0 22px -2px rgba(0, 0, 0, 0.55);
+  }
+
+  /* pressed flat — completes the "raised button" feel from the resting
+     shadow above */
+  .version-card.is-active:has(.vc-link:active) .vc-link {
+    box-shadow: -2px 0 6px -2px rgba(0, 0, 0, 0.3);
+  }
+
+  /* per-card accent overrides — same .is-active structure/animation, different color */
+  .version-card.is-live-blue { --live-rgb: 61, 132, 220; --live: var(--blue); --live-bright: var(--blue-bright); }
+  .version-card.is-live-green { --live-rgb: 61, 220, 132; --live: var(--green); --live-bright: var(--green-bright); }
+
+  .version-card.is-live-orange { --live-rgb: 255, 179, 71; --live: var(--accent-2); --live-bright: #ffcf85; }
+  .version-card.is-live-red { --live-rgb: 255, 92, 92; --live: var(--red); --live-bright: #ff8a8a; }
+
+  @keyframes live-pulse {
+    0%, 100% { box-shadow: 0 4px 18px rgba(var(--live-rgb), 0.1), 0 0 0 0 rgba(var(--live-rgb), 0.22); }
+    50% { box-shadow: 0 4px 18px rgba(var(--live-rgb), 0.16), 0 0 0 7px rgba(var(--live-rgb), 0); }
+  }
+
+  /* a real element (not ::after generated content) specifically so it can
+     carry its own independent :hover state — a pseudo-element can only
+     ever react to its host being hovered, not to the mouse being over
+     just its own rendered box, and the color-swap below needs exactly
+     that: hovering the circle itself, not the whole colored zone. */
+  .vc-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    font-size: 18px;
+    font-weight: 700;
+    border: 2px solid currentColor;
+    border-radius: 50%;
+    background: transparent;
+    --vc-arrow-x: 0px;
+    animation: vc-arrow-throb 2s ease-in-out infinite;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+
+  /* hovering the circle itself swaps it to a dark chip with the card's
+     own theme color for the arrow, instead of the usual dark-ink-on-live
+     coloring — a distinct "you're right on the button" cue */
+  .vc-arrow:hover {
+    background: #0a0a0a;
+    color: var(--live);
+  }
+
+  /* subtle pulse on the circled arrow — a plain attention cue that this
+     zone is clickable, distinct from the whole-card hover lift. Hover
+     nudges it sideways via the --vc-arrow-x custom property rather than a
+     separate transform rule, so the throb (still running) and the nudge
+     combine in the same transform instead of one fighting the other for
+     control of the property. */
+  @keyframes vc-arrow-throb {
+    0%, 100% { transform: translateX(var(--vc-arrow-x)) scale(1); opacity: 0.75; }
+    50% { transform: translateX(var(--vc-arrow-x)) scale(1.12); opacity: 1; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .vc-arrow {
+      animation: none;
     }
   }
 
-  /* ---------- SEARCH / FILTER CALCULATORS ---------- */
-  .hp-quicklinks-row{ display:flex; align-items:center; gap:8px; }
-  .hp-quicklinks-row .hp-quicklinks-inner{ flex:1; min-width:0; }
-
-  .hp-quicklinks-search-btn{
-    flex:none; width:40px; height:40px;
-    display:inline-flex; align-items:center; justify-content:center;
-    border-radius:999px; cursor:pointer;
-    background:var(--hp-panel);
-    border:1px solid transparent;
-    background-image:
-      linear-gradient(var(--hp-panel), var(--hp-panel)),
-      linear-gradient(90deg, var(--hp-gold), var(--hp-rust));
-    background-origin:border-box; background-clip:padding-box, border-box;
-    color:var(--hp-text-dim);
-    box-shadow:0 14px 32px -14px rgba(0,0,0,0.45);
-    transition:color .15s ease, transform .15s ease;
-  }
-  .hp-quicklinks-search-btn:hover{ color:var(--hp-gold); transform:translateY(-1px); }
-  .hp-quicklinks-search-btn.active{
-    background:linear-gradient(90deg, var(--hp-gold), var(--hp-rust));
-    color:#201205;
-    box-shadow:0 6px 16px -6px rgba(217,132,15,0.55);
+  /* :has() so the lift/glow reacts only to hovering the actual link (the
+     colored zone that navigates), not the rest of the card */
+  .version-card.is-active:has(.vc-link:hover) {
+    animation-play-state: paused;
+    border-color: rgba(var(--live-rgb), 0.7);
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 14px 32px rgba(var(--live-rgb), 0.22);
   }
 
-  .hp-search-panel{ margin-top:8px; }
-  .hp-search-panel[hidden]{ display:none; }
-  .hp-search-panel-inner{
-    display:flex; align-items:center; gap:10px;
-    padding:11px 16px;
-    border-radius:14px;
-    background:var(--hp-panel);
-    border:1px solid transparent;
-    background-image:
-      linear-gradient(var(--hp-panel), var(--hp-panel)),
-      linear-gradient(90deg, var(--hp-gold), var(--hp-rust));
-    background-origin:border-box; background-clip:padding-box, border-box;
-    box-shadow:0 14px 32px -14px rgba(0,0,0,0.45);
-    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
-  }
-  .hp-search-panel-inner svg{ flex:none; color:var(--hp-text-faint); }
-  #hpSearchInput{
-    flex:1; min-width:0; background:none; border:none; outline:none;
-    font-family:var(--fn-sans); font-size:14px; color:var(--hp-text);
-  }
-  #hpSearchInput::placeholder{ color:var(--hp-text-faint); }
-  /* suppress the browser's own built-in clear (x) for type="search" so it
-     doesn't stack with the custom .hp-search-clear button right next to it */
-  #hpSearchInput::-webkit-search-cancel-button{ -webkit-appearance:none; appearance:none; }
-  .hp-search-clear{
-    flex:none; width:22px; height:22px; border-radius:999px; border:none;
-    background:var(--hp-gold-soft); color:var(--hp-text-dim); cursor:pointer;
-    display:inline-flex; align-items:center; justify-content:center;
-    font-size:15px; line-height:1;
-  }
-  .hp-search-clear:hover{ color:var(--hp-gold); }
-  .hp-search-clear[hidden]{ display:none; }
-  .hp-search-status{
-    margin:8px 4px 0; font-family:var(--fn-mono); font-size:11.5px;
-    letter-spacing:.04em; color:var(--hp-text-faint);
-  }
-  .hp-search-status.no-results{ color:var(--hp-rust); }
-  .hp-search-status[hidden]{ display:none; }
-
-  /* .hp-card's own explicit display:flex would otherwise beat the browser's
-     default [hidden]{display:none} (author styles always win over the UA
-     stylesheet regardless of specificity) — needed so the search filter
-     actually hides non-matching cards, not just marks them hidden */
-  .hp-card[hidden]{ display:none; }
-
-  /* ---------- FIRST-VISIT WELCOME MODAL ---------- */
-  /* Built/injected via JS only for a first-time visitor (see the script at
-     the bottom of this file) — reuses the same --fn-* "always-dark chrome"
-     tokens and overlay/modal shape as the per-page field-help modal
-     (assets/js/field-help.js + site.css's .fn-help-*), so it needs the same
-     light per-theme glass touches below rather than a whole new palette. */
-  body.hp-welcome-lock{ overflow:hidden; }
-  .hp-welcome-overlay{
-    position:fixed; inset:0; z-index:10000;
-    display:flex; align-items:center; justify-content:center;
-    padding:24px;
-    background:rgba(5,4,8,0.6);
-    animation:hp-welcome-fade .15s ease;
-  }
-  @keyframes hp-welcome-fade{ from{ opacity:0; } to{ opacity:1; } }
-  .hp-welcome-modal{
-    position:relative;
-    width:min(560px, 100%);
-    max-height:min(640px, 88vh);
-    overflow-y:auto;
-    background:var(--fn-panel);
-    border:1px solid var(--fn-line);
-    border-radius:16px;
-    box-shadow:0 24px 60px rgba(0,0,0,0.5);
-    font-family:var(--fn-sans);
-    padding:26px 28px 28px;
-    animation:hp-welcome-pop .18s ease;
-  }
-  @keyframes hp-welcome-pop{
-    from{ opacity:0; transform:scale(0.96) translateY(6px); }
-    to{ opacity:1; transform:scale(1) translateY(0); }
-  }
-  .hp-welcome-close{
-    position:absolute; top:14px; right:14px; z-index:6;
-    width:28px; height:28px;
-    display:inline-flex; align-items:center; justify-content:center;
-    border-radius:50%;
-    border:1px solid var(--fn-line);
-    background:var(--fn-panel-2);
-    color:var(--fn-text-dim);
-    font-size:18px; line-height:1; cursor:pointer;
-    box-shadow:0 4px 14px rgba(0,0,0,0.35);
-  }
-  .hp-welcome-close:hover, .hp-welcome-close:focus-visible{ border-color:var(--fn-rust); color:var(--fn-rust); outline:none; }
-  .hp-welcome-eyebrow{
-    font-family:var(--fn-mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase;
-    color:var(--fn-gold); margin:0 0 8px;
-  }
-  .hp-welcome-modal h2{
-    font-family:var(--fn-serif); font-size:22px; font-weight:600; line-height:1.25;
-    color:var(--fn-text); margin:0 0 10px; padding-right:26px;
-  }
-  .hp-welcome-lede{
-    font-size:13.5px; line-height:1.55; color:var(--fn-text-dim);
-    margin:0 0 20px;
-  }
-  .hp-welcome-options{ display:flex; flex-direction:column; gap:10px; }
-  .hp-welcome-option{
-    display:block; text-align:left; width:100%;
-    padding:14px 16px; border-radius:12px;
-    border:1px solid var(--fn-line);
-    background:var(--fn-panel-2);
-    text-decoration:none; cursor:pointer;
-    font-family:inherit;
-    transition:border-color .15s ease, transform .15s ease, background .15s ease;
-  }
-  .hp-welcome-option:hover{ border-color:var(--fn-gold); transform:translateY(-2px); background:var(--fn-panel); }
-  .hp-welcome-opt-name{
-    display:flex; align-items:center; gap:9px;
-    font-size:14.5px; font-weight:600; color:var(--fn-text);
-    margin-bottom:4px;
-  }
-  .hp-welcome-opt-name svg{ flex-shrink:0; color:var(--fn-gold); }
-  .hp-welcome-opt-desc{ font-size:12.5px; line-height:1.5; color:var(--fn-text-dim); }
-  .hp-welcome-option-skip .hp-welcome-opt-name svg{ color:var(--fn-text-faint); }
-
-  /* brief highlight on the Getting Started section after "No thanks" (or
-     any other dismissal) so it's clear those guides didn't go anywhere. */
-  @keyframes hp-welcome-glow{
-    0%, 100% { box-shadow:0 0 0 0 rgba(217,132,15,0); }
-    50% { box-shadow:0 0 0 8px rgba(217,132,15,0.28); }
-  }
-  .hp-welcome-highlight{
-    background:var(--hp-bg);
-    animation:hp-welcome-glow 1.3s ease-in-out 2;
-    border-radius:18px;
+  .version-card.is-active:has(.vc-link:hover) .vc-arrow {
+    --vc-arrow-x: 6px;
   }
 
-  html[data-theme="neon"] .hp-welcome-overlay{ background:rgba(4,7,20,0.42); }
-  html[data-theme="neon"] .hp-welcome-modal{
-    background:
-      linear-gradient(135deg, rgba(255,255,255,0.09), rgba(255,255,255,0) 45%),
-      rgba(15,23,42,0.62);
-    backdrop-filter:blur(22px) saturate(160%);
-    -webkit-backdrop-filter:blur(22px) saturate(160%);
+  .version-card.is-active:has(.vc-link:active) {
+    transform: translateY(-1px) scale(0.99);
+  }
+
+  .cta-hint {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: inherit;
+    opacity: 0.8;
+    margin: 0;
+  }
+
+  .version-card.is-disabled,
+  .version-card.is-deleted,
+  .version-card.is-soon {
+    transition: border-color 0.2s ease, opacity 0.2s ease;
+  }
+
+  .version-card.is-disabled {
+    opacity: 0.55;
+  }
+
+  .version-card.is-deleted {
+    opacity: 0.4;
+  }
+
+  .version-card.is-disabled .vc-link,
+  .version-card.is-deleted .vc-link,
+  .version-card.is-soon .vc-link {
+    background: var(--card-hover);
+    color: var(--text-dim);
+    cursor: not-allowed;
+  }
+
+  .version-card.is-disabled:hover,
+  .version-card.is-deleted:hover,
+  .version-card.is-soon:hover {
+    border-color: #c7ccd6;
+  }
+
+  .version-icon {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    border-radius: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: 700;
+  }
+
+  /* v5.0+ badge treatment — the version's own color fills a full-height
+     rail down the card's LEFT edge (a mirror of .vc-link's colored zone
+     on the right) instead of a small inline icon box, with a bigger
+     version-number-forward stack (small "Beta" caption over large digits)
+     replacing the "B.4.9"-style abbreviation every earlier version still
+     uses. A plain div, not a link — .vc-link on the right stays the only
+     navigable/clickable zone on the card. */
+  .vc-badge {
+    flex-shrink: 0;
+    width: 110px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 12px 16px;
+    text-align: center;
+    box-shadow: 7px 0 16px -3px rgba(0, 0, 0, 0.45);
+    transition: filter 0.2s ease;
+  }
+
+  /* label + number center within whatever vertical space is left above
+     the status pill, which the flex:1 on this wrapper pushes to the
+     bottom of the badge */
+  .vc-badge-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+  }
+
+  /* plain label, not a chip — the pill look (background/border/padding)
+     only makes sense riding on top of .vc-link's solid color; here it
+     sits directly on the badge's own color, so just the text remains */
+  .vc-badge .status-pill {
+    margin-top: 10px;
+    background: none;
+    border: none;
+    padding: 0;
+    border-radius: 0;
+    color: inherit;
+    opacity: 0.85;
+    font-size: 11.5px;
+    white-space: normal;
+    text-align: center;
+  }
+
+  .version-card.is-active .vc-badge {
+    background: linear-gradient(135deg, var(--live), color-mix(in srgb, var(--live) 55%, black));
+    color: #0a2417;
+  }
+
+  .version-card.is-active:has(.vc-link:hover) .vc-badge {
+    filter: brightness(1.08);
+  }
+
+  .version-card.is-disabled .vc-badge,
+  .version-card.is-deleted .vc-badge,
+  .version-card.is-soon .vc-badge {
+    background: #2a3346;
+    color: var(--text-dim);
+  }
+
+  .vc-badge .vi-label {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    line-height: 1;
+    text-transform: uppercase;
+    opacity: 0.85;
+  }
+
+  .vc-badge .vi-num {
+    font-size: 32px;
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .is-active .version-icon {
+    background: linear-gradient(135deg, var(--live), color-mix(in srgb, var(--live) 55%, black));
+    box-shadow: 0 6px 18px rgba(var(--live-rgb), 0.35);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .version-card.is-active:has(.vc-link:hover) .version-icon {
+    transform: scale(1.12);
+  }
+
+  .is-disabled .version-icon,
+  .is-deleted .version-icon,
+  .is-soon .version-icon {
+    background: #2a3346;
+    color: var(--text-dim);
+  }
+
+  .version-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .version-info .name {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 0 4px;
+  }
+
+  .version-info .path, .notes {
+    font-size: 13px;
+    color: var(--text-dim);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+
+  .version-info .version-dates {
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--text-dim);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    opacity: 0.75;
+    margin: 4px 0 0;
+  }
+
+  .status-pill {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 999px;
+    font-size: 12.5px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  /* status pills only ever live inside the colored .vc-link zone now — a
+     translucent dark chip riding on top of the zone's own solid color,
+     rather than each status having its own bordered-on-dark-card look */
+  .vc-link .status-pill {
+    background: rgba(10, 20, 15, 0.2);
+    color: inherit;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+  }
+
+  .section-divider {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    opacity: 0.55;
+    margin: 34px 0 14px;
+  }
+
+  .archive-toggle {
+    margin: 34px 0 0;
+  }
+  .archive-toggle summary {
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    opacity: 0.7;
+    padding: 10px 0;
+    transition: opacity 0.15s ease;
+  }
+  .archive-toggle summary:hover {
+    opacity: 1;
+  }
+  .archive-toggle summary::-webkit-details-marker {
+    display: none;
+  }
+  .archive-toggle summary::before {
+    content: '';
+    flex-shrink: 0;
+    width: 7px;
+    height: 7px;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: rotate(-45deg);
+    transition: transform 0.15s ease;
+  }
+  .archive-toggle[open] summary::before {
+    transform: rotate(45deg);
+  }
+  .archive-count {
+    opacity: 0.7;
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: normal;
+  }
+  .archive-toggle .versions,
+  .archive-toggle .future-panel {
+    margin-top: 14px;
+  }
+
+  .changelog-toggle {
+    margin: 8px 0 0;
+  }
+  .changelog-toggle summary {
+    cursor: pointer;
+    list-style: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: normal;
+    color: var(--text-dim);
+    background: var(--card-hover);
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    padding: 6px 14px 6px 12px;
+    transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  }
+  .changelog-toggle summary:hover {
+    color: var(--text-main);
+    border-color: var(--text-dim);
+  }
+  .changelog-toggle summary::-webkit-details-marker {
+    display: none;
+  }
+  .changelog-toggle summary::before {
+    content: '';
+    flex-shrink: 0;
+    width: 6px;
+    height: 6px;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: rotate(-45deg);
+    transition: transform 0.15s ease;
+  }
+  .changelog-toggle[open] summary::before {
+    transform: rotate(45deg);
+  }
+  .changelog-toggle .notes-wrap {
+    position: relative;
+    margin-top: 8px;
+  }
+
+  .changelog-toggle .notes {
+    padding: 14px 16px;
+    max-height: min(340px, 45vh);
+    overflow-y: auto;
+    background: #131924;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: inset 0 3px 12px rgba(0, 0, 0, 0.5), inset 0 -1px 0 rgba(255, 255, 255, 0.02);
+  }
+
+  /* fade + chevron hinting that there's more changelog text to scroll to
+     in that direction — shown/hidden by JS based on actual scroll
+     position, since a pure-CSS scroll shadow can't also carry an arrow */
+  .notes-scroll-arrow {
+    position: absolute;
+    left: 1px;
+    right: 1px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease, color 0.15s ease;
+    color: var(--text-dim);
+  }
+
+  .notes-scroll-arrow.is-visible {
+    opacity: 1;
+    pointer-events: auto;
+    cursor: pointer;
+  }
+
+  .notes-scroll-arrow.is-visible:hover {
+    color: var(--text-main);
+  }
+
+  .notes-scroll-arrow.is-visible:hover::before {
+    animation-play-state: paused;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .notes-scroll-arrow-top.is-visible::before,
+    .notes-scroll-arrow-bottom.is-visible::before {
+      animation: none;
+    }
+  }
+
+  .notes-scroll-arrow::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+  }
+
+  .notes-scroll-arrow-top {
+    top: 1px;
+    border-radius: 11px 11px 0 0;
+    background: linear-gradient(to bottom, #131924 35%, transparent);
+    padding-bottom: 6px;
+  }
+
+  .notes-scroll-arrow-top::before {
+    transform: rotate(-135deg);
+    margin-top: 4px;
+  }
+
+  .notes-scroll-arrow-top.is-visible::before {
+    animation: notes-arrow-throb-top 1.6s ease-in-out infinite;
+  }
+
+  @keyframes notes-arrow-throb-top {
+    0%, 100% { transform: rotate(-135deg) scale(0.85); }
+    50% { transform: rotate(-135deg) scale(1.3); }
+  }
+
+  .notes-scroll-arrow-bottom {
+    bottom: 1px;
+    border-radius: 0 0 11px 11px;
+    background: linear-gradient(to top, #131924 35%, transparent);
+    padding-top: 6px;
+  }
+
+  .notes-scroll-arrow-bottom::before {
+    transform: rotate(45deg);
+    margin-bottom: 4px;
+  }
+
+  .notes-scroll-arrow-bottom.is-visible::before {
+    animation: notes-arrow-throb-bottom 1.6s ease-in-out infinite;
+  }
+
+  @keyframes notes-arrow-throb-bottom {
+    0%, 100% { transform: rotate(45deg) scale(0.85); }
+    50% { transform: rotate(45deg) scale(1.3); }
+  }
+
+  .changelog-toggle .notes ul {
+    margin: 0;
+    padding-left: 18px;
+  }
+
+  .changelog-toggle .notes li + li {
+    margin-top: 6px;
+  }
+
+  .future-panel {
+    padding: 22px 24px;
+    background: #131924;
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    box-shadow: inset 0 3px 12px rgba(0, 0, 0, 0.5), inset 0 -1px 0 rgba(255, 255, 255, 0.02);
+  }
+
+  .future-panel-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .future-icon {
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    font-weight: 700;
+    background: #171f2e;
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.45);
+    color: var(--text-dim);
+  }
+
+  .future-heading {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .future-title {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0 0 3px;
+    color: var(--text-dim);
+  }
+
+  .future-subtitle {
+    font-size: 12px;
+    color: var(--text-dim);
+    opacity: 0.7;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    margin: 0;
+  }
+
+  .future-body {
+    font-size: 13.5px;
+    color: var(--text-dim);
+    line-height: 1.65;
+    padding-top: 14px;
+    border-top: 1px dashed var(--border-color);
+  }
+
+  .future-body ul {
+    margin: 0;
+    padding-left: 20px;
+  }
+
+  .future-body li {
+    margin-bottom: 5px;
+  }
+
+  .future-body ul ul {
+    margin: 5px 0 8px;
+    padding-left: 18px;
+    opacity: 0.8;
+  }
+
+  /* ---------- v5.0+ Change Log modal ----------
+     Replaces the inline <details> notes box (still used by every card
+     older than v5.0) with a real closable/resizable window — the
+     changelog is long enough now that a fixed-height scroll box inside
+     the card reads as cramped. One shared overlay/panel in the DOM,
+     content swapped in from each card's own <template> on open. */
+  /* same little CRT-terminal palette as .changelog-modal itself, just
+     hardcoded rather than shared via custom properties — this button
+     lives outside that modal's DOM subtree, so it can't inherit its
+     --term-* vars, and duplicating 4 color values here is simpler than
+     hoisting them to a shared ancestor for one other consumer. */
+  .changelog-modal-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'VT323', ui-monospace, Menlo, Consolas, monospace;
+    font-size: 16px;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: #3dff7a;
+    background: #030f08;
+    border: 1px solid #1f9a4d;
+    border-radius: 4px;
+    padding: 5px 12px 4px;
+    cursor: pointer;
+    text-shadow: 0 0 5px rgba(61, 255, 122, 0.5);
+    transition: color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .changelog-modal-trigger:hover {
+    color: #b6ffce;
+    border-color: #3dff7a;
+    box-shadow: 0 0 8px rgba(61, 255, 122, 0.45);
+  }
+  .changelog-modal-trigger::before {
+    content: '>_';
+    flex-shrink: 0;
+    opacity: 0.85;
+  }
+
+  .changelog-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(2, 6, 4, 0.82);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .changelog-modal-overlay.is-open {
+    display: flex;
+  }
+
+  /* CRT-terminal look — Pip-Boy/Apple IIe by way of a phosphor-green
+     palette, VT323 (a pixel terminal face), scanlines as a background
+     layer, and a soft screen-glow box-shadow. Scoped entirely to this
+     modal via its own --term-* custom properties, so nothing else on the
+     page (or the plain trigger button that opens it) picks up the vibe. */
+  .changelog-modal {
+    --term-bg: #030f08;
+    --term-green: #3dff7a;
+    --term-green-dim: #1f9a4d;
+    --term-green-bright: #b6ffce;
+    --term-glow: rgba(61, 255, 122, 0.55);
+    width: min(760px, 100%);
+    max-height: min(680px, 85vh);
+    background-color: var(--term-bg);
+    background-image: repeating-linear-gradient(
+      0deg,
+      rgba(0, 0, 0, 0) 0px,
+      rgba(0, 0, 0, 0) 2px,
+      rgba(0, 0, 0, 0.28) 3px
+    );
+    border: 2px solid var(--term-green-dim);
+    border-radius: 10px;
     box-shadow:
-      inset 0 1px 0 rgba(255,255,255,0.1),
-      0 16px 40px rgba(0,0,0,0.55),
-      0 0 30px rgba(168,85,247,0.28);
-  }
-  html[data-theme="neon"] .hp-welcome-option:hover{ box-shadow:0 0 14px rgba(168,85,247,0.35); }
-
-  html[data-theme="sunshine"] .hp-welcome-overlay{ background:rgba(31,53,64,0.28); }
-  html[data-theme="sunshine"] .hp-welcome-modal{
-    background:
-      linear-gradient(135deg, rgba(255,255,255,0.5), rgba(255,255,255,0) 45%),
-      rgba(255,255,255,0.58);
-    backdrop-filter:blur(22px) saturate(160%);
-    -webkit-backdrop-filter:blur(22px) saturate(160%);
-    box-shadow:
-      inset 0 1px 0 rgba(255,255,255,0.6),
-      0 16px 40px rgba(31,92,110,0.22),
-      0 0 30px rgba(245,166,35,0.22);
+      0 0 0 1px rgba(61, 255, 122, 0.15),
+      0 0 34px rgba(61, 255, 122, 0.25),
+      0 24px 60px -12px rgba(0, 0, 0, 0.85),
+      inset 0 0 60px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    font-family: 'VT323', ui-monospace, Menlo, Consolas, monospace;
+    color: var(--term-green);
+    animation: term-flicker 6s ease-in-out infinite;
   }
 
-  html[data-theme="lcars"] .hp-welcome-modal{ border-radius:22px 0 0 0; }
-  html[data-theme="lcars"] .hp-welcome-modal h2,
-  html[data-theme="lcars"] .hp-welcome-eyebrow{ font-family:var(--fn-display); letter-spacing:.02em; }
-  html[data-theme="lcars"] .hp-welcome-close{
-    border-radius:999px; background:var(--fn-rust); border-color:transparent; color:#1a0f00;
+  @keyframes term-flicker {
+    0%, 91%, 100% { opacity: 1; }
+    93% { opacity: 0.94; }
+    95% { opacity: 1; }
   }
-  html[data-theme="lcars"] .hp-welcome-close:hover{ background:#FF9494; }
+
+  @keyframes term-blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .changelog-modal { animation: none; }
+    .changelog-modal-title::after { animation: none; }
+  }
+
+  /* the default max-height/width exist to keep the un-maximized modal
+     from looming too large on its own — maximize (available on every
+     device, not just desktop) sets an explicit inline width/height and
+     needs those caps out of the way, or the old max-height wins and the
+     modal stalls well short of full size. Unconditional (not behind the
+     resize media query below) since maximize itself isn't desktop-only. */
+  .changelog-modal.is-maximized {
+    max-width: none;
+    max-height: none;
+  }
+
+  /* the DRAG-resize handle stays desktop-only — mirrors the same
+     pointer:fine gate used elsewhere on the live site's own resizable
+     windows, since dragging a small corner handle isn't a practical touch
+     interaction. Maximize is a single tap and works everywhere (see the
+     unconditional .changelog-modal-maximize rules below). */
+  @media (min-width: 768px) and (pointer: fine) {
+    .changelog-modal {
+      resize: both;
+      overflow: auto;
+      min-width: 340px;
+      min-height: 220px;
+    }
+  }
+
+  .changelog-modal-titlebar {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--term-green-dim);
+    background: rgba(0, 0, 0, 0.28);
+    position: relative;
+    z-index: 1;
+  }
+
+  .changelog-modal-title {
+    font-family: inherit;
+    font-size: 20px;
+    font-weight: 400;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--term-green-bright);
+    text-shadow: 0 0 6px var(--term-glow), 0 0 16px rgba(61, 255, 122, 0.3);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .changelog-modal-title::before {
+    content: '>_ ';
+    opacity: 0.85;
+  }
+  .changelog-modal-title::after {
+    content: '_';
+    animation: term-blink 1s steps(1) infinite;
+  }
+
+  .changelog-modal-titlebar-actions {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .changelog-modal-close,
+  .changelog-modal-maximize {
+    flex-shrink: 0;
+    width: 30px;
+    height: 26px;
+    border-radius: 4px;
+    border: 1px solid var(--term-green-dim);
+    background: transparent;
+    color: var(--term-green);
+    font-family: inherit;
+    font-size: 17px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .changelog-modal-close:hover,
+  .changelog-modal-maximize:hover,
+  .changelog-modal-maximize:focus-visible {
+    color: var(--term-green-bright);
+    border-color: var(--term-green);
+    box-shadow: 0 0 9px rgba(61, 255, 122, 0.5);
+    outline: none;
+  }
+
+  /* unlike the drag-resize handle, maximize is a single tap and works
+     fine on any device — available everywhere, not gated to desktop */
+  .changelog-modal-maximize {
+    display: flex;
+  }
+
+  /* a plain (non-flex) positioning wrapper — .changelog-modal-body stays a
+     normal in-flow flex:1 child of .changelog-modal itself (not of this
+     wrap) so its real content height still feeds the modal's own
+     max-height clamp like it did before the scroll-arrows were added;
+     making the body position:absolute here instead silently broke that
+     (an out-of-flow child contributes nothing to auto-sizing), so the
+     modal always collapsed to its resize-floor instead of growing to
+     fill its default size. This wrap exists purely so the two scroll
+     arrows below have something the exact size of the body to pin to. */
+  .changelog-modal-body-wrap {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    position: relative;
+  }
+
+  .changelog-modal-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 16px 20px 22px;
+    font-family: inherit;
+    font-size: 19px;
+    line-height: 1.45;
+    color: var(--term-green);
+    background: transparent;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* fade + chevron hinting there's more log text that direction — same
+     idea as .notes-scroll-arrow on the old inline changelog box, restyled
+     green/glowing to match this modal's terminal look. Shown/hidden by
+     JS (updateChangelogScrollArrows) based on actual scroll position. */
+  .changelog-modal-scroll-arrow {
+    position: absolute;
+    left: 1px;
+    right: 12px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    color: var(--term-green-bright);
+    z-index: 2;
+  }
+  .changelog-modal-scroll-arrow.is-visible {
+    opacity: 1;
+    pointer-events: auto;
+    cursor: pointer;
+  }
+  .changelog-modal-scroll-arrow::before {
+    content: '';
+    width: 9px;
+    height: 9px;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    filter: drop-shadow(0 0 4px var(--term-glow));
+  }
+  .changelog-modal-scroll-arrow-top {
+    top: 0;
+    background: linear-gradient(to bottom, var(--term-bg) 30%, transparent);
+    padding-bottom: 8px;
+  }
+  .changelog-modal-scroll-arrow-top::before {
+    transform: rotate(-135deg);
+    margin-top: 2px;
+  }
+  .changelog-modal-scroll-arrow-top.is-visible::before {
+    animation: notes-arrow-throb-top 1.6s ease-in-out infinite;
+  }
+  .changelog-modal-scroll-arrow-bottom {
+    bottom: 0;
+    background: linear-gradient(to top, var(--term-bg) 30%, transparent);
+    padding-top: 8px;
+  }
+  .changelog-modal-scroll-arrow-bottom::before {
+    transform: rotate(45deg);
+    margin-bottom: 2px;
+  }
+  .changelog-modal-scroll-arrow-bottom.is-visible::before {
+    animation: notes-arrow-throb-bottom 1.6s ease-in-out infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .changelog-modal-scroll-arrow-top.is-visible::before,
+    .changelog-modal-scroll-arrow-bottom.is-visible::before {
+      animation: none;
+    }
+  }
+
+  .changelog-modal-body ul {
+    margin: 0;
+    padding-left: 0;
+    list-style: none;
+  }
+
+  .changelog-modal-body li {
+    padding-left: 24px;
+    position: relative;
+  }
+  .changelog-modal-body li::before {
+    content: '>';
+    position: absolute;
+    left: 2px;
+    color: var(--term-green-bright);
+    text-shadow: 0 0 6px var(--term-glow);
+  }
+
+  .changelog-modal-body li + li {
+    margin-top: 10px;
+  }
+
+  .changelog-modal-body code {
+    font-family: inherit;
+    font-size: 1em;
+    color: var(--term-green-bright);
+  }
+
+  .changelog-modal-body ::selection {
+    background: var(--term-green);
+    color: #04120a;
+  }
+
+  .changelog-modal-body::-webkit-scrollbar {
+    width: 11px;
+  }
+  .changelog-modal-body::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.35);
+  }
+  .changelog-modal-body::-webkit-scrollbar-thumb {
+    background: var(--term-green-dim);
+    border-radius: 6px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  .changelog-modal-body::-webkit-scrollbar-thumb:hover {
+    background: var(--term-green);
+    background-clip: padding-box;
+  }
+
+  footer {
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 12.5px;
+    margin-top: 48px;
+  }
 </style>
 </head>
 <body>
-<div id="fn-site-nav"></div>
+  <div class="wrap">
+    <header>
+      <div class="badge">🔥 F.I.R.E. Nate</div>
+      <div class="fun-badge">🔥 Nate is getting FIRED'd — so can you! 🔥</div>
+      <h1>Choose a Site Version</h1>
+      <p class="tagline">It's like Groundhog Day, but all the versions of how Nate got FIRE'd</p>
+    </header>
 
-
-<div class="wrap">
-
-  <header class="hp-hero">
-    <p class="hp-eyebrow">FireNate — Financial Independence &amp; Retire Early (F.I.R.E.) Calculators</p>
-    <h1>Your journey to <em>financial independence</em>.</h1>
-    <p class="lede">Small, focused calculators for the questions that actually decide your timeline: how fast you can get there, what a loan really costs, and whether the next dollar should pay down debt or go into the market.</p>
-
-    <!-- <div class="hp-hero-stats"> -->
-      <!-- <div class="stat"><div class="k">Calculators</div><div class="v gold">6</div></div> -->
-   <!--   <div class="stat"><div class="k">Cost</div><div class="v jade">Free, no signup</div></div> -->
-     <!-- <div class="stat"><div class="k">Your data</div><div class="v">Stays on your device</div></div> -->
-  <!--  </div> -->
-  </header>
-  <nav class="hp-quicklinks" id="hpQuicklinks" aria-label="Jump to section">
-    <div class="hp-quicklinks-row">
-      <div class="hp-quicklinks-inner">
-        <a href="#getting-started">Getting Started</a>
-        <a href="#first-steps">Basics</a>
-        <a href="#your-path">Independence</a>
-        <a href="#retirement-strategy">Retirement</a>
-        <a href="#money-decisions">Daily Decisions</a>
-        <a href="#resources">Resources</a>
+    <div class="versions">
+<!-- Card-->
+      <div class="version-card is-disabled">
+        <div class="vc-badge">
+          <div class="vc-badge-main"><span class="vi-label">Beta</span><span class="vi-num">5.2</span></div>
+          <span class="status-pill disabled">🚧 In Progress</span>
+        </div>
+        <div class="vc-main">
+          <div class="vc-main-row">
+            <div class="version-info">
+              <p class="name">Beta 5.2 - Blazing Badger</p>
+              <p class="path">/beta/v5.2</p>
+              <p class="version-dates">Created: 2026-08-27 20:45:00<br>Updated: 2026-08-27 20:45:00</p>
+            </div>
+          </div>
+          <button type="button" class="changelog-modal-trigger" data-changelog-title="Beta 5.2 &mdash; Change Log" data-changelog-target="changelog-v5-2">Show Change Log</button>
+          <template id="changelog-v5-2">
+            <ul>
+              <li>Branched from v5.1</li>
+              <li>Work in progress — nothing to preview yet</li>
+            </ul>
+            [EOF]
+          </template>
+        </div>
+        <a class="vc-link" href="v5.2/index.html" aria-disabled="true" tabindex="-1" onclick="return false;">
+            <p class="cta-hint">Not ready to preview yet</p>
+        </a>
       </div>
-      <button type="button" class="hp-quicklinks-search-btn" id="hpSearchToggle" aria-expanded="false" aria-controls="hpSearchPanel" aria-label="Search calculators">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <circle cx="11" cy="11" r="8"></circle>
-          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-        </svg>
-      </button>
-    </div>
-    <div class="hp-search-panel" id="hpSearchPanel" hidden>
-      <div class="hp-search-panel-inner">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <circle cx="11" cy="11" r="8"></circle>
-          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-        </svg>
-        <input type="search" id="hpSearchInput" placeholder="Search calculators by name, description, or keyword&hellip;" aria-label="Search calculators">
-        <button type="button" class="hp-search-clear" id="hpSearchClear" aria-label="Clear search" hidden>&times;</button>
+<!-- /Card-->
+
+<!-- Card-->
+      <div class="version-card is-active is-live-green">
+        <div class="vc-badge">
+          <div class="vc-badge-main"><span class="vi-label">Beta</span><span class="vi-num">5.1</span></div>
+          <span class="status-pill active">✔ Current</span>
+        </div>
+        <div class="vc-main">
+          <div class="vc-main-row">
+            <div class="version-info">
+              <p class="name">Beta 5.1 - Neon Ninja</p>
+              <p class="path">/beta/v5.1</p>
+              <p class="version-dates">Created: 2026-08-26 18:03:22<br>Updated: 2026-08-27 20:45:00</p>
+            </div>
+          </div>
+          <button type="button" class="changelog-modal-trigger" data-changelog-title="Beta 5.1 &mdash; Change Log (everything since v5.0)" data-changelog-target="changelog-v5-1">Show Change Log</button>
+          <template id="changelog-v5-1">
+            <ul>
+            <li>Branched from v5.0</li>
+            <li>New "Reach FI By Age" tool in Journey Progress &mdash; drag a slider between ages 40 and 70 and see what monthly investment it'd take to hit your goal by then, computed live from your saved profile (works for anyone who's filled in "Your info," no need to have visited a specific calculator first)</li>
+            <li>"Your info" panel: clicking "Clear my info" now triggers the same fun full-screen trash-burst effect as Settings' "Reset this device" &mdash; particles, a pop-in trash icon, an "Info cleared" label &mdash; instead of clearing silently</li>
+            <li>"Your info" panel: reorganized the icon rows &mdash; Share now floats alone on the left of the top row (next to the panel title), with Save, Snapshot, and Load grouped on the right; Export, Import, and "Clear my info" (the trash icon) moved down together into the bottom-right corner of the panel</li>
+            <li>Profile Manager: moved "Delete snapshots older than 90 days" and the automatic-snapshot frequency control up next to the storage usage graphic near the top of the page, since both are storage-management actions rather than list-selection ones &mdash; also fixed a bug (pre-existing for the snapshot list's own selection bar too) where the <code>hidden</code> attribute silently failed to hide these elements</li>
+            <li>Profile Manager: added a "Select all" button to Saved profiles' bulk selection tools &mdash; toggles to "Deselect all" once everything's checked</li>
+            <li>Profile Manager: "Let's set up your profile first" no longer nags once you've entered or loaded any profile data &mdash; previously it stuck around until all four required fields (birthday, savings, goal, retirement age) were filled in, so a partial or freshly-imported profile still saw it</li>
+            <li>Profile Manager: added a storage-used graphic near the top of the page &mdash; a colored bar (green/gold/red, same thresholds as the storage-size notification) showing how close you are to the ~5MB most browsers guarantee per site, updating live as you save, delete, or import</li>
+            <li>New automatic local snapshot &mdash; every 7 days by default (if there's real data), quietly saves an in-browser safety copy of your profile, recoverable via "Load saved profile." Doesn't replace exporting a real backup file (lives in the same browser storage), and says so when it happens. Frequency is configurable from Profile Manager &mdash; Hourly, Daily, Every 3 days, Every 7 days, Every 14 days, or Every 28 days</li>
+            <li>New storage-size warning &mdash; a plain informational heads-up at 50% of what browsers typically allow per site, escalating to warning at 70% and urgent at 90%, before a save can silently start failing</li>
+            <li>New per-type notification muting in Settings &mdash; uncheck Urgent, Warning, Informational, or Achievement to hide that type from the bell entirely; the underlying checks still run, so un-muting later surfaces anything that fired while muted</li>
+            <li>"Import profiles" (both the "Your info" panel's and Profile Manager's) now warns before loading a file that's older than what's already here &mdash; compares the file's own export time against your current data's last-changed time, not against when you happen to open the file</li>
+            <li>Profile Manager: saved profiles can now be bulk-deleted &mdash; select individual snapshots to delete, or clear everything older than 90 days in one click &mdash; since the backup reminder and the new automatic snapshots both actively add to that list over time</li>
+            <li>Profile Manager: "Full raw backup" section can now import as well as export &mdash; restores every key from a previously-exported raw dump straight back into local storage (merging, not replacing &mdash; keys the file doesn't mention are left alone), with its own status message and the same pre-restore safety backup "Import profiles" uses</li>
+            <li>"Your info" panel: the new download/upload buttons now take a snapshot and show the camera-flash cue immediately on click, before the download or file dialog even opens &mdash; export's is a plain snapshot, import's is the real pre-overwrite safety net (fires even if the file dialog gets cancelled)</li>
+            <li>Moved the "Your info" panel's download/upload icons up next to the share icon, out of the busier save/snapshot/load/clear row</li>
+            <li>"Your info" panel: added Export and Import icon buttons doing the exact same thing as Profile Manager's own Export/Import profiles buttons (same file format, round-trips through either)</li>
+            <li>New backup-reminder system notification &mdash; warns (escalating to urgent) once it's been a while since your last export, or you've added a fair amount of new data since then; tracked via a new shared <code>window.FNBackupTracker</code>, written to by every export button on the site</li>
+            <li>Notifications: admin JSON entries can now be scheduled for a future date <em>and time</em> (not just a day) &mdash; stays completely out of the list and badge count until that moment arrives</li>
+            <li>Notifications: added a "Clear all" button to the panel head</li>
+            <li>Notifications: each item can now be individually hidden for good, not just marked read</li>
+            <li>Notifications: added a "type" field &mdash; urgent (rust triangle), warning (gold circle-!), info (azure circle-i, the default), and achievement (jade award ribbon, for genuine milestones) &mdash; each with its own icon; Journey Progress milestones and the SS Bridge "funded" check now fire as achievements instead of plain info</li>
+            <li>Homepage: removed "New!" ribbons that were actually years stale (kept only on Contribution Limits, the one genuinely new page this version); removed all "Updated" ribbons, which had drifted to flag some barely-touched pages while missing the ones with the biggest real changes; added a new &starf; badge marking the handful of calculators most people are likely to return to regularly (FI Snapshot, Net Worth, Budget Calculator, Time to FI)</li>
+            <li>Known Bug: Insioghts for Net worth not refreshing from the Your Info menu in some scenarios. This is fixed in v5.2</li> 
+          </ul>
+            [EOF]
+          </template>
+        </div>
+        <a class="vc-link" href="v5.1/index.html">
+            <p class="cta-hint">Click to open the current build</p>
+          <span class="vc-arrow" aria-hidden="true">&rarr;</span>
+        </a>
       </div>
-      <p class="hp-search-status" id="hpSearchStatus" hidden></p>
-    </div>
-  </nav>
-
-  <section class="hp-section" id="getting-started">
-    <div class="hp-section-head">
-      <div class="num">New here?</div>
-      <h2>Getting Started</h2>
-      <p>Brand new to FIRE or financial calculators in general? Start with these two — one shows you around the site, the other asks a few quick questions and points you at exactly the right tools.</p>
-    </div>
-
-    <div class="hp-grid">
-
-      <a class="hp-card hp-card-important" href="GettingStarted/index.html">
-        <span class="hp-card-tag azure">Start here</span>
-        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>Using This Site</h3>
-        <p>New here? A quick walkthrough of setting up your profile, picking a calculator, and saving your progress.</p>
-        <span class="hp-card-cta">Open guide &rarr;</span>
-      </a>
-
-      <a class="hp-card" href="GettingStartedCalculators/index.html">
-        <span class="hp-card-tag azure">Not sure where to start?</span>
-        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>Calculator Picker</h3>
-        <p>New to personal finance? Answer a few quick questions about your situation and we'll point you to the two or three calculators that'll actually help.</p>
-        <span class="hp-card-cta">Take the quiz &rarr;</span>
-      </a>
+<!-- /Card-->
 
     </div>
-  </section>
 
-  <section class="hp-section" id="first-steps">
-    <div class="hp-section-head">
-      <div class="num">Start here</div>
-      <h2>The Basics</h2>
-      <p>New to FIRE? Start here — get oriented, see where you stand today, and build the safety net before anything else.</p>
-    </div>
+    <details class="archive-toggle">
+      <summary>Archive <span class="archive-count">(v5.0 and earlier)</span></summary>
+      <div class="versions">
 
-    <div class="hp-grid">
-
-      <a class="hp-card hp-card-star" href="FISnapshot/index.html">
-        <span class="hp-card-tag gold">Dashboard</span>
-        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>FI Snapshot</h3>
-        <p>Your financial-independence status at a glance, pulled from your saved profile — plus saved what-if scenarios to compare.</p>
-        <span class="hp-card-cta">Open calculator &rarr;</span>
-      </a>
-
-      <a class="hp-card hp-card-star" href="NetWorth/index.html">
-        <span class="hp-card-tag jade">Net Worth</span>
-        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>The sum of all finances</h3>
-        <p>Input assets and liabilities to see a simplistic view of your financial net worth.</p>
-        <span class="hp-card-cta">Open calculator &rarr;</span>
-      </a>
-
-      <a class="hp-card hp-card-star" href="BudgetCalculator/index.html">
-        <span class="hp-card-tag gold">50/30/20</span>
-        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg>Budget Calculator</h3>
-        <p>Sort your monthly income into needs, wants, and savings, and see how it stacks up against the 50/30/20 guideline.</p>
-        <span class="hp-card-cta">Open calculator &rarr;</span>
-      </a>
-
-      <a class="hp-card" href="EmergencyFund/index.html">
-        <span class="hp-card-tag jade">Rainy Day</span>
-        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>Emergency Fund</h3>
-        <p>How much cash to keep on hand for job loss or a broken transmission, and how close you already are to having it.</p>
-        <span class="hp-card-cta">Open calculator &rarr;</span>
-      </a>
-
-      <a class="hp-card" href="DebtSnowball/index.html">
-        <span class="hp-card-tag rust">Snowball or avalanche</span>
-        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>Debt Payoff Planner</h3>
-        <p>List your debts and watch the snowball play out — every payoff date, every milestone, month by month.</p>
-        <span class="hp-card-cta">Open calculator &rarr;</span>
-      </a>
-
-      <a class="hp-card hp-card-new" href="ContributionLimits/index.html">
-        <span class="hp-card-tag plum">Retirement account limits</span>
-        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="8" y1="16" x2="16" y2="8"></line><circle cx="8.5" cy="8.5" r="1.5"></circle><circle cx="15.5" cy="15.5" r="1.5"></circle></svg>Contribution Limits</h3>
-        <p>This year's IRS 401(k), HSA, and IRA limits — broken into monthly and per-paycheck amounts, plus how close you are to maxing out.</p>
-        <span class="hp-card-cta">Open calculator &rarr;</span>
-      </a>
-
-    </div>
-  </section>
-
-  <section class="hp-section" id="your-path">
-    <div class="hp-section-head">
-      <div class="num">Plan</div>
-      <h2>Financial Independence</h2>
-      <p>The core calculators for charting your timeline to financial independence — and the milestones along the way.</p>
-    </div>
-
-    <div class="hp-grid">
-
-      <a class="hp-card hp-card-star" href="TimeToFI/index.html">
-        <span class="hp-card-tag gold">Savings rate</span>
-        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>Time to get FIRE'd</h3>
-        <p>Enter your income, savings, and goal — see how many years (and what age) every savings rate from 0% to 100% actually buys you.</p>
-        <span class="hp-card-cta">Open calculator &rarr;</span>
-      </a>
-
-      <a class="hp-card" href="ReverseTimeToFI/index.html">
-        <span class="hp-card-tag jade">Freedom Reverse-Engineered</span>
-        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>Reverse Time to being FIRE'd</h3>
-        <p>Start from the freedom date you want. Work backward to exactly what you need to save this week, this month, and this year to get there.</p>
-        <span class="hp-card-cta">Open calculator &rarr;</span>
-      </a>
-
-      <a class="hp-card" href="FireMilestones/index.html">
-        <span class="hp-card-tag plum">Lean · Barista · Coast · Fat</span>
-        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>FIRE Milestones</h3>
-        <p>Full FI is a long road — see five milestone timelines at once, so you can spot the intermediate wins before you get to 100%.</p>
-        <span class="hp-card-cta">Open calculator &rarr;</span>
-      </a>
-
-      <a class="hp-card" href="CoastFire/index.html">
-        <span class="hp-card-tag rust">No more contributions needed?</span>
-        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="3" x2="12" y2="15"></line><polygon points="12 4 12 13 19 13"></polygon><polyline points="4 17 20 17 17 20 7 20"></polyline></svg>Coast &amp; Barista FIRE</h3>
-        <p>Find out if you've already saved enough to coast to your goal on growth alone — and model downshifting to lighter, lower-income work along the way.</p>
-        <span class="hp-card-cta">Open calculator &rarr;</span>
-      </a>
-
-      <a class="hp-card" href="CrossoverPoint/index.html">
-        <span class="hp-card-tag azure">Crossover Point</span>
-        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>Riding the wave</h3>
-        <p>The amount you need saved at each age where compounding alone — no more contributions — carries you the rest of the way to your goal.</p>
-        <span class="hp-card-cta">Open calculator &rarr;</span>
-      </a>
-
-      <a class="hp-card" href="CompoundInterest-WealthMultiplier/index.html">
-        <span class="hp-card-tag gold">Compounding</span>
-        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="5" x2="5" y2="19"></line><circle cx="6.5" cy="6.5" r="2.5"></circle><circle cx="17.5" cy="17.5" r="2.5"></circle></svg>Compound Interest <br/> &amp; Wealth Multiplier</h3>
-        <p>Visualize what a single deposit — or a recurring one — becomes over decades, and what today's dollar could multiply into by any target age.</p>
-        <span class="hp-card-cta">Open calculator &rarr;</span>
-      </a>
-
-    </div>
-  </section>
-
-  <section class="hp-section" id="retirement-strategy">
-    <div class="hp-section-head">
-      <div class="num">Retire</div>
-      <h2>Retirement &amp; Withdrawal Strategy</h2>
-      <p>Once you're closer to FI, these help you plan how you'll actually draw down your accounts — including access before traditional retirement age.</p>
-    </div>
-
-    <div class="hp-grid">
-
-      <a class="hp-card" href="SafeWithdrawalRate/index.html">
-        <span class="hp-card-tag rust">Safe Withdrawal Rate</span>
-        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><polyline points="9 12 12 15 16 10"></polyline></svg>Would it have survived?</h3>
-        <p>Stress-test your withdrawal rate against every real historical market cycle since 1928, inflation-adjusted.</p>
-        <span class="hp-card-cta">Open calculator &rarr;</span>
-      </a>
-
-      <a class="hp-card" href="MonteCarlo/index.html">
-        <span class="hp-card-tag gold">Probability of success</span>
-        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"></rect><circle cx="8" cy="8" r="1.2"></circle><circle cx="16" cy="8" r="1.2"></circle><circle cx="12" cy="12" r="1.2"></circle><circle cx="8" cy="16" r="1.2"></circle><circle cx="16" cy="16" r="1.2"></circle></svg>Monte Carlo Simulator</h3>
-        <p>Reshuffles decades of real market returns into thousands of alternate sequences to stress-test sequence-of-returns risk beyond what fixed historical cycles alone can show.</p>
-        <span class="hp-card-cta">Open calculator &rarr;</span>
-      </a>
-
-      <a class="hp-card" href="VariableWithdrawalRate/index.html">
-        <span class="hp-card-tag plum">Guardrails &amp; cash buffer</span>
-        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>Variable Withdrawal Rate</h3>
-        <p>Guyton-Klinger guardrails, bear-market spending cuts, and a 1&ndash;3 year cash buffer — stress-tested against every real market cycle since 1928.</p>
-        <span class="hp-card-cta">Open calculator &rarr;</span>
-      </a>
-
-      <a class="hp-card" href="SocialSecurityBridge/index.html">
-        <span class="hp-card-tag azure">Retirement bridge</span>
-        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5" r="3"></circle><line x1="12" y1="22" x2="12" y2="8"></line><path d="M5 12H2a10 10 0 0 0 20 0h-3"></path></svg>SS &amp; Pension Bridge</h3>
-        <p>Your true FIRE number once Social Security kicks in — split into the years you self-fund and the years you're supplemented.</p>
-        <span class="hp-card-cta">Open calculator &rarr;</span>
-      </a>
-
-      <a class="hp-card" href="RothLadder/index.html">
-        <span class="hp-card-tag gold">Early access</span>
-        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>Roth Conversion Ladder</h3>
-        <p>Retiring before 59&frac12;? Simulate the conversion ladder — track the 5-year seasoning clock and see exactly which account funds each year.</p>
-        <span class="hp-card-cta">Open calculator &rarr;</span>
-      </a>
-
-      <a class="hp-card" href="RMD/index.html">
-        <span class="hp-card-tag jade">Forced withdrawals</span>
-        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="4 8 12 3 20 8"></polygon><line x1="3" y1="20" x2="21" y2="20"></line><line x1="6" y1="9" x2="6" y2="19"></line><line x1="10" y1="9" x2="10" y2="19"></line><line x1="14" y1="9" x2="14" y2="19"></line><line x1="18" y1="9" x2="18" y2="19"></line></svg>Required Minimum Distributions</h3>
-        <p>Starting at 73, the IRS forces withdrawals from traditional accounts. Project yours year by year using the Uniform Lifetime Table, plus the tax bill.</p>
-        <span class="hp-card-cta">Open calculator &rarr;</span>
-      </a>
-
-      <a class="hp-card" href="HealthcareBridge/index.html">
-        <span class="hp-card-tag rust">ACA subsidy cliff</span>
-        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>Healthcare &amp; ACA Bridge</h3>
-        <p>Retiring before Medicare at 65? See how your MAGI drives your marketplace premium — and what managing it down could save you.</p>
-        <span class="hp-card-cta">Open calculator &rarr;</span>
-      </a>
-
-    </div>
-  </section>
-
-  <section class="hp-section" id="money-decisions">
-    <div class="hp-section-head">
-      <div class="num">Decide</div>
-      <h2>Everyday Money Decisions</h2>
-      <p>Calculators for the big and small financial decisions along the way — debt, loans, and major purchases.</p>
-    </div>
-
-    <div class="hp-grid">
-
-      <a class="hp-card" href="Payoff-or-Invest/index.html">
-        <span class="hp-card-tag gold">Debt vs. portfolio</span>
-        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="6" y1="3" x2="6" y2="15"></line><circle cx="18" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><path d="M18 9a9 9 0 0 1-9 9"></path></svg>Payoff or Invest</h3>
-        <p>A low-rate loan and a rising market pull your extra dollars in opposite directions. See which side of the scale wins with your numbers.</p>
-        <span class="hp-card-cta">Open calculator &rarr;</span>
-      </a>
-
-      <a class="hp-card" href="CashOutOrHold/index.html">
-        <span class="hp-card-tag azure">Liquidate vs. hold</span>
-        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="20" height="12" rx="2"></rect><circle cx="12" cy="12" r="3"></circle><path d="M6 12h.01M18 12h.01"></path></svg>Cash Out or Hold</h3>
-        <p>Selling investments to wipe out debt feels simple — until taxes take a bite. See what actually reaches the lender after capital gains, and whether it beats staying invested.</p>
-        <span class="hp-card-cta">Open calculator &rarr;</span>
-      </a>
-
-
-      <a class="hp-card" href="LoanCalculator/index.html">
-        <span class="hp-card-tag jade">Amortization</span>
-        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>Loan Calculator</h3>
-        <p>The full amortization schedule for any loan: monthly payment, the principal/interest burn-down chart, and total cost over the term.</p>
-        <span class="hp-card-cta">Open calculator &rarr;</span>
-      </a>
-
-      <a class="hp-card" href="CarBuying/index.html">
-        <span class="hp-card-tag rust">True cost</span>
-        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15 L5 9 L8 6 L16 6 L19 9 L20 15"></path><rect x="2" y="14" width="20" height="5" rx="1"></rect><circle cx="7" cy="19" r="2.2"></circle><circle cx="17" cy="19" r="2.2"></circle></svg>Car Buying</h3>
-        <p>What a car really costs once you fold in the loan, taxes and fees, insurance, fuel, and maintenance — plus tips for working with a dealership.</p>
-        <span class="hp-card-cta">Open calculator &rarr;</span>
-      </a>
-
-      <a class="hp-card" href="RentVsBuy/index.html">
-        <span class="hp-card-tag plum">Rent vs. Buy</span>
-        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="7" cy="15" r="4"></circle><line x1="10.5" y1="11.5" x2="21" y2="1"></line><line x1="15" y1="7" x2="18" y2="10"></line><line x1="18" y1="4" x2="21" y2="7"></line></svg>Rent vs. Buy</h3>
-        <p>Buying builds equity but ties up cash; renting frees it to invest. Compare both paths side by side and see which one actually leaves you wealthier.</p>
-        <span class="hp-card-cta">Open calculator &rarr;</span>
-      </a>
-
-      <a class="hp-card" href="RealEstateVsStocks/index.html">
-        <span class="hp-card-tag jade">Buy vs. invest</span>
-        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>Homes vs. Stocks</h3>
-        <p>Put the same monthly dollars toward a mortgage or toward the market, and watch home equity race against a stock portfolio over 30 years.</p>
-        <span class="hp-card-cta">Open calculator &rarr;</span>
-      </a>
-
-    </div>
-  </section>
-
-  <section class="hp-section" id="resources">
-    <div class="hp-section-head">
-      <div class="num">More</div>
-      <h2>Resources</h2>
-      <p>Files, reference info, and planning tools that aren't FIRE calculators.</p>
-    </div>
-
-    <div class="hp-grid">
-
-      <a class="hp-card" href="Downloads/index.html">
-        <span class="hp-card-tag gold">Nate's Files</span>
-        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>Downloads &amp; Files</h3>
-        <p>See the stuff that got Nate FIRED'd</p>
-        <span class="hp-card-cta">Open Files &rarr;</span>
-      </a>
-
-      <a class="hp-card" href="GenInfo/index.html">
-        <span class="hp-card-tag jade">General Info</span>
-        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>Retirement Information</h3>
-        <p>401k, HSA, IRA, SS information</p>
-        <span class="hp-card-cta">Open Page &rarr;</span>
-      </a>
-
-      <a class="hp-card" href="Glossary/index.html">
-        <span class="hp-card-tag azure">Definitions</span>
-        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>Glossary</h3>
-        <p>Lean, Barista, Coast, and Fat FIRE, the 4% rule, MAGI, the ACA subsidy cliff, and more — every term used across this site, in one place.</p>
-        <span class="hp-card-cta">Open glossary &rarr;</span>
-      </a>
-
-      <a class="hp-card" href="FAQ/index.html">
-        <span class="hp-card-tag plum">Q&amp;A</span>
-        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>F.A.Q.</h3>
-        <p>Common questions about using the site, budgeting, FIRE, and getting started with investing — searchable and sorted by topic.</p>
-        <span class="hp-card-cta">Open F.A.Q. &rarr;</span>
-      </a>
-
-      <div class="hp-card hp-card-sponsor">
-        <span class="hp-card-tag azure">D3 Planning</span>
-        <h3>Don't be caught <del style="color:var(--hp-text-faint)">dead</del> without it.</h3>
-        <p>Ready when you aren't</p>
-        <p>The D3 (<b>D</b>ead, <b>D</b>ying or <b>D</b>isabled) planner helps guide you through the process of being ready for when you are not.</p>
-        <span class="hp-card-cta"><a target="_blank" href="http://iBeDead.com">Open Old Site &rarr;</a></span>
-        <span class="hp-card-cta"><a target="_blank" href="https://d3.flagship.is/">Open New Site &rarr;</a></span>
-        <span style="font-size: x-small; color: var(--hp-text-faint);">*This external site has its own privacy rules such as use of cookies.</span>
+<!-- Card-->
+      <div class="version-card is-active is-live-orange">
+        <div class="vc-badge">
+          <div class="vc-badge-main"><span class="vi-label">Beta</span><span class="vi-num">5.0</span></div>
+          <span class="status-pill active">View</span>
+        </div>
+        <div class="vc-main">
+          <div class="vc-main-row">
+            <div class="version-info">
+              <p class="name">Beta 5.0 — NaN Nate</p>
+              <p class="path">/beta/v5.0</p>
+              <p class="version-dates">Created: 2026-08-23 16:05:37<br>Updated: 2026-08-26 17:57:48</p>
+            </div>
+          </div>
+          <button type="button" class="changelog-modal-trigger" data-changelog-title="Beta 5.0 &mdash; Change Log (everything since v4.8)" data-changelog-target="changelog-v5-0">Show Change Log</button>
+          <template id="changelog-v5-0">
+            <ul>
+            <li>Branched from v4.11 (via v4.8 -> v4.9 -> v4.10 -> v4.11) — this was a big one: days of real work touching nearly every page on the site, not just a handful of headline features</li>
+            <li>New: Journey Progress Dashboard - A new dashboard accessible from the main menu using a compass icon aggregating data across calculators to try and provive current progress towards goals, actionable information and insights, and next steps. </li>
+            <li>New: "Notifications" bell in the nav bar &mdash; merges an admin-editable JSON feed (<code>assets/data/notifications.json</code>) with system-generated alerts (Journey Progress milestones, an RMD age reminder, a Social Security/Pension Bridge "funded" check, etc.) behind an unread-count badge, with read state and the whole feed carried along in your saved-data exports</li>
+            <li>New calculator: Contribution Limits — a full IRS annual-limit tracker for 401(k)/403(b)/457(b), HSA, and IRA accounts, including SECURE 2.0's 2025+ age-60&ndash;63 "super catch-up." Shows your limits at a glance, tracks year-to-date progress toward the max with remaining-per-paycheck math, flags free employer-match money left on the table, estimates your tax savings, warns on limit overages, and projects your contributions to retirement with its own growth chart &mdash; plus a second chart showing how every limit has grown 2023&ndash;2026</li>
+            <li>Journey Progress dashboard grew from 6 cards to 8 (added Budget Calculator and FIRE Milestones), and the modal itself is now resizable, movable, and has a maximize/restore button on desktop, with a persistent titlebar</li>
+            <li>Journey Progress's Financial Foundations checklist upgraded from a plain done/not-done marker to a 3-state red/yellow/green health indicator, plus a wave of accuracy fixes: the catch-up-contribution reminder now persists instead of firing once on your exact birthday year, Net Worth and Budget Calculator cards no longer miss live-but-unsaved data, the Debt card's cold-start messaging was corrected, and a 5th accent color ("azure") was activated so two cards stop sharing a color</li>
+            <li>Every calculator's chart hover-tooltips are now keyboard-accessible instead of mouse-only &mdash; bars, dots, and hit-targets are focusable with proper labels and a visible focus ring, and TimeToFI's and Loan Calculator's line charts support full arrow-key scrubbing (12 pages touched: TimeToFI, Loan Calculator, Coast &amp; Barista FIRE, Crossover Point, Emergency Fund, FI Snapshot, Monte Carlo, RMD, Rent vs. Buy, Roth Conversion Ladder, SS &amp; Pension Bridge, and Compound Interest &amp; Wealth Multiplier)</li>
+            <li>New shared Bars &harr; Line/Area chart-mode toggle, rolled out to TimeToFI, RMD, Roth Conversion Ladder, SS &amp; Pension Bridge, Compound Interest &amp; Wealth Multiplier, and Crossover Point</li>
+            <li>TimeToFI: Line mode is a new continuous every-1% (not just every-5%) two-series trend chart with a life-expectancy reference line; added a separate "marginal years saved" diminishing-returns chart, a marginal-dollar picker (what an extra $100&ndash;$500/mo buys you), a return-rate sensitivity note, a plain-English "what your goal actually buys" translation, a highlighted current-savings-rate row, and a "since your last visit" trend history</li>
+            <li>FIRE Milestones: new "Up next" callout banner for your nearest unreached milestone, a gap-between-milestones chip row, dates shown alongside ages everywhere, a Coast FI reality check, a Barista-income scenario picker, a safe-withdrawal-rate sensitivity note, and a visual redesign of the milestone cards; fixed a bug where a low-contribution Coast FI age landing after your target retirement age broke the "on schedule" messaging, and another where a card with no reached milestones showed literal "null" text</li>
+            <li>Budget Calculator: added a since-last-snapshot trend indicator, a biggest-line-items breakdown, a trim-the-wants note, and a new "Other" field in the Needs section (wired into saved data, exports, and Profile Manager's example generator)</li>
+            <li>Emergency Fund: two new inputs (expected expense growth and expected income during an emergency), a new "Time to Reach" table column, a drawdown scenario note ($1,000 / $2,500 / half the fund), a "since your last visit" trend history, and six more insight notes covering interest-vs-contributions, rate sensitivity, inflation-adjusted timelines, what to do once you're funded, a rate-competitiveness benchmark, and a partial-income runway</li>
+            <li>Net Worth: two new insight cards (liquidity mix, and debt composition by short-term/high-interest vs. long-term), plus a trend note in your History section showing your overall dollar change, annualized growth rate, and a straight-line projected date to hit your net-worth goal</li>
+            <li>Car Buying: a refinance-comparison section, a 20/4/10 affordability check, a loan-term comparison table, a "+$1k/$2.5k/$5k/$10k more down" scenario picker, a refinance worth-it note, a cash-vs-finance opportunity-cost note, and a resale-value reality check against a realistic depreciation curve</li>
+            <li>Cash Out or Hold: a new cumulative-advantage chart with a crossover marker, plus exact-sell-amount, break-even-return, and extended-time-horizon notes</li>
+            <li>Debt Snowball renamed to Debt Payoff Planner, with a debt-consolidation-loan comparison and its own chart, a "+$50/$100/$200/$500 more/mo" scenario picker, payoff-milestone chips, a debt-to-income note, a "what debt freedom is worth" projection, a snowball-vs-avalanche time/interest comparison, and a "what your extra payment buys you" note</li>
+            <li>Healthcare &amp; ACA Bridge: new notes on your headroom to the subsidy cliff, the marginal cost of your next $1,000 of income, and the total subsidy value over your whole bridge period</li>
+            <li>Payoff or Invest: a new investment-balance-over-time chart with a crossover marker, plus break-even-return, extended-horizon, and 25/50/75%-hybrid-split notes</li>
+            <li>Homes vs. Stocks: added a 20-year loan-term option, a "how fragile is this verdict" sensitivity check, net-of-selling-costs equity, and a rent-offset note correcting an implicit $0-rent assumption</li>
+            <li>Reverse Time to FI: new notes on the value of working one more year, what your guaranteed income is worth to the plan, and your cushion against a 2-point-lower return</li>
+            <li>Safe Withdrawal Rate: a new "max 100%-safe rate" stat, plus notes on the toughest historical retirement cohort and the cost of fees</li>
+            <li>Variable Withdrawal Rate: the same three-note treatment as Safe Withdrawal Rate, comparing against a fixed baseline and quantifying the strategy's own spending volatility</li>
+            <li>Coast &amp; Barista FIRE: new "a windfall today" and Barista-phase flexibility notes</li>
+            <li>Crossover Point: your old single note split into four targeted ones, a new "crossover age" concept and status-strip stat, a required-contribution-to-close-the-gap figure, and a $10k-windfall what-if</li>
+            <li>FI Snapshot: three new insight cards &mdash; coast-only horizon, gap to goal, and required savings to close it, benchmarked against a 15&ndash;25% FIRE savings rate</li>
+            <li>Monte Carlo: new notes on when failures typically happen, the cost of fees, and the withdrawal rate needed to hit a target success rate</li>
+            <li>RMD: new notes on the cost of being forced onto the RMD schedule, a comparison against a plain 4% withdrawal, and your pre-RMD window</li>
+            <li>Rent vs. Buy: new notes on your true break-even point, a sensitivity check, and the cost of moving</li>
+            <li>Roth Conversion Ladder: new notes on your bridge cushion, the minimum conversion needed to avoid a shortfall, and when the ladder runs dry</li>
+            <li>SS &amp; Pension Bridge: new notes on how your bridge fund would've performed against real historical markets, the delay-to-claim-later break-even, and whether you're on track</li>
+            <li>Compound Interest &amp; Wealth Multiplier: a new "Rule of 72" quick-doubling-time note and a chart note explaining its steep-final-years behavior</li>
+            <li>Loan Calculator: a new "total cost as a multiple of what you borrowed" stat, an extra-payment scenario note, and a refinance comparison with its own chart</li>
+            <li>Getting Started: new step introducing the Journey Progress dashboard</li>
+            <li>Profile Manager: fixed "Load Example Data" duplicating a snapshot on repeat clicks instead of replacing it, and extended the example data to cover Contribution Limits</li>
+            <li>Nav bar polish: hover/focus tooltips on every icon-only button, a small "(i)" info-dot pattern for short stat explanations, and a table &Delta;-column color rework that stays legible in every theme instead of assuming a light background</li>
+            <li>Fixed two broken Glossary deep-links on the F.A.Q. page, removed a stray unreferenced React draft file from Loan Calculator, removed a couple of unnecessary script includes, and cleaned out some dead CSS</li>
+            <li>and more good stuff...</li>
+           </ul>
+            [EOF]
+          </template>
+        </div>
+        <a class="vc-link" href="v5.0/index.html">
+            <p class="cta-hint">Click to open this build</p>
+          <span class="vc-arrow" aria-hidden="true">&rarr;</span>
+        </a>
       </div>
+<!-- /Card-->
 
-    </div>
-  </section>
-
-  <!-- <section class="hp-section" style="padding-top:0;">
-    <div class="hp-about">
-      <div>
-        <h3>Not financial advice — a set of ledgers</h3>
-        <p>Every tool here is a simple model built to make trade-offs visible, not to predict the future. Real markets, rates, and life don't move in a straight line — use these to build intuition and revisit your plan regularly, then talk to a licensed financial advisor about decisions that matter.</p>
+<!-- Card-->
+      <div class="version-card is-disabled">
+        <div class="vc-main">
+          <div class="vc-main-row">
+            <div class="version-icon">B.4.11</div>
+            <div class="version-info">
+              <p class="name">Beta 4.11 - Paused Proton</p>
+              <p class="path">/beta/v4.11</p>
+              <p class="version-dates">Created: 2026-08-23 17:16:45<br>Updated: 2026-08-25 23:29:50</p>
+            </div>
+          </div>
+          <details class="changelog-toggle" onclick="toggleChangeLog(event)">
+            <summary>Show Change Log</summary>
+            <div class="notes">
+              ---- v4.10 Change Log ----
+              <ul>
+            <li>Branched from v4.10</li>
+            <li>Superseded by v5.0 — see its Change Log for everything that shipped in this branch</li>
+          </ul>
+        [EOF]</div>
+          </details>
+        </div>
+        <a class="vc-link" href="v4.9/index.html" aria-disabled="true" tabindex="-1" onclick="return false;">
+          <span class="status-pill disabled">⛔ Disabled</span>
+            <p class="cta-hint">Superseded by v5.0</p>
+        </a>
       </div>
-      <ul>
-        <li>All calculations run locally in your browser</li>
-        <li>Inputs save automatically on your device only</li>
-        <li>No accounts, no tracking, no data leaves your machine</li>
+<!-- /Card-->
+
+
+
+
+<!-- Card-->
+      <div class="version-card is-disabled">
+        <div class="vc-main">
+          <div class="vc-main-row">
+            <div class="version-icon">B.4.10</div>
+            <div class="version-info">
+              <p class="name">Beta 4.10 - Rascally Robot</p>
+              <p class="path">/beta/v4.10</p>
+              <p class="version-dates">Created: 2026-08-23 17:16:45<br>Updated: 2026-08-25 23:29:50</p>
+            </div>
+          </div>
+          <details class="changelog-toggle" onclick="toggleChangeLog(event)">
+            <summary>Show Change Log</summary>
+            <div class="notes">
+              ---- v4.10 Change Log ----
+              <ul>
+            <li>Branched from v4.9</li>
+            <li>Superseded by v5.0 — see its Change Log for everything that shipped in this branch</li>
+          </ul>
+        [EOF]</div>
+          </details>
+        </div>
+        <a class="vc-link" href="v4.9/index.html" aria-disabled="true" tabindex="-1" onclick="return false;">
+          <span class="status-pill disabled">⛔ Disabled</span>
+            <p class="cta-hint">Superseded by v5.0</p>
+        </a>
+      </div>
+<!-- /Card-->
+
+
+
+<!-- Card-->
+      <div class="version-card is-disabled">
+        <div class="vc-main">
+          <div class="vc-main-row">
+            <div class="version-icon">B.4.9</div>
+            <div class="version-info">
+              <p class="name">Beta 4.9 - Running Rock</p>
+              <p class="path">/beta/v4.9</p>
+              <p class="version-dates">Created: 2026-08-23 17:16:45<br>Updated: 2026-08-25 23:29:50</p>
+            </div>
+          </div>
+          <details class="changelog-toggle" onclick="toggleChangeLog(event)">
+            <summary>Show Change Log</summary>
+            <div class="notes">
+              ---- v4.9 Change Log ----
+              <ul>
+            <li>Branched from v4.8</li>
+            <li>Superseded by v5.0 — see its Change Log for everything that shipped in this branch</li>
+          </ul>
+        [EOF]</div>
+          </details>
+        </div>
+        <a class="vc-link" href="v4.9/index.html" aria-disabled="true" tabindex="-1" onclick="return false;">
+          <span class="status-pill disabled">⛔ Disabled</span>
+            <p class="cta-hint">Superseded by v5.0</p>
+        </a>
+      </div>
+<!-- /Card-->
+
+<!-- Card-->
+      <div class="version-card is-active is-live-orange">
+        <div class="vc-main">
+          <div class="vc-main-row">
+            <div class="version-icon">B.4.8</div>
+            <div class="version-info">
+              <p class="name">Beta 4.8 - Wandering Wall</p>
+              <p class="path">/beta/v4.8</p>
+              <p class="version-dates">Created: 2026-08-21 20:48:26<br>Updated: 2026-08-23 16:03:35</p>
+            </div>
+          </div>
+          <details class="changelog-toggle" onclick="toggleChangeLog(event)">
+            <summary>Show Change Log</summary>
+            <div class="notes">
+              ---- v4.8 Change Log ----
+              <ul>
+            <li>Branched from v4.7</li>
+            <li>Bug Fixes to some data persistence on a couple calculators.</li>
+            <li>Homepage nav bar and hamburger menu section labels shortened: "Basics", "Independence", "Retirement", "Daily Decisions"</li>
+            <li>New first-visit welcome modal on the homepage — choose to learn the site, get a guided calculator pick, or skip, with a highlight on the Getting Started section if you skip (just a scroll and a highlight pulse — no page dimming)</li>
+            <li>Picking Calculators quiz: mobile now has a "Show my results" button so closing the results drawer doesn't strand you</li>
+            <li>Fixed a handful of bugs surfaced by the welcome modal: an iOS Safari scroll-lock issue, the modal accidentally dismissing the separate "Add your info" hint, and that hint's arrow pointing at the wrong icon on mobile</li>
+            <li>"Clear all local data" now sends you to the homepage for a genuinely fresh-visitor experience, instead of just reloading wherever you were</li>
+            <li>Homepage headline changed to "Your journey to financial independence," and the D3 Planning card's "Sponsor" ribbon renamed to "Partner"</li>
+            <li>Using This Site page: added a direct "Open the Glossary" button, in case the inline link gets missed, plus a new "Pick a look that fits you" section explaining every theme with a button that jumps straight to the theme picker</li>
+            <li>Glossary browsing redesigned: category jump-links now live behind a small expandable icon instead of an always-visible bar that ate space on mobile, plus a new sort menu (by category or alphabetically A&ndash;Z)</li>
+            <li>Glossary content greatly expanded — now 72 terms — adding full coverage of account types (retirement, investment, and banking), loan and credit types, everyday money-basics and investing vocabulary, and more advanced terms like Robo-Investor, Fractional Shares, Short Selling, and Stock Options</li>
+            <li>Glossary reorganized into a two-level category tree — five topic groups (Foundational Concepts, Retirement, Banking, Investing, Debt &amp; Loans), each with its own subcategories — with a persistent browsing sidebar on wider screens, collapsible at every level, and definition cards that glow on hover</li>
+            <li>New "System" theme option that automatically matches your device's light/dark setting (light &rarr; Sunshine, dark &rarr; Neon) — now the default for new visitors, alongside the previous five themes</li>
+            <li>New F.A.Q. page — the same searchable, sortable, collapsible browsing as the Glossary, seeded with about 20 questions across five topics, plus a first-visit reminder to consult a licensed professional</li>
+            <li>Footer's version number now links back to this version picker (styled like plain text, not an obvious link), and a bit more breathing room added above the footer on every page</li>
+            <li>Nav bar now casts a soft effect along its bottom edge, brightest at center and tapering toward the sides, projecting onto the page below rather than into the nav itself — a plain neutral shadow on Light and Sunshine, a warm/violet accent glow on Dark and Neon</li>
+            <li>Fixed a contrast bug where Neon and Sunshine's icon buttons and category pills washed out against their own translucent panels on the Glossary and F.A.Q. pages</li>
+            <li>F.A.Q. page: "Other Common Topics &amp; Questions" category renamed to "Other Topics," and a new "Will FireNate always be free?" question added</li>
+            <li>Glossary: merged two overlapping categories ("Early access to retirement funds" and "Early retirement gaps") into a single "Early Retirement" section</li>
+            <li>Renamed "Picking Calculators" to "Calculator Picker" site-wide (homepage, hamburger menu, Getting Started, and the F.A.Q.)</li>
+            <li>Moved Compound Interest &amp; Wealth Multiplier's saved inputs off a cookie and onto localStorage, and gave Loan Calculator and Homes vs. Stocks their own localStorage persistence (with a "Last saved" indicator) — both previously reset every time you reloaded</li>
+            <li>Registered all three of the above in the shared saved-data list, and filled in the last gaps in Profile Manager's example-data generator (it was missing sample data for Cash Out or Hold, Compound Interest, Loan Calculator, and Homes vs. Stocks)</li>
+            <li>Profile Manager: new "Full raw backup" button that exports every single key saved in local storage, exactly as stored — a debugging/backup copy separate from the curated profile export</li>
+          </ul>
+        [EOF]</div>
+          </details>
+        </div>
+        <a class="vc-link" href="v4.8/index.html">
+          <span class="status-pill active">View</span>
+            <p class="cta-hint">Click to open </p>
+          <span class="vc-arrow" aria-hidden="true">&rarr;</span>
+        </a>
+      </div>
+<!-- /Card-->
+
+<!-- Card-->
+      <div class="version-card is-active is-live-orange">
+        <div class="vc-main">
+          <div class="vc-main-row">
+            <div class="version-icon">B.4.7</div>
+            <div class="version-info">
+              <p class="name">Beta 4.7 - Orange Octopus</p>
+              <p class="path">/beta/v4.7</p>
+              <p class="version-dates">Created: 2026-08-20 17:56:20<br>Updated: 2026-08-21 20:13:25</p>
+            </div>
+          </div>
+          <details class="changelog-toggle" onclick="toggleChangeLog(event)">
+            <summary>Show Change Log</summary>
+            <div class="notes"><ul>
+            <li>Branched from v4.6</li>
+            <li>Every calculator's "?" help window now lists every single input field individually (Net Worth's was condensed into 4 summary bullets for its 30 fields — now all 30 are listed by name)</li>
+            <li>Service worker cache bumped so this version doesn't share a cache with v4.6</li>
+            <li>New "LCARS" theme — a flat, Star-Trek-console-inspired look with solid swept-corner panel rails in place of the other themes' blur/gradient treatment, rolled out across the nav, homepage, and every calculator's own cards</li>
+            <li>Theme picker reorganized into two icon-grouped clusters (Light/Sunshine under a sun icon, Dark/Neon/LCARS under a moon icon) instead of one flat row of options</li>
+            <li>New "Getting Started" section: the original guide is now "Using This Site", alongside a new "Picking Calculators" page — a branching quiz that asks a few questions and recommends calculators, plus a subway-map-style "Financial Concepts Map" for browsing every calculator by topic (Saving, Debt, Retirement), where each stop shows what to understand first, which calculators help, and what people usually ask next</li>
+            <li>Picking Calculators lets you choose Quiz or Map on load, shows results in a resizable side panel (a slide-up drawer on mobile), and lets you switch between quiz and map without reloading</li>
+            <li>New calculator: Budget Calculator — sorts monthly income into Needs/Wants/Savings, compares the split against the 50/30/20 guideline with live bucket bars and a plain-English verdict, and logs dated snapshots to track your budget over time (same one-entry-per-date history behavior as Net Worth)</li>
+            <li>Budget Calculator wired into the nav menu, homepage, Profile Manager's example-data generator, and the Financial Concepts Map's previously-empty Budgeting node</li>
+            <li>Renamed "First Steps" to "The Basics" and "Your Path to FI" to "Financial Independence" site-wide, and retitled the calculator-picker entry to "Picking Calculators" with a new map icon</li>
+            <li>Added a "Feedback &amp; communications" section to Terms, Conditions &amp; Copyright, clarifying that submissions aren't guaranteed a response and become FireNate's property</li>
+            <li>Added 19 new regression tests covering Budget Calculator's math and history logic — full suite now at 195 checks, all passing</li>
+         </ul></div>
+          </details>
+        </div>
+        <a class="vc-link" href="v4.7/index.html">
+          <span class="status-pill active">View</span>
+            <p class="cta-hint">Click to open </p>
+          <span class="vc-arrow" aria-hidden="true">&rarr;</span>
+        </a>
+      </div>
+<!-- /Card-->
+
+<!-- Card-->
+      <div class="version-card is-active is-live-orange">
+        <div class="vc-main">
+          <div class="vc-main-row">
+            <div class="version-icon">B.4.6</div>
+            <div class="version-info">
+              <p class="name">Beta 4.6 - Silly Snake</p>
+              <p class="path">/beta/v4.6</p>
+              <p class="version-dates">Created: 2026-08-16 20:21:38<br>Updated: 2026-08-20 16:55:20</p>
+            </div>
+          </div>
+          <details class="changelog-toggle" onclick="toggleChangeLog(event)">
+            <summary>Show Change Log</summary>
+            <div class="notes"><ul>
+            <li>New calculator: Cash Out or Hold — decide whether to sell investments to pay off debt or stay invested, accounting for capital gains tax and short/long-term holding period</li>
+            <li>New "Neon" and "Sunshine" glass themes — a 4-option theme selector (Light, Dark, Neon, Sunshine) replacing the old dark-mode toggle, rolled out site-wide</li>
+            <li>Every calculator page now has a "?" help icon explaining what each input means, with auto-scroll hints for long lists and a floating close button</li>
+            <li>"Your info" panel: added a manual Save button and a Last Saved/Last Snapshot timestamp, and reorganized its icons</li>
+            <li>Hamburger menu now auto-scrolls to your current page when opened</li>
+            <li>Fixed a real bug: chart tooltips in the Neon theme were rendering in the wrong position due to a backdrop-filter/position:fixed conflict</li>
+            <li>Fixed Dark/Neon/Sunshine rendering across Net Worth, Loan Calculator, General Info, Files, Compound Interest, Payoff or Invest, Homes v Stocks, and Reverse Time to FI</li>
+            <li>Getting Started guide updated with a new step introducing the help-icon feature</li>
+            <li>Homepage "New!"/"Updated!"/"Important!" ribbons cleaned up and corrected</li>
+            <li>Fixed a broken link, a service-worker cache collision with v4.5, and removed stray backup files from the live site</li>
+            <li>Added meta descriptions and a robots.txt ahead of publishing</li>
+            <li>Consolidated duplicated toolbar CSS and JS across 14 calculator pages into shared files, for easier maintenance going forward</li>
+         </ul></div>
+          </details>
+        </div>
+        <a class="vc-link" href="v4.6/index.html">
+          <span class="status-pill active">View</span>
+            <p class="cta-hint">Click to open </p>
+          <span class="vc-arrow" aria-hidden="true">&rarr;</span>
+        </a>
+      </div>
+<!-- /Card-->
+
+<!-- Card-->
+      <div class="version-card is-active is-live-orange">
+        <div class="vc-main">
+          <div class="vc-main-row">
+            <div class="version-icon">B.4.5</div>
+            <div class="version-info">
+              <p class="name">Beta 4.5 - Flying Fox</p>
+              <p class="path">/beta/v4.5</p>
+              <p class="version-dates">Created: 2026-08-16 17:00:18<br>Updated: 2026-08-16 20:21:38</p>
+            </div>
+          </div>
+          <details class="changelog-toggle" onclick="toggleChangeLog(event)">
+            <summary>Show Change Log</summary>
+            <div class="notes"><ul>
+            <li>Icons, added lots of icons</li>
+            <li>Fixed a real bug: the Net Worth calculator was saving to a cookie instead of localStorage, invisible to Profile Manager, snapshots, and export</li>
+            <li>Net Worth is now a history tracker — log dated snapshots and watch a net-worth trend chart over time</li>
+            <li>Added charts to Roth Conversion Ladder (funding sources by year) and SS &amp; Pension Bridge (bridge vs. ongoing cost by claiming age)</li>
+            <li>Profile Manager: rename a saved snapshot in place, and compare two snapshots side by side</li>
+            <li>Four new calculators: Rent vs. Buy, Coast &amp; Barista FIRE, Required Minimum Distributions (RMD), and a Monte Carlo sequence-of-returns simulator (bootstrap-resampled from real 1928&ndash;2025 market data)</li>
+            <li>All new calculators wired into the nav menu, homepage, and the site's snapshot/export system</li>
+            <li>"Your info" panel: added a Name field, shown as a badge in the nav bar, used to prefix auto-generated snapshot names and export filenames</li>
+            <li>Profile Manager: "Create example data snapshot" button — one click fills a saved profile with realistic example numbers across every calculator, to explore the site without touching your own data</li>
+            <li>Fixed the new profile Name not actually being saved/restored across snapshot save, load, import, and share</li>
+            <li>Rent vs. Buy: grouped inputs into "Owning" and "Renting" sections</li>
+            <li>Moved the "how FireNate got its name" video clip from the Files page to the About page</li>
+            <li>Fixed a mislabeled "Traditional Retirement Age" field on FIRE Milestones</li>
+         </ul></div>
+          </details>
+        </div>
+        <a class="vc-link" href="v4.5/index.html">
+          <span class="status-pill active">View</span>
+            <p class="cta-hint">Click to open </p>
+          <span class="vc-arrow" aria-hidden="true">&rarr;</span>
+        </a>
+      </div>
+<!-- /Card-->
+
+<!-- Card-->
+        <div class="version-card is-disabled">
+        <div class="vc-main">
+          <div class="vc-main-row">
+            <div class="version-icon">B.4.4</div>
+            <div class="version-info">
+              <p class="name">Beta 4.4 - Jumping Jelly</p>
+              <p class="path">/beta/v4.4</p>
+              <p class="version-dates">Created: 2026-08-15 21:45:42<br>Updated: 2026-08-15 23:21:23</p>
+            </div>
+          </div>
+          <details class="changelog-toggle" onclick="toggleChangeLog(event)">
+            <summary>Show Change Log</summary>
+            <div class="notes"><ul>
+            <li>Profile Manager: share a saved snapshot as a plain text string (and import one someone shares with you) — not just a URL</li>
+            <li>Profile Manager: one-click "Quick snapshot" that captures your live profile and every calculator's inputs with an auto-generated name, no typing required</li>
+         </ul></div>
+          </details>
+        </div>
+        <a class="vc-link" href="v4.4/index.html" aria-disabled="true" tabindex="-1" onclick="return false;">
+          <span class="status-pill disabled">⛔ Disabled</span>
+            <p class="cta-hint">Click to open </p>
+        </a>
+      </div>
+<!-- /Card-->
+
+<!-- Card-->
+      <div class="version-card is-active is-live-orange">
+        <div class="vc-main">
+          <div class="vc-main-row">
+            <div class="version-icon">B.4.3</div>
+            <div class="version-info">
+              <p class="name">Beta 4.3 - Bouncing Banana</p>
+              <p class="path">/beta/v4.3</p>
+              <p class="version-dates">Created: 2026-08-15 09:46:45<br>Updated: 2026-08-15 18:49:24</p>
+            </div>
+          </div>
+          <details class="changelog-toggle" onclick="toggleChangeLog(event)">
+            <summary>Show Change Log</summary>
+            <div class="notes"><ul>
+            <li>New calculators: Debt Snowball, Social Security &amp; Pension Bridge, Roth Conversion Ladder, Variable Withdrawal Rate (Guyton-Klinger guardrails + cash buffer), and Healthcare &amp; ACA Bridge (with a subsidy-cliff visualizer)</li>
+            <li>Homepage reorganized into grouped sections with a sticky "jump to section" bar and a live search/filter across every calculator</li>
+            <li>Hamburger menu reworked into grouped, collapsible sections with its own search</li>
+            <li>New Glossary page (20 FIRE terms) plus inline definition tooltips on calculator pages</li>
+            <li>"Copy a shareable link" button — encodes your profile and calculator inputs into a URL you can send to someone else</li>
+            <li>New About and Terms, Conditions &amp; Copyright pages, plus a redesigned footer</li>
+            <li>Favicon, web app manifest, and an offline service worker</li>
+            <li>Fixed three real calculation bugs (debt snowball payoff rollover, withdrawal-rate growth order, profile autofill mapping) and added a regression test suite to guard them</li>
+            <li>Fixed path handling so the site works correctly when hosted in a subfolder</li>
+            <li>Contact Us Page</li>
+         </ul></div>
+          </details>
+        </div>
+        <a class="vc-link" href="v4.3/index.html">
+          <span class="status-pill active">View</span>
+            <p class="cta-hint">Click to open </p>
+          <span class="vc-arrow" aria-hidden="true">&rarr;</span>
+        </a>
+      </div>
+<!-- /Card-->
+
+<!-- Card-->
+      <div class="version-card is-active is-live-orange">
+        <div class="vc-main">
+          <div class="vc-main-row">
+            <div class="version-icon">B.4.2</div>
+            <div class="version-info">
+              <p class="name">Beta 4.2 - Salty Sugar</p>
+              <p class="path">/beta/v4.2</p>
+              <p class="version-dates">Created: 2026-08-14 17:52:21<br>Updated: 2026-08-15 09:34:48</p>
+            </div>
+          </div>
+          <details class="changelog-toggle" onclick="toggleChangeLog(event)">
+            <summary>Show Change Log</summary>
+            <div class="notes"><ul>
+            <li>Bug Fixes</li>
+            <li>New pages</li>
+            <li>Home Page changes</li>
+         </ul></div>
+          </details>
+        </div>
+        <a class="vc-link" href="v4.2/index.html">
+          <span class="status-pill active">View</span>
+            <p class="cta-hint">Click to open </p>
+          <span class="vc-arrow" aria-hidden="true">&rarr;</span>
+        </a>
+      </div>
+<!-- /Card-->
+
+<!-- Card-->
+      <div class="version-card is-active is-live-orange">
+        <div class="vc-main">
+          <div class="vc-main-row">
+            <div class="version-icon">B.4.1</div>
+            <div class="version-info">
+              <p class="name">Beta 4.1 - Peppy Pepper</p>
+              <p class="path">/beta/v4.1</p>
+              <p class="version-dates">Created: 2026-08-14 04:50:38<br>Updated: 2026-08-14 16:51:42</p>
+            </div>
+          </div>
+          <details class="changelog-toggle" onclick="toggleChangeLog(event)">
+            <summary>Show Change Log</summary>
+            <div class="notes"><ul>
+            <li>Full "Your info" profile panel — quick snapshot via camera icon, an automatic safety backup before "Clear my info", and a hover/tap quick-load menu for saved profiles</li>
+            <li>New Profile Manager page — save, load, delete, and compare named snapshots of your plan side by side</li>
+            <li>Snapshots, backups, exports, and imports now capture every calculator's own saved inputs too, not just your shared profile — one save covers your whole plan across the site</li>
+            <li>Export your saved profiles to a JSON file and import them back in, with an automatic backup made before any import that would overwrite your live data</li>
+            <li>Fun, unmistakable confirmation animations for taking a snapshot, loading a profile, and clearing your data</li>
+            <li>Hamburger menu and quick-load flyout both cap their height with scroll fades and hover-to-auto-scroll</li>
+          </ul></div>
+          </details>
+        </div>
+        <a class="vc-link" href="v4.1/index.html">
+          <span class="status-pill active">View</span>
+            <p class="cta-hint">Click to open </p>
+          <span class="vc-arrow" aria-hidden="true">&rarr;</span>
+        </a>
+      </div>
+<!-- /Card-->
+
+<!-- Card-->
+      <div class="version-card is-active is-live-orange">
+        <div class="vc-main">
+          <div class="vc-main-row">
+            <div class="version-icon">B.4.0</div>
+            <div class="version-info">
+              <p class="name">Beta 4.0 - Vanilla Vespa</p>
+              <p class="path">/beta/v4.0</p>
+              <p class="version-dates">Created: 2026-08-13 05:38:14<br>Updated: 2026-08-13 18:53:47</p>
+            </div>
+          </div>
+          <details class="changelog-toggle" onclick="toggleChangeLog(event)">
+            <summary>Show Change Log</summary>
+            <div class="notes"><ul>
+            <li>FI Snapshot dashboard — age, savings, and goal progress pulled straight from your saved profile</li>
+            <li>Coast-FI status, with saved what-if scenarios you can compare, load, or delete</li>
+            <li>Safe Withdrawal Rate stress test against every real historical market cycle since 1928</li>
+            <li>Emergency Fund calculator — coverage targets, funded progress, and payoff projection</li>
+            <li>"New!" ribbons on the homepage, reordered to lead with the FI Snapshot dashboard</li>
+          </ul></div>
+          </details>
+        </div>
+        <a class="vc-link" href="v4.0/index.html">
+          <span class="status-pill active">View</span>
+            <p class="cta-hint">Click to open </p>
+          <span class="vc-arrow" aria-hidden="true">&rarr;</span>
+        </a>
+      </div>
+<!-- /Card-->
+
+<!-- Card-->
+      <div class="version-card is-active is-live-orange">
+        <div class="vc-main">
+          <div class="vc-main-row">
+            <div class="version-icon">B.3.1</div>
+            <div class="version-info">
+              <p class="name">Beta 3.1 - Crazy Calvin</p>
+              <p class="path">/beta/v3.1</p>
+              <p class="version-dates">Created: 2026-08-09 20:18:50<br>Updated: 2026-08-13 05:33:14</p>
+            </div>
+          </div>
+          <details class="changelog-toggle" onclick="toggleChangeLog(event)">
+            <summary>Show Change Log</summary>
+            <div class="notes"><ul>
+            <li>Unified styles</li>
+             <li>Dark and light modes</li>
+              <li>persistent user settings/Defaults - flow into page defaults for inputs</li>
+               <li>persistent site settings</li>
+                <li>site menu rework</li>
+                 <li>clean up footers</li>
+                  <li>code clean up - external JS & CSS files</li>
+                   <li>Additional Pages (Net Worth, General Info, Files, Crossover)</li>
+          </ul></div>
+          </details>
+        </div>
+        <a class="vc-link" href="v3.1/index.html">
+          <span class="status-pill active">View</span>
+            <p class="cta-hint">Click to open </p>
+          <span class="vc-arrow" aria-hidden="true">&rarr;</span>
+        </a>
+      </div>
+<!-- /Card-->
+
+<!-- Card-->
+      <div class="version-card is-active is-live-red">
+        <div class="vc-main">
+          <div class="vc-main-row">
+            <div class="version-icon">B.3.0</div>
+            <div class="version-info">
+              <p class="name">Beta 3.0 - Black Pearl</p>
+              <p class="path">/beta/v3</p>
+              <p class="version-dates">Created: 2026-08-09 20:18:50<br>Updated: 2026-08-11 18:58:20</p>
+            </div>
+          </div>
+          <details class="changelog-toggle" onclick="toggleChangeLog(event)">
+            <summary>Show Change Log</summary>
+            <div class="notes">Unify pages into a cohesive site</div>
+          </details>
+        </div>
+        <a class="vc-link" href="v3/index.html">
+          <span class="status-pill active">View</span>
+            <p class="cta-hint">Click to open </p>
+          <span class="vc-arrow" aria-hidden="true">&rarr;</span>
+        </a>
+      </div>
+<!-- /Card-->
+
+<!-- Card-->
+      <div class="version-card is-disabled">
+        <div class="vc-main">
+          <div class="vc-main-row">
+            <div class="version-icon">B.2</div>
+            <div class="version-info">
+              <p class="name">Beta 2.0 - Breaking Badger </p>
+              <p class="path">/beta/v2</p>
+              <p class="version-dates">Created: 2026-08-09 20:20:58<br>Updated: 2026-08-09 22:31:13</p>
+            </div>
+          </div>
+          <details class="changelog-toggle" onclick="toggleChangeLog(event)">
+            <summary>Show Change Log</summary>
+            <div class="notes">Add additional calculators</div>
+          </details>
+        </div>
+        <a class="vc-link" href="v2/index.html" aria-disabled="true" tabindex="-1" onclick="return false;">
+          <span class="status-pill disabled">⛔ Disabled</span>
+        </a>
+      </div>
+<!-- /Card-->
+
+<!-- Card-->
+      <div class="version-card is-deleted">
+        <div class="vc-main">
+          <div class="vc-main-row">
+            <div class="version-icon">A.1</div>
+            <div class="version-info">
+              <p class="name">Alpha 1.0 - Alf Alpha</p>
+              <p class="path">/beta/v1</p>
+              <p class="version-dates">Created: 2026-08-08 20:37:52<br>Updated: 2026-08-09 20:20:56</p>
+            </div>
+          </div>
+          <details class="changelog-toggle" onclick="toggleChangeLog(event)">
+            <summary>Show Change Log</summary>
+            <div class="notes">Initial Time-To-FI Calculator P.O.C.</div>
+          </details>
+        </div>
+        <a class="vc-link" href="v1/index.html" aria-disabled="true" tabindex="-1" onclick="return false;">
+          <span class="status-pill deleted">🗑 Deleted</span>
+        </a>
+      </div>
+<!-- /Card-->
+
+      </div>
+    </details>
+
+    <details class="archive-toggle">
+      <summary>Roadmap Notes <span class="archive-count">(Future Considerations)</span></summary>
+      <div class="future-panel">
+      <div class="future-panel-header">
+        <div class="future-icon">X.Y</div>
+        <div class="future-heading">
+          <p class="future-title">Future Considerations</p>
+          <p class="future-subtitle">/beta/vX.Y — not scheduled, just notes</p>
+        </div>
+        <span class="status-pill planning">Prioritizing</span>
+      </div>
+      <div class="future-body">
+        <ul>
+          <li>Bug fixes</li>
+          <li>Mobile Friendly</li>
+          <li>Additional Calculators</li>
+          <li>Dynamic Site
+             <ul>
+                <li>Data Persistance</li>
+                <li>User Accounts</li>
+                <li>Dashboards / Reports</li>
+                <li>F.I. Tracking</li>
+                <li>Budgets</li>
+                <li>Budget Tracking</li>
+                <li>Shared Info with D3</li>
+                <li>Family/Friends sharing/collaboration</li>
+              </ul>
+          </li>
+          <li>Style / Formatting fixes & unification</li>
+          <li>Import / Export features</li>
+          <li>About / Story / etc.</li>
+          <li>Disclaimers, Terms, Conditions, Agreements page</li>
+          <li>Links to additional resources</li>
+          <li>Glossary</li>
+          <li>Additional inatructions, guides, tips</li>
+        </ul>
+      </div>
+      </div>
+    </details>
+    <p></p>
+
+
+
+    <footer>
+      <ul style="list-style-type: none;">
+          <li>All Rights Reserved</li>
+          <li style="color:var(--red)">Use at your own risk.</li>
+          <li style="color:var(--accent)">No promises are made or implied.</li>
+          <li style="color:var(--text-dim)">Always consult a licensed professional before making any changes, decisions, or actions.</li>
+          <li style="color:goldenrod;">This site uses cookies, but no information is used for tracking purposes, and all information stays on your local device.</li>
+          <li style="color:var(--green-bright);">Page Last Updated: 2026-08-27</li>
       </ul>
+      </footer>
+
+    <div class="changelog-modal-overlay" id="changelogModalOverlay">
+      <div class="changelog-modal" id="changelogModal">
+        <div class="changelog-modal-titlebar">
+          <span class="changelog-modal-title" id="changelogModalTitle">Change Log</span>
+          <div class="changelog-modal-titlebar-actions">
+            <button type="button" class="changelog-modal-maximize" id="changelogModalMaximize" aria-label="Maximize" aria-pressed="false"></button>
+            <button type="button" class="changelog-modal-close" id="changelogModalClose" aria-label="Close change log">&times;</button>
+          </div>
+        </div>
+        <div class="changelog-modal-body-wrap">
+          <div class="changelog-modal-body" id="changelogModalBody"></div>
+          <div class="changelog-modal-scroll-arrow changelog-modal-scroll-arrow-top" id="changelogArrowTop"></div>
+          <div class="changelog-modal-scroll-arrow changelog-modal-scroll-arrow-bottom" id="changelogArrowBottom"></div>
+        </div>
+      </div>
     </div>
-  </section> -->
-
-  
-</div>
-
-<footer id="site-footer"></footer>
-
-<script>
-// highlights whichever section is currently in view in the sticky
-// "jump to section" bar, so it doubles as a lightweight scroll indicator
-(function(){
-  var links = Array.from(document.querySelectorAll('.hp-quicklinks a'));
-  var sections = links
-    .map(function(a){ return document.getElementById(a.getAttribute('href').slice(1)); })
-    .filter(Boolean);
-  if (!sections.length || !('IntersectionObserver' in window)) return;
-
-  function setActive(id){
-    links.forEach(function(a){
-      a.classList.toggle('active', a.getAttribute('href') === '#' + id);
-    });
-  }
-
-  // a section only "counts" once it's cleared the stacked sticky headers
-  // (site nav + this quicklinks bar), and only while it's near the top of
-  // the viewport — so exactly one link is active at a time, not several
-  var observer = new IntersectionObserver(function(entries){
-    entries.forEach(function(entry){
-      if (entry.isIntersecting) setActive(entry.target.id);
-    });
-  }, { rootMargin: '-140px 0px -70% 0px', threshold: 0 });
-
-  sections.forEach(function(sec){ observer.observe(sec); });
-})();
-
-// search/filter the calculator cards by title, description, and the
-// colored tag pill on each card (doubling as a lightweight keyword field)
-(function(){
-  var toggle = document.getElementById('hpSearchToggle');
-  var panel = document.getElementById('hpSearchPanel');
-  var input = document.getElementById('hpSearchInput');
-  var clearBtn = document.getElementById('hpSearchClear');
-  var status = document.getElementById('hpSearchStatus');
-  if (!toggle || !panel || !input) return;
-
-  var cards = Array.from(document.querySelectorAll('.hp-card'));
-  var sections = Array.from(document.querySelectorAll('.hp-section'));
-
-  // precompute each card's searchable text once up front rather than on
-  // every keystroke — title + tag + every paragraph of description
-  cards.forEach(function(card){
-    var title = card.querySelector('h3');
-    var tag = card.querySelector('.hp-card-tag');
-    var paras = Array.from(card.querySelectorAll('p')).map(function(p){ return p.textContent; });
-    var text = [title ? title.textContent : '', tag ? tag.textContent : ''].concat(paras).join(' ');
-    card.dataset.searchText = text.toLowerCase();
-  });
-
-  function filter(query){
-    var q = query.trim().toLowerCase();
-    var visibleCount = 0;
-
-    sections.forEach(function(section){
-      var sectionCards = Array.from(section.querySelectorAll('.hp-card'));
-      if (!sectionCards.length) return; // leave non-calculator sections alone
-      var sectionHasMatch = false;
-      sectionCards.forEach(function(card){
-        var match = !q || card.dataset.searchText.indexOf(q) > -1;
-        card.hidden = !match;
-        if (match){ sectionHasMatch = true; visibleCount++; }
-      });
-      section.hidden = q ? !sectionHasMatch : false;
-    });
-
-    if (clearBtn) clearBtn.hidden = !q;
-    if (status){
-      if (!q){
-        status.hidden = true;
-        status.classList.remove('no-results');
-      } else if (visibleCount === 0){
-        status.hidden = false;
-        status.classList.add('no-results');
-        status.textContent = 'No calculators match "' + query.trim() + '".';
-      } else {
-        status.hidden = false;
-        status.classList.remove('no-results');
-        status.textContent = 'Showing ' + visibleCount + ' of ' + cards.length + ' calculators.';
+  </div>
+  <script>
+    // every version card is itself a link (an <a>) to that build — any click
+    // inside the "Change Log" <details>, including on the expanded notes
+    // text (not just the summary), would otherwise bubble up and follow
+    // that link. The handler lives on <details> itself (not just <summary>)
+    // so it catches those clicks too; preventDefault stops the card's own
+    // navigation (and the summary's native toggle, so we do the toggle by
+    // hand only when the click actually landed on the summary).
+    function toggleChangeLog(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (e.target.closest("summary")) {
+        var details = e.currentTarget;
+        details.open = !details.open;
+        details.querySelector("summary").textContent = details.open ? "Hide Change Log" : "Show Change Log";
+        if (details.open) {
+          var notes = details.querySelector(".notes");
+          if (notes) updateScrollArrows(notes);
+        }
       }
     }
-  }
 
-  function openPanel(){
-    panel.hidden = false;
-    toggle.classList.add('active');
-    toggle.setAttribute('aria-expanded', 'true');
-    input.focus();
-  }
-  function closePanel(){
-    panel.hidden = true;
-    toggle.classList.remove('active');
-    toggle.setAttribute('aria-expanded', 'false');
-    input.value = '';
-    filter('');
-  }
+    // wraps every changelog's .notes in a positioning context and adds a
+    // top/bottom fade+arrow pair, toggled by updateScrollArrows() below
+    // based on actual scroll position — so it only ever shows in the
+    // direction there's really more text to see.
+    document.querySelectorAll(".changelog-toggle .notes").forEach(function (notes) {
+      var wrap = document.createElement("div");
+      wrap.className = "notes-wrap";
+      notes.parentNode.insertBefore(wrap, notes);
+      wrap.appendChild(notes);
 
-  toggle.addEventListener('click', function(){
-    if (panel.hidden) openPanel(); else closePanel();
-  });
-  input.addEventListener('input', function(){ filter(input.value); });
-  input.addEventListener('keydown', function(e){
-    if (e.key === 'Escape') closePanel();
-  });
-  if (clearBtn){
-    clearBtn.addEventListener('click', function(){
-      input.value = '';
-      filter('');
-      input.focus();
+      var top = document.createElement("div");
+      top.className = "notes-scroll-arrow notes-scroll-arrow-top";
+      var bottom = document.createElement("div");
+      bottom.className = "notes-scroll-arrow notes-scroll-arrow-bottom";
+      wrap.appendChild(top);
+      wrap.appendChild(bottom);
+
+      notes.addEventListener("scroll", function () {
+        updateScrollArrows(notes);
+      });
+
+      wireScrollArrow(top, notes, -1);
+      wireScrollArrow(bottom, notes, 1);
     });
-  }
-})();
 
-// first-visit welcome modal — only for someone who has never dismissed it
-// before (own localStorage flag, independent of FNProfile/calculator data,
-// so it fires purely on "have they seen this modal", not "have they used
-// the site"). Mirrors field-help.js's modal pattern: built on demand,
-// closes on backdrop click / Escape / any option, focus-managed.
-(function(){
-  var WELCOME_KEY = 'fn-welcome-dismissed';
-  if (localStorage.getItem(WELCOME_KEY)) return;
+    function updateScrollArrows(notes) {
+      var wrap = notes.parentElement;
+      var top = wrap.querySelector(".notes-scroll-arrow-top");
+      var bottom = wrap.querySelector(".notes-scroll-arrow-bottom");
+      var canScroll = notes.scrollHeight > notes.clientHeight + 1;
+      top.classList.toggle("is-visible", canScroll && notes.scrollTop > 4);
+      bottom.classList.toggle("is-visible", canScroll && notes.scrollTop < notes.scrollHeight - notes.clientHeight - 4);
+    }
 
-  var lastFocused = document.activeElement;
-  var overlay = document.createElement('div');
-  overlay.className = 'hp-welcome-overlay';
-  overlay.innerHTML =
-    '<div class="hp-welcome-modal" role="dialog" aria-modal="true" aria-labelledby="hpWelcomeTitle" tabindex="-1">' +
-      '<button type="button" class="hp-welcome-close" aria-label="Close">&times;</button>' +
-      '<p class="hp-welcome-eyebrow">Welcome to FireNate</p>' +
-      '<h2 id="hpWelcomeTitle">New here? Let\'s get you pointed the right way.</h2>' +
-      '<p class="hp-welcome-lede">A set of small, focused calculators for financial-independence planning &mdash; no signup, nothing leaves your device. How would you like to get started?</p>' +
-      '<div class="hp-welcome-options">' +
-        '<a class="hp-welcome-option" href="GettingStarted/index.html">' +
-          '<div class="hp-welcome-opt-name"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>Learn how the site works</div>' +
-          '<div class="hp-welcome-opt-desc">A quick walkthrough &mdash; setting up your profile, picking a calculator, and saving your progress.</div>' +
-        '</a>' +
-        '<a class="hp-welcome-option" href="GettingStartedCalculators/index.html">' +
-          '<div class="hp-welcome-opt-name"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>Help me pick a calculator</div>' +
-          '<div class="hp-welcome-opt-desc">Answer a few quick questions and we\'ll point you to the two or three calculators that\'ll actually help.</div>' +
-        '</a>' +
-        '<button type="button" class="hp-welcome-option hp-welcome-option-skip">' +
-          '<div class="hp-welcome-opt-name"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>No thanks, I\'ll look around myself</div>' +
-          '<div class="hp-welcome-opt-desc">No problem &mdash; the Getting Started guides up top are always there if you change your mind.</div>' +
-        '</button>' +
-      '</div>' +
-    '</div>';
-  document.body.appendChild(overlay);
-  document.body.classList.add('hp-welcome-lock');
+    // hovering, holding a touch on, or clicking an arrow scrolls the
+    // changelog text in that direction — held (hover/touch) scrolls
+    // continuously, a plain click/tap nudges by about one screenful.
+    var arrowScrollTimer = null;
+    function stopArrowAutoScroll() {
+      if (arrowScrollTimer) {
+        clearInterval(arrowScrollTimer);
+        arrowScrollTimer = null;
+      }
+    }
+    function wireScrollArrow(arrow, notes, direction) {
+      arrow.addEventListener("mouseenter", function () {
+        stopArrowAutoScroll();
+        arrowScrollTimer = setInterval(function () {
+          notes.scrollTop += direction * 10;
+        }, 16);
+      });
+      arrow.addEventListener("mouseleave", stopArrowAutoScroll);
+      arrow.addEventListener("touchstart", function (e) {
+        e.preventDefault();
+        stopArrowAutoScroll();
+        arrowScrollTimer = setInterval(function () {
+          notes.scrollTop += direction * 10;
+        }, 16);
+      }, { passive: false });
+      arrow.addEventListener("touchend", stopArrowAutoScroll);
+      arrow.addEventListener("touchcancel", stopArrowAutoScroll);
+      arrow.addEventListener("click", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        notes.scrollBy({ top: direction * notes.clientHeight * 0.7, behavior: "smooth" });
+      });
+    }
 
-  function highlightGettingStarted(){
-    var section = document.getElementById('getting-started');
-    if (!section) return;
-    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // v5.0+ Change Log modal — a real closable/resizable window (see the
+    // "v5.0+ Change Log modal" CSS section above) replacing the inline
+    // <details> notes box every earlier version still uses. One shared
+    // overlay/panel; each trigger button just points at its own
+    // <template> of changelog <li>s to clone in on open.
+    var changelogOverlay = document.getElementById("changelogModalOverlay");
+    var changelogModal = document.getElementById("changelogModal");
+    var changelogTitle = document.getElementById("changelogModalTitle");
+    var changelogBody = document.getElementById("changelogModalBody");
+    var changelogClose = document.getElementById("changelogModalClose");
+    var changelogMaximizeBtn = document.getElementById("changelogModalMaximize");
+    var changelogArrowTop = document.getElementById("changelogArrowTop");
+    var changelogArrowBottom = document.getElementById("changelogArrowBottom");
+    var CHANGELOG_MAXIMIZE_SVG = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"></rect></svg>';
+    var CHANGELOG_RESTORE_SVG = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="7" width="13" height="13" rx="2"></rect><path d="M4 17V6a2 2 0 0 1 2-2h11"></path></svg>';
+    changelogMaximizeBtn.innerHTML = CHANGELOG_MAXIMIZE_SVG;
+    var changelogMaximized = false;
+    var changelogSavedSize = null;
 
-    section.classList.add('hp-welcome-highlight');
-    setTimeout(function(){
-      section.classList.remove('hp-welcome-highlight');
-    }, 2700);
-  }
+    function restoreChangelogModal() {
+      if (!changelogMaximized) return;
+      if (changelogSavedSize) {
+        changelogModal.style.width = changelogSavedSize.width;
+        changelogModal.style.height = changelogSavedSize.height;
+        changelogModal.style.resize = changelogSavedSize.resize;
+      }
+      changelogModal.classList.remove("is-maximized");
+      changelogMaximizeBtn.setAttribute("aria-label", "Maximize");
+      changelogMaximizeBtn.setAttribute("aria-pressed", "false");
+      changelogMaximizeBtn.innerHTML = CHANGELOG_MAXIMIZE_SVG;
+      changelogMaximized = false;
+    }
 
-  function onKeydown(e){ if (e.key === 'Escape') dismiss(true); }
+    changelogMaximizeBtn.addEventListener("click", function () {
+      if (!changelogMaximized) {
+        changelogSavedSize = {
+          width: changelogModal.style.width,
+          height: changelogModal.style.height,
+          resize: changelogModal.style.resize
+        };
+        changelogModal.style.width = "calc(100vw - 32px)";
+        changelogModal.style.height = "calc(100vh - 32px)";
+        changelogModal.style.resize = "none";
+        changelogModal.classList.add("is-maximized");
+        changelogMaximizeBtn.setAttribute("aria-label", "Restore");
+        changelogMaximizeBtn.setAttribute("aria-pressed", "true");
+        changelogMaximizeBtn.innerHTML = CHANGELOG_RESTORE_SVG;
+        changelogMaximized = true;
+      } else {
+        restoreChangelogModal();
+      }
+    });
 
-  function dismiss(highlight){
-    localStorage.setItem(WELCOME_KEY, '1');
-    if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
-    document.body.classList.remove('hp-welcome-lock');
-    document.removeEventListener('keydown', onKeydown);
-    if (lastFocused && lastFocused.focus) lastFocused.focus();
-    // iOS Safari can leave the page unscrollable if a new programmatic
-    // scroll (scrollIntoView, below) starts in the very same tick that
-    // body's overflow:hidden lock is lifted — a double rAF guarantees at
-    // least one full render has actually completed with scrolling restored
-    // before that scroll kicks off
-    if (highlight) requestAnimationFrame(function(){ requestAnimationFrame(highlightGettingStarted); });
-  }
+    // top/bottom fade+arrow pair for the modal body — same idea as the
+    // old inline changelog's .notes-scroll-arrow, just targeting a
+    // permanent DOM element (the wrap) instead of one rebuilt per
+    // <details>, since this modal's body content is swapped in/out on
+    // every open rather than existing once per card.
+    function updateChangelogScrollArrows() {
+      var canScroll = changelogBody.scrollHeight > changelogBody.clientHeight + 1;
+      changelogArrowTop.classList.toggle("is-visible", canScroll && changelogBody.scrollTop > 4);
+      changelogArrowBottom.classList.toggle("is-visible", canScroll && changelogBody.scrollTop < changelogBody.scrollHeight - changelogBody.clientHeight - 4);
+    }
+    var changelogArrowTimer = null;
+    function stopChangelogArrowScroll() {
+      if (changelogArrowTimer) {
+        clearInterval(changelogArrowTimer);
+        changelogArrowTimer = null;
+      }
+    }
+    function wireChangelogScrollArrow(arrow, direction) {
+      arrow.addEventListener("mouseenter", function () {
+        stopChangelogArrowScroll();
+        changelogArrowTimer = setInterval(function () {
+          changelogBody.scrollTop += direction * 10;
+        }, 16);
+      });
+      arrow.addEventListener("mouseleave", stopChangelogArrowScroll);
+      arrow.addEventListener("touchstart", function (e) {
+        e.preventDefault();
+        stopChangelogArrowScroll();
+        changelogArrowTimer = setInterval(function () {
+          changelogBody.scrollTop += direction * 10;
+        }, 16);
+      }, { passive: false });
+      arrow.addEventListener("touchend", stopChangelogArrowScroll);
+      arrow.addEventListener("touchcancel", stopChangelogArrowScroll);
+      arrow.addEventListener("click", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        changelogBody.scrollBy({ top: direction * changelogBody.clientHeight * 0.7, behavior: "smooth" });
+      });
+    }
+    changelogBody.addEventListener("scroll", updateChangelogScrollArrows);
+    wireChangelogScrollArrow(changelogArrowTop, -1);
+    wireChangelogScrollArrow(changelogArrowBottom, 1);
+    // re-check whenever the modal's own size changes — native resize-drag
+    // or the maximize/restore toggle both change how much of the log fits
+    // without the body's content (and thus scrollHeight) changing at all
+    if (window.ResizeObserver) {
+      new ResizeObserver(updateChangelogScrollArrows).observe(changelogBody);
+    }
 
-  // nav.js separately shows a "New here? Add your info" hint near the
-  // profile icon, which dismisses itself for good on the very next click
-  // anywhere on the page — without this, picking ANY of the three options
-  // below (a brand-new visitor's first-ever click) would silently kill
-  // that hint too, even though nothing about choosing a getting-started
-  // path means they've actually filled in their profile yet
-  overlay.addEventListener('click', function(e){ e.stopPropagation(); });
-  overlay.addEventListener('click', function(e){ if (e.target === overlay) dismiss(true); });
-  overlay.querySelector('.hp-welcome-close').addEventListener('click', function(){ dismiss(true); });
-  overlay.querySelector('.hp-welcome-option-skip').addEventListener('click', function(){ dismiss(true); });
-  overlay.querySelectorAll('a.hp-welcome-option').forEach(function(a){
-    a.addEventListener('click', function(){ localStorage.setItem(WELCOME_KEY, '1'); });
-  });
-  document.addEventListener('keydown', onKeydown);
+    function openChangelogModal(trigger) {
+      var template = document.getElementById(trigger.getAttribute("data-changelog-target"));
+      if (!template) return;
+      changelogTitle.innerHTML = trigger.getAttribute("data-changelog-title") || "Change Log";
+      changelogBody.innerHTML = "";
+      changelogBody.appendChild(template.content.cloneNode(true));
+      changelogBody.scrollTop = 0;
+      changelogOverlay.classList.add("is-open");
+      document.body.style.overflow = "hidden";
+      changelogClose.focus();
+      updateChangelogScrollArrows();
+    }
 
-  var modal = overlay.querySelector('.hp-welcome-modal');
-  if (modal) modal.focus();
-})();
-</script>
+    function closeChangelogModal() {
+      changelogOverlay.classList.remove("is-open");
+      document.body.style.overflow = "";
+      restoreChangelogModal();
+    }
+
+    document.querySelectorAll(".changelog-modal-trigger").forEach(function (btn) {
+      btn.addEventListener("click", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        openChangelogModal(btn);
+      });
+    });
+
+    changelogClose.addEventListener("click", closeChangelogModal);
+    changelogOverlay.addEventListener("click", function (e) {
+      if (e.target === changelogOverlay) closeChangelogModal();
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && changelogOverlay.classList.contains("is-open")) closeChangelogModal();
+    });
+  </script>
 </body>
 </html>
