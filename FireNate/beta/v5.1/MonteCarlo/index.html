@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script src="../assets/js/theme-init.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FireNate - Monte Carlo Simulator</title>
+<meta name="description" content="Stress-test your withdrawal plan against thousands of randomly reshuffled historical market sequences — not just the cycles that actually happened — to see your probability of success and the range of possible outcomes.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Antonio:wght@400;500;600;700&family=Michroma&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/site.css">
+<link rel="stylesheet" href="../assets/css/timeToFI.css">
+<link rel="stylesheet" href="../assets/css/toolbar.css">
+<script src="../assets/js/theme.js" defer></script>
+<script src="../assets/js/user-profile.js" defer></script>
+<script src="../assets/js/nav.js" defer></script>
+<script src="../assets/js/profile-autofill.js" defer></script>
+<script src="../assets/js/field-help.js" defer></script>
+<script>
+window.FN_BASE = "../"; window.FN_PAGE = "monte-carlo";
+window.FN_FIELD_HELP = {
+  "title": "About this Tool",
+  "intro": "This stress-tests a withdrawal rate against thousands of randomized market-return sequences, instead of a single fixed historical path, to show the probability your money lasts.",
+  "sections": [
+    {
+      "heading": "Inputs",
+      "items": [
+        {
+          "label": "Starting Portfolio",
+          "text": "Your portfolio balance on day one of retirement."
+        },
+        {
+          "label": "Withdrawal Rate",
+          "text": "The percent of your starting portfolio you withdraw each year (adjusted for inflation thereafter)."
+        },
+        {
+          "label": "Retirement Length",
+          "text": "How many years the portfolio needs to last."
+        },
+        {
+          "label": "Annual Fees",
+          "text": "Fund expense ratios and advisory fees, as a percent of the portfolio per year — a steady drag on returns."
+        },
+        {
+          "label": "Simulations",
+          "text": "How many randomized market scenarios to run. More simulations give a smoother, more reliable success-rate estimate, at the cost of taking a bit longer to compute."
+        }
+      ]
+    }
+  ]
+};
+window.FN_PROFILE_FIELDS = {
+  currentSavings: "#startPortfolio"
+};
+window.FN_PROFILE_LEGACY_KEY = "monteCarloInputs";
+</script>
+<style>
+  /* ---------- toolbar overrides (shared: assets/css/toolbar.css) ---------- */
+  .mc-field select{
+      background:rgba(0,0,0,0.22); border:1px solid transparent; border-radius:7px; color:var(--toolbar-text);
+    font-family:var(--mono); font-size:14.5px; font-weight:500; padding:8px 10px; outline:none;
+    transition:border-color .15s, box-shadow .15s; box-shadow:0 1px 2px rgba(0,0,0,0.2);
+    width:104px; cursor:pointer;
+  }
+  .mc-field select:focus{ border-color:var(--gold-bright); box-shadow:0 0 0 3px rgba(243,178,58,0.28); }
+  .mc-save-row{ display:flex; align-items:center; gap:10px; }
+  .mc-save .rerun-btn{
+    background:rgba(79,216,232,0.1); border:1px solid var(--teal-bright); color:var(--teal-bright);
+    font-family:var(--mono); font-size:11.5px; letter-spacing:.05em; text-transform:uppercase;
+    padding:7px 16px; border-radius:20px; cursor:pointer; transition:background-color .15s, color .15s; white-space:nowrap;
+  }
+  .mc-save .rerun-btn:hover{ background:var(--teal-bright); color:var(--toolbar-bg-solid); }
+  .mc-save .rerun-btn:active{ transform:translateY(1px); }
+
+  /* ---------- EXPLAINER ---------- */
+  .mc-explainer{
+    background:var(--surface); border:1px solid var(--line); border-top:4px solid var(--target);
+    border-radius:var(--radius); padding:22px 24px; margin-top:4px;
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:20px;
+  }
+  .mc-explainer-step .tag{
+    font-family:var(--mono); font-size:10.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+    margin-bottom:6px; display:block;
+  }
+  .mc-explainer-step.s1 .tag{ color:var(--gold); }
+  .mc-explainer-step.s2 .tag{ color:var(--target); }
+  .mc-explainer-step.s3 .tag{ color:var(--jade); }
+  .mc-explainer-step p{ margin:0; font-size:13.5px; color:var(--ink-dim); line-height:1.6; }
+  .mc-explainer-step strong{ color:var(--ink); }
+  .mc-explainer-note{
+    grid-column:1/-1; margin-top:2px; padding-top:14px; border-top:1px dashed var(--line-soft);
+    font-size:12px; color:var(--ink-faint); line-height:1.6;
+  }
+
+  /* ---------- VERDICT BANNER ---------- */
+  .mc-verdict{
+    display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+    background:var(--surface); border:1px solid var(--line); border-top:4px solid var(--gold);
+    border-radius:var(--radius); padding:22px 24px; margin-top:4px;
+  }
+  .mc-verdict.good{ border-top-color:var(--jade); }
+  .mc-verdict.warn{ border-top-color:var(--danger); }
+  [data-theme="lcars"] .mc-verdict-headline{ font-family:var(--display); letter-spacing:.02em; }
+  .mc-verdict-headline{ font-family:var(--serif); font-size:22px; font-weight:600; color:var(--ink); margin:0 0 4px; }
+  .mc-verdict-sub{ font-size:13px; color:var(--ink-dim); margin:0; }
+  [data-theme="lcars"] .mc-verdict-amt{ font-family:var(--mono); font-variant-numeric:tabular-nums; }
+  .mc-verdict-amt{ font-family:var(--serif); font-size:34px; font-weight:600; }
+  .mc-verdict-amt.jade{ color:var(--jade); }
+  .mc-verdict-amt.danger{ color:var(--danger); }
+
+  /* ---------- inline SVG percentile-fan chart (no external chart library) ---------- */
+  #mcChart{ width:100%; height:auto; display:block; overflow:visible; }
+  .mc-band{ fill:var(--target); opacity:0.14; }
+  .mc-line-median{ fill:none; stroke:var(--jade); stroke-width:2.5; stroke-linecap:round; stroke-linejoin:round; }
+  .mc-line-p10{ fill:none; stroke:var(--danger); stroke-width:1.5; stroke-dasharray:4 3; stroke-linecap:round; stroke-linejoin:round; }
+  .mc-line-p90{ fill:none; stroke:var(--target); stroke-width:1.5; stroke-dasharray:4 3; stroke-linecap:round; stroke-linejoin:round; }
+  .mc-hit:focus{ outline:none; }
+  .mc-hit:focus-visible{ outline:2px solid var(--jade); outline-offset:2px; }
+  .mc-grid-line{ stroke:var(--line); stroke-width:1; }
+  .mc-grid-label, .mc-axis-label{ font-family:var(--mono); font-size:10px; fill:var(--ink-faint); }
+  #mcTooltip{
+    position:fixed; pointer-events:none; background:var(--surface); border:1px solid var(--line);
+    border-radius:10px; padding:9px 13px; font-family:var(--mono); font-size:12px; color:var(--ink);
+    opacity:0; transform:translate(-50%,-115%); transition:opacity .12s; z-index:50;
+    white-space:nowrap; box-shadow:0 8px 24px -10px rgba(0,0,0,0.45);
+  }
+  #mcTooltip .yr{ color:var(--ink-faint); margin-bottom:3px; }
+  [data-theme="neon"] #mcTooltip .yr{ color:var(--ink-dim); }
+  #mcTooltip .row{ display:flex; justify-content:space-between; gap:14px; }
+
+  /* ---------- note cards: below the status strip, one topic per box ---------- */
+  .mc-notes{
+    display:grid; grid-template-columns:repeat(auto-fit, minmax(230px, 1fr));
+    gap:14px; margin-top:16px;
+  }
+  .mc-note{
+    background:var(--surface); border:1px solid var(--line); border-top:3px solid var(--target);
+    border-radius:var(--radius); padding:16px 18px;
+    color:var(--ink-faint); font-size:13px; line-height:1.55; margin:0;
+  }
+  .mc-note b{ color:var(--ink-dim); }
+  .mc-note[hidden]{ display:none; }
+  .mc-note#mcNoteTargetRate{ border-top-color:var(--jade); }
+  .mc-note#mcNoteFailTiming{ border-top-color:var(--danger); }
+  .mc-note#mcNoteFees{ border-top-color:var(--plum); }
+  .mc-note-label{
+    display:block; color:var(--ink); font-weight:700; font-size:10.5px;
+    letter-spacing:0.08em; text-transform:uppercase; margin-bottom:6px;
+  }
+</style>
+</head>
+<body>
+<div id="fn-site-nav"></div>
+
+<div class="mc-inputs" id="mcInputs">
+  <div class="wrap mc-summary-row" style="position:relative">
+    <div class="mc-summary" id="mcSummary">&mdash;</div>
+    <button type="button" class="fn-help-btn" style="position:absolute; right:20px; top:50%; transform:translateY(-50%)" aria-label="What do these inputs mean?">?</button>
+  </div>
+  <div class="mc-content" id="mcContent">
+    <div class="wrap mc-inner">
+      <div class="mc-fields">
+        <div class="mc-field">
+          <label for="startPortfolio">Starting Portfolio</label>
+          <div class="mc-input-row"><span class="mc-prefix">$</span><input type="text" inputmode="decimal" pattern="[0-9,.]*" id="startPortfolio" value="1,000,000.00"></div>
+        </div>
+        <div class="mc-field">
+          <label for="withdrawRate">Withdrawal Rate</label>
+          <div class="mc-input-row"><input class="mc-narrow" type="number" step="0.1" inputmode="decimal" id="withdrawRate" value="4" min="1" max="10"><span class="mc-suffix">%</span></div>
+        </div>
+        <div class="mc-field">
+          <label for="retireLength">Retirement Length</label>
+          <div class="mc-input-row"><input class="mc-narrow" type="number" id="retireLength" value="30" min="5" max="60" step="1"><span class="mc-suffix">yrs</span></div>
+        </div>
+        <div class="mc-field">
+          <label for="feeRate">Annual Fees</label>
+          <div class="mc-input-row"><input class="mc-narrow" type="number" step="0.05" inputmode="decimal" id="feeRate" value="0.10" min="0" max="3"><span class="mc-suffix">%</span></div>
+        </div>
+        <div class="mc-field">
+          <label for="numTrials">Simulations</label>
+          <div class="mc-input-row">
+            <select id="numTrials">
+              <option value="500">500</option>
+              <option value="1000">1,000</option>
+              <option value="2000" selected>2,000</option>
+              <option value="5000">5,000</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="mc-save">
+        <span class="save-status" id="mcSaveStatus">Not saved yet</span>
+        <div class="mc-save-row">
+          <button type="button" id="rerunBtn" class="rerun-btn">Shuffle again</button>
+          <button type="button" id="resetBtn" class="reset-btn">Reset to defaults</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="wrap mc-toggle-row">
+    <button id="mcToggle" type="button" class="mc-toggle" aria-expanded="true" aria-controls="mcContent">
+      <svg class="mc-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+      <span id="mcToggleLabel">Hide inputs</span>
+    </button>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">FIRE Nate - Monte Carlo Simulator</p>
+    <h1 id="pageTitleHeader">History only happened <em>one way</em> &mdash; this tests thousands of others.</h1>
+    <p class="lede">Safe Withdrawal Rate tests every real historical starting year. This goes further: it randomly reshuffles the same historical annual returns into thousands of alternate sequences your retirement could have lived through, to estimate a probability of success instead of a pass/fail count.</p>
+  </header>
+
+  <div class="mc-explainer">
+    <div class="mc-explainer-step s1">
+      <span class="tag">Bootstrap resampling</span>
+      <p>Each simulated retirement <strong>randomly draws a real S&amp;P 500 annual return</strong> (1928&ndash;2025) for every year, with replacement &mdash; so the same historical years can repeat or skip in any order, not just the sequence they actually occurred in.</p>
+    </div>
+    <div class="mc-explainer-step s2">
+      <span class="tag">Sequence-of-returns risk</span>
+      <p>A crash early in retirement, while you're still withdrawing from a full balance, does far more damage than the same crash late in retirement. <strong>Shuffling the order</strong> is exactly how this risk gets tested.</p>
+    </div>
+    <div class="mc-explainer-step s3">
+      <span class="tag">Reading the results</span>
+      <p>The success rate is the share of simulated retirements that never ran out of money. The shaded band on the chart shows <strong>where most outcomes actually land</strong> &mdash; not just the median.</p>
+    </div>
+    <div class="mc-explainer-note">
+      This resamples real historical years rather than assuming returns are perfectly random and independent (they aren't, in real markets), which is a common, reasonably grounded approach — but still just a model. Because it's random, the exact success rate will shift a little each time you change an input or click "Shuffle again"; that variation is expected, not a bug, and shrinks as you raise the number of simulations.
+    </div>
+  </div>
+
+  <h2 class="ledger-title" style="margin-top: 40px; margin-bottom: 4px;">Verdict</h2>
+  <div class="mc-verdict" id="mcVerdict"></div>
+
+  <h2 class="ledger-title" style="margin-top: 40px; margin-bottom: 4px;">Summary</h2>
+  <div class="status" id="statusStrip"></div>
+  <div class="mc-notes" id="mcNotes">
+    <p class="mc-note" id="mcNoteTargetRate" hidden></p>
+    <p class="mc-note" id="mcNoteFailTiming" hidden></p>
+    <p class="mc-note" id="mcNoteFees" hidden></p>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h2>Range of possible outcomes</h2>
+      <span class="sub">MEDIAN PATH, WITH THE 10TH&ndash;90TH PERCENTILE BAND</span>
+    </div>
+    <div class="chart-card">
+      <svg id="mcChart" viewBox="0 0 1120 340"></svg>
+      <div id="mcTooltip"></div>
+      <div class="legend-row">
+        <span class="legend-dot jade"></span> Median balance
+        <span class="legend-dot" style="background:var(--target);"></span> 90th percentile
+        <span class="legend-dot" style="background:var(--danger);"></span> 10th percentile
+      </div>
+    </div>
+  </div>
+
+<footer id="site-footer"></footer>
+
+</div>
+
+<script src="../assets/js/calc-utils.js"></script>
+<script>
+/* Real (inflation-adjusted) S&P 500 total annual returns, 1928-2025.
+   Source: nominal returns from NYU Stern (Damodaran), CPI from usinflationcalculator.com.
+   Same dataset used by Safe Withdrawal Rate / Withdrawal Guardrails, resampled here
+   (randomly, with replacement) instead of walked through as fixed historical cycles. */
+const SP500_REAL_RETURNS = [
+  [1928,0.463],[1929,-0.083],[1930,-0.2336],[1931,-0.3829],[1932,0.014],[1933,0.5804],
+  [1934,-0.0416],[1935,0.4358],[1936,0.2999],[1937,-0.3759],[1938,0.3205],[1939,0.003],
+  [1940,-0.1129],[1941,-0.1692],[1942,0.0746],[1943,0.1787],[1944,0.1704],[1945,0.3277],
+  [1946,-0.1545],[1947,-0.0804],[1948,-0.0222],[1949,0.1974],[1950,0.2913],[1951,0.1462],
+  [1952,0.1595],[1953,-0.0199],[1954,0.515],[1955,0.3313],[1956,0.0585],[1957,-0.1332],
+  [1958,0.3981],[1959,0.1128],[1960,-0.0134],[1961,0.2539],[1962,-0.0971],[1963,0.2104],
+  [1964,0.1493],[1965,0.1063],[1966,-0.1251],[1967,0.2008],[1968,0.0634],[1969,-0.1302],
+  [1970,-0.0202],[1971,0.0941],[1972,0.1508],[1973,-0.1931],[1974,-0.3324],[1975,0.2557],
+  [1976,0.1704],[1977,-0.1266],[1978,-0.0101],[1979,0.0649],[1980,0.1607],[1981,-0.136],
+  [1982,0.1339],[1983,0.1855],[1984,0.0177],[1985,0.2668],[1986,0.1628],[1987,0.0213],
+  [1988,0.1195],[1989,0.2546],[1990,-0.0803],[1991,0.2498],[1992,0.0436],[1993,0.0677],
+  [1994,-0.0124],[1995,0.3346],[1996,0.1911],[1997,0.3011],[1998,0.2632],[1999,0.1829],
+  [2000,-0.1202],[2001,-0.1425],[2002,-0.232],[2003,0.2547],[2004,0.0783],[2005,0.0138],
+  [2006,0.1203],[2007,0.0261],[2008,-0.3887],[2009,0.2645],[2010,0.1301],[2011,-0.0107],
+  [2012,0.1351],[2013,0.302],[2014,0.1173],[2015,0.0128],[2016,0.1034],[2017,0.1911],
+  [2018,-0.0647],[2019,0.2889],[2020,0.1662],[2021,0.227],[2022,-0.2411],[2023,0.211],
+  [2024,0.2136],[2025,0.148]
+];
+
+const $ = id => document.getElementById(id);
+const fmtUSD = n => n.toLocaleString('en-US', {style:'currency', currency:'USD', maximumFractionDigits:0});
+const fmtNum = n => n.toLocaleString('en-US', {maximumFractionDigits:1});
+const formatCurrencyField = id => {
+  const raw = parseCurrency(id);
+  $(id).value = raw.toLocaleString('en-US', {maximumFractionDigits:2});
+};
+function sanitizeCurrencyInput(id){
+  const el = $(id);
+  const before = el.value;
+  const cursorFromEnd = before.length - (el.selectionStart ?? before.length);
+  let cleaned = before.replace(/[^0-9.,]/g, '');
+  const parts = cleaned.split('.');
+  if (parts.length > 2){
+    cleaned = parts[0] + '.' + parts.slice(1).join('');
+  }
+  if (cleaned !== before){
+    el.value = cleaned;
+    const newPos = Math.max(0, cleaned.length - cursorFromEnd);
+    el.setSelectionRange(newPos, newPos);
+  }
+}
+
+// ---------- sticky, collapsible input toolbar ----------
+const COLLAPSE_KEY = 'monte-carlo-inputs-collapsed';
+const mcInputsEl = $('mcInputs');
+const mcToggle = $('mcToggle');
+const mcToggleLabel = $('mcToggleLabel');
+const mcSummary = $('mcSummary');
+const mcSaveStatus = $('mcSaveStatus');
+
+let inputsCollapsed = false;
+function setInputsCollapsed(collapsed){
+  inputsCollapsed = collapsed;
+  if (mcInputsEl) mcInputsEl.classList.toggle('collapsed', collapsed);
+  if (mcToggle) mcToggle.setAttribute('aria-expanded', String(!collapsed));
+  if (mcToggleLabel) mcToggleLabel.textContent = collapsed ? 'Show inputs' : 'Hide inputs';
+  try { localStorage.setItem(COLLAPSE_KEY, collapsed ? '1' : '0'); } catch(e) {}
+}
+if (mcToggle){
+  mcToggle.addEventListener('click', () => setInputsCollapsed(!inputsCollapsed));
+}
+
+function pad2(n){ return String(n).padStart(2, '0'); }
+function updateSaveStatus(){
+  if (!mcSaveStatus) return;
+  const d = new Date();
+  mcSaveStatus.textContent = `Last saved: ${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
+}
+function updateMcSummary(m){
+  if (!mcSummary) return;
+  mcSummary.textContent = `Success rate: ${fmtNum(m.successRate)}%  |  Median ending balance: ${fmtUSD(m.medianEnding)}  |  ${m.numTrials.toLocaleString('en-US')} simulations`;
+}
+
+// ---------- one simulated retirement, drawing a random historical year (with
+// replacement) for every year of the horizon, instead of a fixed contiguous
+// historical block ----------
+function runTrial(startPortfolio, withdrawRate, years, feeRate){
+  const withdrawal = startPortfolio * (withdrawRate / 100);
+  let balance = startPortfolio;
+  const balances = [balance];
+  for (let y = 0; y < years; y++){
+    const idx = Math.floor(Math.random() * SP500_REAL_RETURNS.length);
+    const r = SP500_REAL_RETURNS[idx][1];
+    balance = balance * (1 + r - feeRate / 100) - withdrawal;
+    if (balance < 0) balance = 0;
+    balances.push(balance);
+  }
+  return { balances, survived: balances[balances.length - 1] > 0, endingBalance: balances[balances.length - 1] };
+}
+
+function percentile(sortedArr, p){
+  if (!sortedArr.length) return 0;
+  const idx = Math.min(sortedArr.length - 1, Math.max(0, Math.floor(p * (sortedArr.length - 1))));
+  return sortedArr[idx];
+}
+
+// Just the success rate at a given rate — used by the target-rate search
+// and the fee-drag what-if below, both of which need their own smaller,
+// fixed-size trial batch rather than reusing the user's chosen numTrials
+// (which can run up to 5,000 and would make either what-if noticeably
+// slower to fold into every keystroke's render).
+function successRateAt(withdrawRate, years, feeRate, trials){
+  let successCount = 0;
+  for (let t = 0; t < trials; t++){
+    if (runTrial(1, withdrawRate, years, feeRate).survived) successCount++;
+  }
+  return (successCount / trials) * 100;
+}
+
+// Bisection instead of a full linear scan across rates — success rate is
+// monotonic (non-increasing) in the withdrawal rate, so ~8 evaluations
+// converge to within ~0.04 percentage points, far cheaper than scanning
+// every 0.1% step while still landing on a stable estimate.
+function findRateForTargetSuccess(years, feeRate, targetSuccess){
+  const TRIALS = 400;
+  let lo = 0.5, hi = 10;
+  if (successRateAt(lo, years, feeRate, TRIALS) < targetSuccess) return null;
+  for (let i = 0; i < 8; i++){
+    const mid = (lo + hi) / 2;
+    const sr = successRateAt(mid, years, feeRate, TRIALS);
+    if (sr >= targetSuccess) lo = mid; else hi = mid;
+  }
+  return lo;
+}
+
+function computeFailureTiming(trials, years){
+  const failYears = [];
+  trials.forEach(t => {
+    if (t.survived) return;
+    const idx = t.balances.findIndex(b => b <= 0);
+    failYears.push(idx === -1 ? years : idx);
+  });
+  if (!failYears.length) return null;
+  failYears.sort((a, b) => a - b);
+  return { count: failYears.length, medianYear: percentile(failYears, 0.5) };
+}
+
+function computeFeeDrag(startPortfolio, withdrawRate, years, feeRate, successRate){
+  if (feeRate <= 0) return null;
+  const TRIALS = 800;
+  const zeroFeeSuccessRate = successRateAt(withdrawRate, years, 0, TRIALS);
+  const delta = zeroFeeSuccessRate - successRate;
+  return { zeroFeeSuccessRate, delta };
+}
+
+function compute(){
+  const startPortfolio = parseCurrency('startPortfolio');
+  const withdrawRate = parseFloat($('withdrawRate').value) || 0;
+  const years = Math.max(1, Math.min(60, parseInt($('retireLength').value, 10) || 30));
+  const feeRate = parseFloat($('feeRate').value) || 0;
+  const numTrials = parseInt($('numTrials').value, 10) || 2000;
+
+  const trials = [];
+  for (let t = 0; t < numTrials; t++){
+    trials.push(runTrial(startPortfolio, withdrawRate, years, feeRate));
+  }
+
+  const successCount = trials.filter(t => t.survived).length;
+  const successRate = (successCount / numTrials) * 100;
+
+  // percentile fan: at each year, gather every trial's balance and take the
+  // 10th/50th/90th percentile — this is what draws the "cone" on the chart
+  const fan = [];
+  for (let y = 0; y <= years; y++){
+    const valuesAtY = trials.map(t => t.balances[y]).sort((a, b) => a - b);
+    fan.push({
+      year: y,
+      p10: percentile(valuesAtY, 0.10),
+      p50: percentile(valuesAtY, 0.50),
+      p90: percentile(valuesAtY, 0.90)
+    });
+  }
+
+  const endingSorted = trials.map(t => t.endingBalance).sort((a, b) => a - b);
+  const failureTiming = computeFailureTiming(trials, years);
+
+  return {
+    startPortfolio, withdrawRate, years, feeRate, numTrials,
+    successRate, fan, failureTiming,
+    medianEnding: percentile(endingSorted, 0.5),
+    p10Ending: percentile(endingSorted, 0.10),
+    p90Ending: percentile(endingSorted, 0.90)
+  };
+}
+
+// ---------- render ----------
+function render(){
+  const m = compute();
+
+  // verdict banner
+  const verdict = $('mcVerdict');
+  const good = m.successRate >= 90;
+  const warn = m.successRate < 75;
+  verdict.className = 'mc-verdict ' + (good ? 'good' : (warn ? 'warn' : ''));
+  verdict.innerHTML = `
+    <div>
+      <div class="mc-verdict-headline">${fmtNum(m.successRate)}% of simulated retirements succeeded</div>
+      <p class="mc-verdict-sub">Withdrawing ${fmtUSD(m.startPortfolio * m.withdrawRate / 100)}/yr from ${fmtUSD(m.startPortfolio)} for ${fmtNum(m.years)} years, across ${m.numTrials.toLocaleString('en-US')} randomly reshuffled historical sequences.</p>
+    </div>
+    <div class="mc-verdict-amt ${good ? 'jade' : (warn ? 'danger' : '')}">${fmtNum(m.successRate)}%</div>
+  `;
+
+  // status strip
+  const strip = $('statusStrip');
+  strip.innerHTML = '';
+  const add = (k, v, cls) => {
+    const div = document.createElement('div');
+    div.className = 'stat';
+    div.innerHTML = `<div class="k">${k}</div><div class="v ${cls||''}">${v}</div>`;
+    strip.appendChild(div);
+  };
+  add('Success rate', fmtNum(m.successRate) + '%', m.successRate >= 90 ? 'jade' : (m.successRate < 75 ? 'target' : ''));
+  add('Annual withdrawal', fmtUSD(m.startPortfolio * m.withdrawRate / 100));
+  add('Median ending balance', fmtUSD(m.medianEnding), 'jade');
+  add('10th percentile ending', fmtUSD(m.p10Ending));
+  add('90th percentile ending', fmtUSD(m.p90Ending), 'target');
+
+  updateMcSummary(m);
+  renderChart(m);
+  renderNotes(m);
+}
+
+const TARGET_SUCCESS = 90;
+
+function renderNotes(m){
+  const targetEl = $('mcNoteTargetRate');
+  if (targetEl){
+    const targetRate = findRateForTargetSuccess(m.years, m.feeRate, TARGET_SUCCESS);
+    if (targetRate !== null){
+      targetEl.hidden = false;
+      const cmp = m.withdrawRate <= targetRate
+        ? `Your <b>${fmtNum(m.withdrawRate)}%</b> rate is at or under that, consistent with the <b>${fmtNum(m.successRate)}%</b> success rate above.`
+        : `Your <b>${fmtNum(m.withdrawRate)}%</b> rate is above that, which is why your success rate is below ${TARGET_SUCCESS}%.`;
+      targetEl.innerHTML = `<span class="mc-note-label">Rate for a ${TARGET_SUCCESS}% target</span>To hit a <b>${TARGET_SUCCESS}%</b> Monte Carlo success rate for a ${fmtNum(m.years)}-year retirement, you could withdraw up to about <b>${fmtNum(targetRate)}%</b>. ${cmp} (Estimated from a smaller, faster sample — expect it to shift a little each time.)`;
+    } else {
+      targetEl.hidden = true;
+    }
+  }
+
+  const failEl = $('mcNoteFailTiming');
+  if (failEl){
+    if (m.failureTiming){
+      failEl.hidden = false;
+      failEl.innerHTML = `<span class="mc-note-label">When failures happen</span>Among the <b>${fmtNum(100 - m.successRate)}%</b> of simulations that failed, the money typically ran out around <b>year ${fmtNum(m.failureTiming.medianYear)}</b> of the ${fmtNum(m.years)}-year retirement.`;
+    } else {
+      failEl.hidden = true;
+    }
+  }
+
+  const feesEl = $('mcNoteFees');
+  if (feesEl){
+    const feeDrag = computeFeeDrag(m.startPortfolio, m.withdrawRate, m.years, m.feeRate, m.successRate);
+    if (feeDrag && Math.abs(feeDrag.delta) > 0.5){
+      feesEl.hidden = false;
+      feesEl.innerHTML = `<span class="mc-note-label">Cost of fees</span>At a <b>${fmtNum(m.feeRate)}%</b> annual fee, this plan has about a <b>${fmtNum(m.successRate)}%</b> success rate. With no fees at all, the same plan would run closer to <b>${fmtNum(feeDrag.zeroFeeSuccessRate)}%</b> &mdash; fees are costing you roughly <b>${fmtNum(feeDrag.delta)} percentage points</b> of success.`;
+    } else {
+      feesEl.hidden = true;
+    }
+  }
+}
+
+// ---------- inline SVG percentile-fan chart (no external chart library) ----------
+const mcSvgNS = 'http://www.w3.org/2000/svg';
+const mcChartSvg = $('mcChart');
+const mcTooltip = $('mcTooltip');
+
+function mcNiceCeil(v){
+  if (v <= 0) return 1;
+  const mag = Math.pow(10, Math.floor(Math.log10(v)));
+  const norm = v / mag;
+  let step;
+  if (norm <= 1) step = 1; else if (norm <= 2) step = 2; else if (norm <= 5) step = 5; else step = 10;
+  return step * mag;
+}
+
+function renderChart(m){
+  const W = 1120, H = 340;
+  const padL = 70, padR = 20, padT = 20, padB = 34;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const fan = m.fan;
+
+  mcChartSvg.innerHTML = '';
+  if (!fan.length) return;
+
+  const maxV = mcNiceCeil(Math.max(...fan.map(f => f.p90), 1) * 1.05);
+
+  function xAt(i){ return padL + (fan.length === 1 ? 0 : (i / (fan.length - 1)) * plotW); }
+  function yAt(v){ return padT + plotH - (Math.max(0, v) / maxV) * plotH; }
+
+  const steps = 5;
+  for (let i = 0; i <= steps; i++){
+    const val = maxV * i / steps;
+    const y = yAt(val);
+    const line = document.createElementNS(mcSvgNS, 'line');
+    line.setAttribute('x1', padL); line.setAttribute('x2', W - padR);
+    line.setAttribute('y1', y); line.setAttribute('y2', y);
+    line.setAttribute('class', 'mc-grid-line');
+    mcChartSvg.appendChild(line);
+
+    const label = document.createElementNS(mcSvgNS, 'text');
+    label.setAttribute('x', padL - 8); label.setAttribute('y', y + 4);
+    label.setAttribute('text-anchor', 'end'); label.setAttribute('class', 'mc-grid-label');
+    label.textContent = fmtUSD(val);
+    mcChartSvg.appendChild(label);
+  }
+
+  const maxLabels = 12;
+  const labelStep = Math.max(1, Math.ceil(fan.length / maxLabels));
+  fan.forEach((f, i) => {
+    if (i % labelStep !== 0 && i !== fan.length - 1) return;
+    const label = document.createElementNS(mcSvgNS, 'text');
+    label.setAttribute('x', xAt(i)); label.setAttribute('y', H - padB + 18);
+    label.setAttribute('text-anchor', 'middle'); label.setAttribute('class', 'mc-axis-label');
+    label.textContent = 'Yr ' + f.year;
+    mcChartSvg.appendChild(label);
+  });
+
+  // shaded 10th-90th percentile band
+  const topPts = fan.map((f, i) => xAt(i) + ',' + yAt(f.p90)).join(' ');
+  const bottomPts = fan.slice().reverse().map((f, i) => xAt(fan.length - 1 - i) + ',' + yAt(f.p10)).join(' ');
+  const band = document.createElementNS(mcSvgNS, 'polygon');
+  band.setAttribute('points', topPts + ' ' + bottomPts);
+  band.setAttribute('class', 'mc-band');
+  mcChartSvg.appendChild(band);
+
+  function drawLine(key, cls){
+    const pts = fan.map((f, i) => xAt(i) + ',' + yAt(f[key])).join(' ');
+    const poly = document.createElementNS(mcSvgNS, 'polyline');
+    poly.setAttribute('points', pts);
+    poly.setAttribute('class', cls);
+    mcChartSvg.appendChild(poly);
+  }
+  drawLine('p90', 'mc-line-p90');
+  drawLine('p10', 'mc-line-p10');
+  drawLine('p50', 'mc-line-median');
+
+  // invisible hover targets along the median line for a per-year tooltip
+  fan.forEach((f, i) => {
+    const hit = document.createElementNS(mcSvgNS, 'circle');
+    hit.setAttribute('class', 'mc-hit');
+    hit.setAttribute('cx', xAt(i)); hit.setAttribute('cy', yAt(f.p50));
+    hit.setAttribute('r', '9'); hit.setAttribute('fill', 'transparent');
+    hit.style.cursor = 'pointer';
+    hit.setAttribute('tabindex', '0');
+    hit.setAttribute('role', 'img');
+    hit.setAttribute('aria-label', `Year ${f.year}: 90th percentile ${fmtUSD(f.p90)}, median ${fmtUSD(f.p50)}, 10th percentile ${fmtUSD(f.p10)}.`);
+    const hitHtml = `<div class="yr">Year ${f.year}</div>` +
+      `<div class="row">90th pct <b>${fmtUSD(f.p90)}</b></div>` +
+      `<div class="row">Median <b>${fmtUSD(f.p50)}</b></div>` +
+      `<div class="row">10th pct <b>${fmtUSD(f.p10)}</b></div>`;
+    hit.addEventListener('mousemove', (e) => {
+      mcTooltip.style.opacity = 1;
+      mcTooltip.style.left = e.clientX + 'px';
+      mcTooltip.style.top = e.clientY + 'px';
+      mcTooltip.innerHTML = hitHtml;
+    });
+    hit.addEventListener('mouseleave', () => { mcTooltip.style.opacity = 0; });
+    hit.addEventListener('focus', () => {
+      const r = hit.getBoundingClientRect();
+      mcTooltip.style.opacity = 1;
+      mcTooltip.style.left = (r.left + r.width / 2) + 'px';
+      mcTooltip.style.top = r.top + 'px';
+      mcTooltip.innerHTML = hitHtml;
+    });
+    hit.addEventListener('blur', () => { mcTooltip.style.opacity = 0; });
+    mcChartSvg.appendChild(hit);
+  });
+}
+
+// ---------- persistence ----------
+const STORAGE_KEY = 'monteCarloInputs';
+const DEFAULTS = {
+  startPortfolio: '1000000', withdrawRate: '4', retireLength: '30', feeRate: '0.10', numTrials: '2000'
+};
+const CURRENCY_FIELDS = ['startPortfolio'];
+const ALL_FIELDS = Object.keys(DEFAULTS);
+
+function saveInputs(){
+  const vals = {};
+  ALL_FIELDS.forEach(id => { vals[id] = $(id).value; });
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(vals)); } catch(e) { /* storage unavailable, ignore */ }
+  updateSaveStatus();
+}
+function loadInputs(){
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const vals = JSON.parse(raw);
+    Object.keys(vals).forEach(id => { if ($(id)) $(id).value = vals[id]; });
+  } catch(e) { /* storage unavailable or corrupt, ignore */ }
+}
+
+// Persisting on every keystroke means an interrupted edit — select-all a
+// field to retype it, then get pulled away before finishing — saves
+// whatever partial digits were typed so far as the permanent value.
+// render() still runs on every keystroke for instant visual feedback; only
+// the localStorage write is debounced, so a normal typing pause settles on
+// the finished number instead of a mid-edit fragment. blur still saves
+// immediately (the field is done being edited at that point).
+let saveDebounceTimer = null;
+function scheduleSave(){
+  if (saveDebounceTimer) clearTimeout(saveDebounceTimer);
+  saveDebounceTimer = setTimeout(saveInputs, 500);
+}
+
+ALL_FIELDS.forEach(id => {
+  if (CURRENCY_FIELDS.includes(id)) return; // wired separately below with sanitization
+  $(id).addEventListener('input', () => { scheduleSave(); render(); });
+  $(id).addEventListener('change', () => { scheduleSave(); render(); });
+});
+CURRENCY_FIELDS.forEach(id => {
+  $(id).addEventListener('input', () => { sanitizeCurrencyInput(id); scheduleSave(); render(); });
+  $(id).addEventListener('blur', () => { if (saveDebounceTimer) { clearTimeout(saveDebounceTimer); saveDebounceTimer = null; } formatCurrencyField(id); saveInputs(); });
+});
+
+$('rerunBtn').addEventListener('click', render); // same inputs, fresh random draws
+
+$('resetBtn').addEventListener('click', () => {
+  Object.keys(DEFAULTS).forEach(id => { $(id).value = DEFAULTS[id]; });
+  if (window.FNProfileAutofill) window.FNProfileAutofill.apply(true);
+  CURRENCY_FIELDS.forEach(formatCurrencyField);
+  saveInputs();
+  render();
+});
+
+loadInputs();
+CURRENCY_FIELDS.forEach(formatCurrencyField);
+try { setInputsCollapsed(localStorage.getItem(COLLAPSE_KEY) === '1'); } catch(e) { setInputsCollapsed(false); }
+render();
+</script>
+</body>
+</html>

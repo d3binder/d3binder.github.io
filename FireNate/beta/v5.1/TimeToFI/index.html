@@ -1,0 +1,1563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script src="../assets/js/theme-init.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FireNate - Time To FI</title>
+<meta name="description" content="Enter your income, savings, and goal to see how many years — and what age — your current savings rate actually gets you to financial independence.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Antonio:wght@400;500;600;700&family=Michroma&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/site.css">
+<link rel="stylesheet" href="../assets/css/timeToFI.css">
+<link rel="stylesheet" href="../assets/css/toolbar.css">
+<script src="../assets/js/theme.js" defer></script>
+<script src="../assets/js/user-profile.js" defer></script>
+<script src="../assets/js/nav.js" defer></script>
+<script src="../assets/js/profile-autofill.js" defer></script>
+<script src="../assets/js/field-help.js" defer></script>
+<script>
+window.FN_BASE = "../"; window.FN_PAGE = "time-to-fi";
+window.FN_FIELD_HELP = {
+  "title": "About this Tool",
+  "intro": "The core calculator: how long it'll take your current savings rate to reach your financial independence goal.",
+  "sections": [
+    {
+      "heading": "Inputs",
+      "items": [
+        {
+          "label": "Annual Income",
+          "text": "Your gross annual income — used alongside savings to figure your savings rate."
+        },
+        {
+          "label": "Current Savings Rate",
+          "text": "What share of your income you're actually saving right now. Highlighted in the chart, ledger, and summary so you can see how it stacks up against every other hypothetical rate — and against the rate you'd actually need to hit your retirement age."
+        },
+        {
+          "label": "Goal Amount",
+          "text": "The portfolio size you're aiming for."
+        },
+        {
+          "label": "Savings",
+          "text": "What you've already saved toward your goal."
+        },
+        {
+          "label": "Age",
+          "text": "Your age right now."
+        },
+        {
+          "label": "Annual Return Rate",
+          "text": "The average annual investment growth rate you expect."
+        },
+        {
+          "label": "Life Expectancy",
+          "text": "Used as a reference marker on the timeline, not part of the FI calculation itself."
+        },
+        {
+          "label": "Retirement Age",
+          "text": "A target age shown on the timeline for reference/comparison against when you'd actually hit your goal."
+        }
+      ]
+    }
+  ]
+};
+window.FN_PROFILE_FIELDS = {
+  currentAge: "#age",
+  currentIncome: "#income",
+  currentSavings: "#savings",
+  goalAmount: "#goal",
+  retireAge: "#targetAge",
+  expectedReturn: "#returnPct"
+};
+window.FN_PROFILE_LEGACY_KEY = "fi-runway-inputs";
+</script>
+<style>
+  /* ---------- toolbar overrides (shared: assets/css/toolbar.css) ---------- */
+  :root{ --toolbar-input-width:112px; --toolbar-narrow-width:66px; }
+
+  /* ---------- inline SVG bar chart (no external chart library) ---------- */
+  #fiChart{ width:100%; height:auto; display:block; overflow:visible; }
+  .fi-bar-age{ fill:var(--gold); transition:opacity .15s ease; cursor:pointer; }
+  .fi-bar-freedom{ fill:var(--jade); transition:opacity .15s ease; cursor:pointer; }
+  .fi-bar-ref{ fill:var(--ink-faint); transition:opacity .15s ease; cursor:pointer; }
+  .fi-bar-group:hover rect{ opacity:0.75; }
+  .fi-bar-group:focus{ outline:none; }
+  .fi-bar-group:focus-visible rect{ opacity:0.75; }
+  .fi-bar-group:focus-visible{ outline:2px solid var(--plum); outline-offset:2px; }
+  .fi-grid-line{ stroke:var(--line); stroke-width:1; }
+  .fi-grid-label, .fi-axis-label{
+    font-family:var(--mono); font-size:10px; fill:var(--ink-faint);
+  }
+  /* Marks the bar/line-dot for the user's own entered "Current Savings
+     Rate" among the fixed 0–100% ledger, so it reads as a landmark rather
+     than blending into the regular 5%-step milestones. */
+  .fi-bar-current{ stroke:var(--plum); stroke-width:2; }
+  .fi-current-marker{ fill:var(--plum); }
+  .fi-axis-label-current{ fill:var(--plum); font-weight:700; }
+  .chart-line-dot-current{ stroke:var(--plum); stroke-width:2; }
+  .fi-tooltip{
+    position:fixed; pointer-events:none; background:var(--surface); border:1px solid var(--line);
+    border-radius:10px; padding:9px 13px; font-family:var(--mono); font-size:12px; color:var(--ink);
+    opacity:0; transform:translate(-50%,-115%); transition:opacity .12s; z-index:50;
+    white-space:nowrap; box-shadow:0 8px 24px -10px rgba(0,0,0,0.45);
+  }
+  .fi-tooltip .yr{ color:var(--ink-faint); margin-bottom:3px; }
+  [data-theme="neon"] .fi-tooltip .yr{ color:var(--ink-dim); }
+  .fi-tooltip b{ color:var(--gold); }
+
+  /* ---------- hover-scrub overlay: shared by the two full-resolution
+     (101-point) line charts below, since per-point hover targets aren't
+     practical at that density — a single invisible hit-rect tracks the
+     nearest rate under the cursor instead. ---------- */
+  .chart-hover-rect{ fill:transparent; cursor:crosshair; }
+  .chart-hover-rect:focus{ outline:none; }
+  .chart-hover-rect:focus-visible{ outline:2px solid var(--plum); outline-offset:-2px; }
+  .chart-hover-line{ stroke:var(--ink-faint); stroke-width:1; stroke-dasharray:3 3; pointer-events:none; }
+
+  /* ---------- ledger: adjustable Δ-vs-row-N control ---------- */
+  /* Groups .sub with the new select so .panel-head's own space-between
+     still lands h2 on the left and this pair together on the right,
+     instead of splitting into three unevenly-spaced columns. */
+  .panel-head-right{ display:flex; align-items:baseline; gap:16px; flex-wrap:wrap; }
+  .delta-step-field{
+    display:inline-flex; align-items:center; gap:7px;
+    font-family:var(--mono); font-size:12.5px; color:var(--ink-faint);
+  }
+  .delta-step-field select{
+    font-family:var(--mono); font-size:12.5px; color:var(--ink);
+    background:var(--surface); border:1px solid var(--line); border-radius:6px;
+    padding:4px 8px; cursor:pointer;
+  }
+  .delta-step-field select:focus{ outline:none; border-color:var(--target); }
+
+  /* ---------- ledger: collapsed-by-default <details> wrapper ---------- */
+  .ledger-details{ margin-top:2px; }
+  .ledger-summary{
+    display:flex; align-items:center; gap:8px; cursor:pointer; list-style:none;
+    padding:4px 0 14px; color:var(--ink-faint);
+    font-family:var(--mono); font-size:12.5px; letter-spacing:0.04em; text-transform:uppercase;
+    user-select:none;
+  }
+  .ledger-summary::-webkit-details-marker{ display:none; }
+  .ledger-summary:hover{ color:var(--ink); }
+  .ledger-chevron{ transition:transform .15s ease; flex:none; }
+  .ledger-details[open] > .ledger-summary .ledger-chevron{ transform:rotate(180deg); }
+
+  /* ---------- fixed-return caveat, linking to Monte Carlo ---------- */
+  .ti-caveat{ color:var(--ink-faint); font-size:13px; line-height:1.5; max-width:56ch; margin:10px 0 0; }
+  .ti-caveat a{ color:var(--target); text-decoration:none; border-bottom:1px solid currentColor; }
+  .ti-caveat a:hover{ color:var(--gold); }
+
+  /* ---------- note cards: one topic per box, same shape used across the
+     site's other calculator pages ---------- */
+  .ti-notes{
+    display:grid; grid-template-columns:repeat(auto-fit, minmax(230px, 1fr));
+    gap:14px; margin-top:16px;
+  }
+  .ti-note{
+    background:var(--surface); border:1px solid var(--line); border-top:3px solid var(--target);
+    border-radius:var(--radius); padding:16px 18px;
+    color:var(--ink-faint); font-size:13px; line-height:1.55; margin:0;
+  }
+  .ti-note b{ color:var(--ink-dim); }
+  .ti-note[hidden]{ display:none; }
+  .ti-note#tiNoteMarginalDollar{ border-top-color:var(--gold); }
+  .ti-note#tiNoteSensitivity{ border-top-color:var(--danger); }
+  .ti-note#tiNoteGoalCheck{ border-top-color:var(--target); }
+  .ti-note-label{
+    display:block; color:var(--ink); font-weight:700; font-size:10.5px;
+    letter-spacing:0.08em; text-transform:uppercase; margin-bottom:6px;
+  }
+  .ti-scenario-toggle{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+  .ti-scenario-btn{
+    font-family:var(--mono); font-size:12px; font-weight:600;
+    padding:6px 13px; border-radius:999px; border:1px solid var(--line);
+    background:var(--surface-2); color:var(--ink-faint); cursor:pointer;
+  }
+  .ti-scenario-btn:hover:not(.active){ border-color:var(--gold); color:var(--ink-dim); }
+  .ti-scenario-btn.active{ background:var(--gold); color:#201205; border-color:var(--gold); }
+</style>
+</head>
+<body>
+<div id="fn-site-nav"></div>
+
+<div class="ti-inputs" id="tiInputs">
+  <div class="wrap ti-summary-row" style="position:relative">
+    <div class="ti-summary" id="tiSummary">&mdash;</div>
+    <button type="button" class="fn-help-btn" style="position:absolute; right:20px; top:50%; transform:translateY(-50%)" aria-label="What do these inputs mean?">?</button>
+  </div>
+  <div class="ti-content" id="tiContent">
+    <div class="wrap ti-inner">
+      <div class="ti-fields">
+        <div class="ti-field">
+          <label for="income">Annual Income</label>
+          <div class="ti-input-row"><span class="ti-prefix">$</span><input type="text" inputmode="decimal" pattern="[0-9,.]*" id="income" value="90,000.00"></div>
+        </div>
+        <div class="ti-field">
+          <label for="currentRate">Current Savings Rate</label>
+          <div class="ti-input-row"><input class="ti-narrow" type="number" inputmode="decimal" pattern="[0-9,.]*" id="currentRate" value="15" min="0" max="100" step="0.5"><span class="ti-suffix">%</span></div>
+        </div>
+        <div class="ti-field">
+          <label for="goal">Goal Amount</label>
+          <div class="ti-input-row"><span class="ti-prefix">$</span><input type="text" step="1000" inputmode="decimal" pattern="[0-9,.]*" id="goal" value="1,500,000.00"></div>
+        </div>
+        <div class="ti-field">
+          <label for="savings">Savings</label>
+          <div class="ti-input-row"><span class="ti-prefix">$</span><input type="text" step="1000" inputmode="decimal" pattern="[0-9,.]*" id="savings" value="80,000.00"></div>
+        </div>
+        <div class="ti-field">
+          <label for="age">Age</label>
+          <div class="ti-input-row"><input class="ti-narrow" type="number" id="age" value="30" min="0" max="100" step="0.5"></div>
+        </div>
+        <div class="ti-field">
+          <label for="returnPct">Annual Return Rate</label>
+          <div class="ti-input-row"><input class="ti-narrow" type="number" inputmode="decimal" pattern="[0-9,.]*" id="returnPct" value="8.5" min="-20" max="30" step="0.1"><span class="ti-suffix">%</span></div>
+        </div>
+        <div class="ti-field">
+          <label for="lifespan">Life Expectancy</label>
+          <div class="ti-input-row"><input class="ti-narrow" type="number" id="lifespan" value="79" min="0" max="120" step="1"></div>
+        </div>
+        <div class="ti-field">
+          <label for="targetAge">Retirement Age</label>
+          <div class="ti-input-row"><input class="ti-narrow" type="number" id="targetAge" value="45" min="0" max="120" step="0.5"></div>
+        </div>
+      </div>
+      <div class="ti-save">
+        <span class="save-status" id="tiSaveStatus">Not saved yet</span>
+        <button type="button" id="resetBtn" class="reset-btn">Reset to defaults</button>
+      </div>
+    </div>
+  </div>
+  <div class="wrap ti-toggle-row">
+    <button id="tiToggle" type="button" class="ti-toggle" aria-expanded="true" aria-controls="tiContent">
+      <svg class="ti-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+      <span id="tiToggleLabel">Hide inputs</span>
+    </button>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">FIRE Nate - Time To Financial Independence</p>
+    <h1 id="pageTitleHeader">How fast can you <em>fly</em> to <br/>financial independence?</h1>
+    <p class="lede">Enter your numbers below. Every point on the runway shows what a given savings rate buys you — in years, and in age — assuming your investments keep compounding along the way.</p>
+    <p class="ti-caveat">Every number here assumes a steady, fixed return every year — for how a variable market could shift these results, try the <a href="../MonteCarlo/index.html">Monte Carlo Simulator</a>.</p>
+  </header>
+
+  <h2 class="ledger-title" style="margin-top: 40px; margin-bottom: 4px;">Summary</h2>
+  <div class="status" id="statusStrip"></div>
+
+  <div id="ratesSection" style="margin-top: 24px;">
+    <h2 class="ledger-title" style="margin-bottom: 4px;">Reference Rates</h2>
+    <div class="status" id="statusStripRates"></div>
+  </div>
+
+  <div class="ti-notes" id="tiNotes">
+    <div class="ti-note" id="tiNoteMarginalDollar">
+      <span class="ti-note-label">What would extra money get you?</span>
+      <div class="ti-scenario-toggle" id="marginalDollarToggle">
+        <button type="button" class="ti-scenario-btn" data-amt="100">+$100/mo</button>
+        <button type="button" class="ti-scenario-btn active" data-amt="250">+$250/mo</button>
+        <button type="button" class="ti-scenario-btn" data-amt="500">+$500/mo</button>
+      </div>
+      <div id="marginalDollarText"></div>
+    </div>
+    <p class="ti-note" id="tiNoteSensitivity" hidden></p>
+    <p class="ti-note" id="tiNoteGoalCheck" hidden></p>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h2>Age at FI, against the years you get to keep</h2>
+      <span class="sub" id="ageFiChartSub">EVERY SAVINGS RATE, 0%–100%, STEP 1%, MEASURED AGAINST LIFE EXPECTANCY</span>
+    </div>
+    <div class="chart-card">
+      <div class="chart-mode-toggle" role="group" aria-label="Chart style">
+        <button type="button" class="chart-mode-btn" data-mode="bars">Bars</button>
+        <button type="button" class="chart-mode-btn active" data-mode="line">Line</button>
+      </div>
+      <svg id="fiChart" viewBox="0 0 1120 340"></svg>
+      <div id="fiTooltip" class="fi-tooltip"></div>
+      <div class="legend-row">
+        <span class="legend-dot gold"></span> Age reaching FI
+        <span class="legend-dot jade"></span> Years of freedom after
+        <span class="legend-dot grey"></span> Average life span (reference)
+        <span class="legend-dot plum"></span> Your current rate
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h2 id="FullLegerHeader">Full ledger</h2>
+      <div class="panel-head-right">
+        <span class="sub">0% — 100%, STEP 1%</span>
+        <label class="delta-step-field">Δ compares to
+          <select id="diffStep">
+            <option value="1" selected>previous row</option>
+            <option value="2">2 rows back</option>
+            <option value="3">3 rows back</option>
+            <option value="5">5 rows back</option>
+            <option value="7">7 rows back</option>
+            <option value="10">10 rows back</option>
+          </select>
+        </label>
+      </div>
+    </div>
+    <details class="ledger-details" id="ledgerDetails">
+      <summary class="ledger-summary">
+        <svg class="ledger-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        <span id="ledgerSummaryLabel">Show ledger</span>
+      </summary>
+      <div class="table-card">
+        <div class="table-scroll">
+          <table id="fiTable">
+            <thead>
+              <tr>
+                <th>Savings Rate</th>
+                <th>Expenses</th>
+                <th>Savings / Year</th>
+                <th>Savings / Month</th>
+                <th>Years to Goal</th>
+                <th>Age Reaching Goal</th>
+                <th id="diffHeader">Δ vs. prev. row</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </details>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h2>Marginal years saved</h2>
+      <span class="sub" id="marginalSub">YEARS SAVED VS. THE PREVIOUS ROW, ACROSS EVERY SAVINGS RATE</span>
+    </div>
+    <div class="chart-card">
+      <svg id="marginalChart" viewBox="0 0 1120 260"></svg>
+      <div id="marginalTooltip" class="fi-tooltip"></div>
+      <div class="legend-row">
+        <span class="legend-dot jade"></span> Years saved by this step
+        <span class="legend-dot plum"></span> Your current rate
+      </div>
+    </div>
+  </div>
+
+<footer id="site-footer"></footer>
+
+
+</div>
+
+<script src="../assets/js/calc-utils.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const fmtUSD = n => n.toLocaleString('en-US', {style:'currency', currency:'USD', maximumFractionDigits:0});
+const fmtNum = n => n.toLocaleString('en-US', {maximumFractionDigits:1});
+const formatCurrencyField = id => {
+  const raw = parseCurrency(id);
+  $(id).value = raw.toLocaleString('en-US', {maximumFractionDigits:2});
+};
+function sanitizeCurrencyInput(id){
+  const el = $(id);
+  const before = el.value;
+  const cursorFromEnd = before.length - (el.selectionStart ?? before.length);
+
+  // keep only digits, commas, and a single decimal point
+  let cleaned = before.replace(/[^0-9.,]/g, '');
+  const parts = cleaned.split('.');
+  if (parts.length > 2){
+    cleaned = parts[0] + '.' + parts.slice(1).join('');
+  }
+
+  if (cleaned !== before){
+    el.value = cleaned;
+    const newPos = Math.max(0, cleaned.length - cursorFromEnd);
+    el.setSelectionRange(newPos, newPos);
+  }
+}
+
+function yearsToGoal(P, C, G, r){
+  // P: current savings, C: annual contribution, G: goal, r: annual return (decimal)
+  if (P >= G) return 0;
+  if (C <= 0){
+    if (r <= 0 || P <= 0) return Infinity;
+    return Math.log(G / P) / Math.log(1 + r);
+  }
+  if (Math.abs(r) < 1e-9){
+    return (G - P) / C;
+  }
+  const k = C / r;
+  const x = (G + k) / (P + k);
+  if (x <= 0) return Infinity;
+  return Math.log(x) / Math.log(1 + r);
+}
+
+// Inverse of yearsToGoal: given a fixed number of years, what's the
+// balance? Same continuous-compounding shape (lump sum growth + ongoing
+// contribution growth), just solved for the value at time t instead of the
+// t that hits a target value — used to project the balance at a specific
+// future date (e.g. a milestone birthday) rather than at the goal itself.
+function valueAtYears(P, C, r, t){
+  if (t <= 0) return P;
+  if (Math.abs(r) < 1e-9) return P + C * t;
+  const base = Math.pow(1 + r, t);
+  return P * base + C * ((base - 1) / r);
+}
+
+function rateNeededForAge(targetAge, currentAge, P, G, r, income){
+  const n = targetAge - currentAge;
+  if (P >= G) return {status:'already'};
+  if (n <= 0) return {status:'past'};
+  if (income <= 0) return {status:'unreachable', rateNeeded:Infinity};
+
+  let C;
+  if (Math.abs(r) < 1e-9){
+    C = (G - P) / n;
+  } else {
+    const x = Math.pow(1 + r, n);
+    C = (G - P * x) * r / (x - 1);
+  }
+  const rate = Math.max(0, (C / income) * 100);
+  if (rate > 100) return {status:'unreachable', rateNeeded: rate};
+  return {status:'ok', rate};
+}
+
+// ---------- sticky, collapsible input toolbar ----------
+const COLLAPSE_KEY = 'fi-runway-inputs-collapsed';
+const tiInputsEl = $('tiInputs');
+const tiToggle = $('tiToggle');
+const tiToggleLabel = $('tiToggleLabel');
+const tiSummary = $('tiSummary');
+const tiSaveStatus = $('tiSaveStatus');
+
+let inputsCollapsed = false;
+function setInputsCollapsed(collapsed){
+  inputsCollapsed = collapsed;
+  if (tiInputsEl) tiInputsEl.classList.toggle('collapsed', collapsed);
+  if (tiToggle) tiToggle.setAttribute('aria-expanded', String(!collapsed));
+  if (tiToggleLabel) tiToggleLabel.textContent = collapsed ? 'Show inputs' : 'Hide inputs';
+  try { localStorage.setItem(COLLAPSE_KEY, collapsed ? '1' : '0'); } catch(e) {}
+}
+
+function updateTiSummary(){
+  if (!tiSummary) return;
+  const income = parseCurrency('income');
+  const goal = parseCurrency('goal');
+  const savings = parseCurrency('savings');
+  const returnPct = parseFloat($('returnPct').value) || 0;
+  const currentRate = parseFloat($('currentRate').value) || 0;
+  const targetAge = parseFloat($('targetAge').value);
+  tiSummary.textContent = `Income: ${fmtUSD(income)}  |  Savings: ${fmtUSD(savings)} → Goal: ${fmtUSD(goal)}  |  Your rate: ${fmtNum(currentRate)}%  |  Return: ${fmtNum(returnPct)}%/yr  |  Retire at ${isFinite(targetAge) ? fmtNum(targetAge) : '—'}`;
+}
+
+function pad2(n){ return String(n).padStart(2, '0'); }
+function updateSaveStatus(){
+  if (!tiSaveStatus) return;
+  const d = new Date();
+  tiSaveStatus.textContent = `Last saved: ${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
+}
+
+if (tiToggle){
+  tiToggle.addEventListener('click', () => setInputsCollapsed(!inputsCollapsed));
+}
+
+const ledgerDetails = $('ledgerDetails');
+const ledgerSummaryLabel = $('ledgerSummaryLabel');
+if (ledgerDetails && ledgerSummaryLabel){
+  ledgerDetails.addEventListener('toggle', () => {
+    ledgerSummaryLabel.textContent = ledgerDetails.open ? 'Hide ledger' : 'Show ledger';
+  });
+}
+
+// ---------- "since your last visit" trend ----------
+// One dated entry per calendar day, separate from the plain input snapshot
+// (STORAGE_KEY below) — today's own entry keeps getting overwritten as the
+// user edits, but fiHistoryBaseline (captured once, at load, from whatever
+// the most recent *prior* day's entry already was) stays fixed for the
+// whole session, so the comparison reads against a real earlier visit
+// rather than against itself.
+const HISTORY_KEY = 'fi-runway-history';
+function fiTodayStr(){
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+function loadFiHistory(){
+  try {
+    const arr = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+    return Array.isArray(arr) ? arr : [];
+  } catch(e) { return []; }
+}
+function saveFiHistory(history){
+  try { localStorage.setItem(HISTORY_KEY, JSON.stringify(history)); } catch(e) { /* storage unavailable, ignore */ }
+}
+function logFiSnapshot(state){
+  const currentRateRounded = Math.round(Math.min(100, Math.max(0, state.currentRate)));
+  const row = state.rows[currentRateRounded];
+  if (!row) return;
+  const today = fiTodayStr();
+  let history = loadFiHistory();
+  const entry = { date: today, years: isFinite(row.years) ? row.years : null, savings: state.savings };
+  const idx = history.findIndex(h => h.date === today);
+  if (idx >= 0) history[idx] = entry; else history.push(entry);
+  history.sort((a, b) => a.date < b.date ? -1 : (a.date > b.date ? 1 : 0));
+  if (history.length > 90) history = history.slice(history.length - 90);
+  saveFiHistory(history);
+}
+
+let fiHistoryBaseline = null;
+(function(){
+  const today = fiTodayStr();
+  const prior = loadFiHistory().filter(h => h.date < today);
+  fiHistoryBaseline = prior.length ? prior[prior.length - 1] : null;
+})();
+
+let lastFiState = null;
+let marginalBumpAmount = 250;
+
+function renderMarginalDollarNote(state){
+  const { income, savings, goal, r, currentRate, rows } = state;
+  const el = $('marginalDollarText');
+  if (!el) return;
+  const currentRateRounded = Math.round(Math.min(100, Math.max(0, currentRate)));
+  const currentRow = rows[currentRateRounded];
+  const currentContribution = income * (currentRate / 100);
+  const bumpedContribution = currentContribution + marginalBumpAmount;
+  const bumpedYears = yearsToGoal(savings, bumpedContribution, goal, r);
+
+  if (currentRow.years === 0){
+    el.innerHTML = `You're already at your goal — an extra ${fmtUSD(marginalBumpAmount)}/mo wouldn't change your timeline, just pad the cushion.`;
+    return;
+  }
+  if (!isFinite(currentRow.years)){
+    if (isFinite(bumpedYears)){
+      el.innerHTML = `At your current rate this goal is never reached. Add <b>${fmtUSD(marginalBumpAmount)}/mo</b> on top and it becomes reachable — about <b>${fmtNum(bumpedYears)} years</b> away.`;
+    } else {
+      el.innerHTML = `Even with an extra ${fmtUSD(marginalBumpAmount)}/mo, this goal still isn't reachable at your current return assumption — the gap needs a bigger change than this.`;
+    }
+    return;
+  }
+  const yearsSaved = currentRow.years - bumpedYears;
+  const newRatePct = income > 0 ? (bumpedContribution / income) * 100 : 0;
+  if (yearsSaved > 0.05){
+    el.innerHTML = `An extra <b>${fmtUSD(marginalBumpAmount)}/mo</b> would take your savings rate from <b>${fmtNum(currentRate)}%</b> to about <b>${fmtNum(newRatePct)}%</b> — cutting about <b>${fmtNum(yearsSaved)} years</b> off your timeline.`;
+  } else {
+    el.innerHTML = `An extra ${fmtUSD(marginalBumpAmount)}/mo barely moves your timeline at this point — you're close enough to your goal that the remaining gap is mostly about time, not contributions.`;
+  }
+}
+
+function renderSensitivityNote(state){
+  const { savings, goal, r, income, currentRate, rows } = state;
+  const el = $('tiNoteSensitivity');
+  if (!el) return;
+  const currentRateRounded = Math.round(Math.min(100, Math.max(0, currentRate)));
+  const currentRow = rows[currentRateRounded];
+  const contribution = income * (currentRate / 100);
+
+  if (currentRow.years === 0){
+    el.hidden = true;
+    return;
+  }
+  el.hidden = false;
+  const rLow = r - 0.01, rHigh = r + 0.01;
+  const yearsLow = yearsToGoal(savings, contribution, goal, rLow);
+  const yearsHigh = yearsToGoal(savings, contribution, goal, rHigh);
+  let html = `<span class="ti-note-label">How much does the return assumption matter?</span>`;
+  html += `At your <b>${fmtNum(r * 100)}%/yr</b> assumption, your current rate reaches the goal in <b>${isFinite(currentRow.years) ? fmtNum(currentRow.years) + ' years' : 'never'}</b>. `;
+  const lowText = isFinite(yearsLow) ? `${fmtNum(yearsLow)} years` : 'never';
+  const highText = isFinite(yearsHigh) ? `${fmtNum(yearsHigh)} years` : 'never';
+  html += `A point lower (${fmtNum(rLow * 100)}%) pushes that to <b>${lowText}</b>; a point higher (${fmtNum(rHigh * 100)}%) pulls it in to <b>${highText}</b>. `;
+  html += `For a fuller picture of how a variable market could shake this out, try the <a href="../MonteCarlo/index.html">Monte Carlo Simulator</a>.`;
+  el.innerHTML = html;
+}
+
+function renderGoalCheckNote(state){
+  const { goal, rows, currentRate } = state;
+  const el = $('tiNoteGoalCheck');
+  if (!el) return;
+  if (!(goal > 0)){ el.hidden = true; return; }
+  el.hidden = false;
+  const currentRateRounded = Math.round(Math.min(100, Math.max(0, currentRate)));
+  const currentRow = rows[currentRateRounded];
+  const annualSpend = goal * 0.04;
+  const monthlySpend = annualSpend / 12;
+  let html = `<span class="ti-note-label">What your goal actually buys</span>`;
+  html += `At a common 4% withdrawal rate, your <b>${fmtUSD(goal)}</b> goal supports about <b>${fmtUSD(annualSpend)}/yr</b> (<b>${fmtUSD(monthlySpend)}/mo</b>) in retirement spending. `;
+  const currentMonthly = currentRow.expenses / 12;
+  const diffPct = currentMonthly > 0 ? ((monthlySpend - currentMonthly) / currentMonthly) * 100 : null;
+  if (diffPct === null){
+    html += `Compare that to what you're living on today to see if it lines up.`;
+  } else if (Math.abs(diffPct) < 10){
+    html += `That's close to the ${fmtUSD(currentMonthly)}/mo you're living on today — a goal roughly sized to your current lifestyle.`;
+  } else if (diffPct > 0){
+    html += `That's ${fmtNum(diffPct)}% more than the ${fmtUSD(currentMonthly)}/mo you're living on today — room to spend more freely, or a cushion for the unexpected.`;
+  } else {
+    html += `That's ${fmtNum(Math.abs(diffPct))}% less than the ${fmtUSD(currentMonthly)}/mo you're living on today — worth checking whether this goal actually supports your current lifestyle.`;
+  }
+  el.innerHTML = html;
+}
+
+function compute(){
+  const income = parseCurrency('income');
+  const goal = parseCurrency('goal');
+  const savings = parseCurrency('savings');
+  const age = parseFloat($('age').value) || 0;
+  const r = (parseFloat($('returnPct').value) || 0) / 100;
+  const lifespan = parseFloat($('lifespan').value) || 0;
+  const targetAge = parseFloat($('targetAge').value);
+  const currentRate = Math.min(100, Math.max(0, parseFloat($('currentRate').value) || 0));
+
+  const rows = [];
+  for (let rate = 0; rate <= 100; rate += 1){
+    const contribution = income * (rate / 100);
+    const expenses = income - contribution;
+    const years = yearsToGoal(savings, contribution, goal, r);
+    const ageAt = isFinite(years) ? age + years : Infinity;
+    const freedomYears = isFinite(ageAt) ? Math.max(lifespan - ageAt, 0) : null;
+    rows.push({rate, contribution, expenses, years, ageAt, diff: null, freedomYears});
+  }
+  return {income, goal, savings, age, r, lifespan, targetAge, currentRate, rows};
+}
+
+function render(){
+  const state = compute();
+  lastFiState = state;
+  const {rows, lifespan, income, goal, savings, age, r, targetAge, currentRate} = state;
+
+  // Δ column compares each row to whichever row is `diffStep` rows back
+  // (rows are a flat 0–100 array indexed by rate, so rows[i - diffStep] is
+  // always the right comparison row for any step) rather than always the
+  // literal previous row — lets "how much does bumping my rate help"
+  // answer over a bigger stride than 1 percentage point at a time.
+  const diffStep = parseInt($('diffStep').value, 10) || 1;
+  rows.forEach((row, i) => {
+    const base = rows[i - diffStep];
+    row.diff = (base && isFinite(base.years) && isFinite(row.years)) ? (row.years - base.years) : null;
+  });
+  const diffHeaderEl = $('diffHeader');
+  if (diffHeaderEl) diffHeaderEl.textContent = diffStep === 1 ? 'Δ vs. prev. row' : `Δ vs. ${diffStep} rows back`;
+  const marginalSubEl = $('marginalSub');
+  if (marginalSubEl) marginalSubEl.textContent = diffStep === 1
+    ? 'YEARS SAVED VS. THE PREVIOUS ROW, ACROSS EVERY SAVINGS RATE'
+    : `YEARS SAVED VS. ${diffStep} ROWS BACK, ACROSS EVERY SAVINGS RATE`;
+
+  const maxDiff = Math.max(0.001, ...rows.map(r => (r.diff !== null && isFinite(r.diff)) ? Math.abs(r.diff) : 0));
+  const targetResult = isFinite(targetAge) ? rateNeededForAge(targetAge, age, savings, goal, r, income) : {status:'none'};
+  const targetRateRounded = (targetResult.status === 'ok') ? Math.round(targetResult.rate) : null;
+  const currentRateRounded = Math.round(currentRate);
+  const currentRow = rows[currentRateRounded];
+
+  // ---- status strip: nearest whole-number match to a "typical" 20% rate as a headline stat, plus fastest & current savings status
+  const alreadyThere = rows[0].years === 0;
+  const strip = $('statusStrip');
+  const stripRates = $('statusStripRates');
+  strip.innerHTML = '';
+  stripRates.innerHTML = '';
+  const addTo = (target, k, v, cls, hint) => {
+    const div = document.createElement('div');
+    div.className = 'stat';
+    const hintHtml = hint ? `<span class="stat-info-dot" tabindex="0" aria-label="${hint}">i</span>` : '';
+    div.innerHTML = `<div class="k">${k}${hintHtml}</div><div class="v ${cls||''}">${v}</div>`;
+    target.appendChild(div);
+  };
+  const add = (k, v, cls, hint) => addTo(strip, k, v, cls, hint);
+
+  // Your actual rate, front and center — same "years / age" shape as the
+  // fixed 5/10/15/20% reference stats below, so it reads as one of them,
+  // just the one that's really yours.
+  if (currentRow.years === 0){
+    add(`At your rate (${fmtNum(currentRate)}%)`, 'Already there', 'plum');
+  } else {
+    add(`At your rate (${fmtNum(currentRate)}%)`, isFinite(currentRow.years) ? `${fmtNum(currentRow.years)} yrs · age ${fmtNum(currentRow.ageAt)}` : 'Never', 'plum');
+  }
+
+  // Same rate, reframed as a cost instead of a savings number — "expenses"
+  // already sits on every row (income minus that row's contribution), just
+  // buried in the ledger table; pulling it up here as a monthly figure is
+  // often the more visceral way to feel out whether a rate is livable.
+  add(`You're living on`, `${fmtUSD(currentRow.expenses / 12)}/month`, 'target');
+
+  // How that same "years to goal" number has moved since the last time
+  // these inputs were looked at — baseline is a fixed prior-day snapshot
+  // (see fiHistoryBaseline above), not today's own entry, so editing the
+  // fields right now doesn't move the comparison point out from under you.
+  if (fiHistoryBaseline && fiHistoryBaseline.years !== null && isFinite(currentRow.years)){
+    const deltaYears = currentRow.years - fiHistoryBaseline.years;
+    const baselineLabel = new Date(fiHistoryBaseline.date + 'T00:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric'});
+    if (Math.abs(deltaYears) < 0.05){
+      add(`Since ${baselineLabel}`, 'No change');
+    } else if (deltaYears < 0){
+      add(`Since ${baselineLabel}`, `${fmtNum(Math.abs(deltaYears))} yrs faster`, 'jade');
+    } else {
+      add(`Since ${baselineLabel}`, `${fmtNum(deltaYears)} yrs slower`, 'danger');
+    }
+  }
+
+  // Turns "X.Y years from now" into an actual calendar month/year — an
+  // abstract year-count is harder to plan around than "~Mar 2041", and
+  // every other calculator on the site already uses this same "~Mon YYYY"
+  // phrasing for projections.
+  if (isFinite(currentRow.years) && currentRow.years > 0){
+    const projectedDate = new Date();
+    projectedDate.setMonth(projectedDate.getMonth() + Math.round(currentRow.years * 12));
+    add('Projected FI date', `~${projectedDate.toLocaleDateString('en-US', {month:'short', year:'numeric'})}`, 'gold');
+
+    // How much of the goal is money you actually put in vs. what
+    // compounding earned on top of it — same "total contributed" straight-
+    // line sum (starting savings + annual contribution × years) used
+    // throughout this page's own math, just split against the goal instead
+    // of collapsed into a single "years to goal" number.
+    const totalContributed = savings + currentRow.contribution * currentRow.years;
+    const totalGrowth = goal - totalContributed;
+    const contributedPct = goal > 0 ? (totalContributed / goal) * 100 : 0;
+    const growthPct = goal > 0 ? (totalGrowth / goal) * 100 : 0;
+    add(`You'll contribute`, `${fmtUSD(totalContributed)} (${fmtNum(contributedPct)}%)`, 'plum');
+    add(`Growth contributes`, `${fmtUSD(totalGrowth)} (${fmtNum(growthPct)}%)`, 'jade');
+
+    // A mid-journey checkpoint at your next round-number birthday, using
+    // the real birthday from "Your info" (not just this page's own `age`
+    // field) — projected with the same valueAtYears() shape as the rest of
+    // this page's math, just evaluated at a fixed future date instead of
+    // solved for the date the goal itself is hit.
+    if (window.FNProfile){
+      const profile = window.FNProfile.get();
+      const dob = profile && profile.birthday ? new Date(profile.birthday + 'T00:00:00') : null;
+      if (dob && !isNaN(dob.getTime())){
+        const msPerYear = 365.25 * 24 * 3600 * 1000;
+        const today = new Date();
+        const fractionalAge = (today - dob) / msPerYear;
+        if (fractionalAge > 0 && fractionalAge < 120){
+          const milestoneAge = (Math.floor(fractionalAge / 5) + 1) * 5;
+          const milestoneDate = new Date(dob.getFullYear() + milestoneAge, dob.getMonth(), dob.getDate());
+          const yearsFromNow = (milestoneDate - today) / msPerYear;
+          if (yearsFromNow > 0){
+            const projected = valueAtYears(savings, currentRow.contribution, r, yearsFromNow);
+            const pct = goal > 0 ? (projected / goal) * 100 : null;
+            const dateLabel = milestoneDate.toLocaleDateString('en-US', {month:'short', year:'numeric'});
+            add(`At age ${milestoneAge} (${dateLabel})`, pct !== null ? `${fmtUSD(projected)} (${fmtNum(pct)}%)` : fmtUSD(projected), 'gold');
+          }
+        }
+      }
+    }
+  }
+
+  // Direct comparison against whatever rate the target-retirement-age math
+  // says is actually needed — the "how is this performing" ask made
+  // concrete as a single signed number instead of two stats to eyeball.
+  if (targetResult.status === 'ok'){
+    const gap = currentRate - targetResult.rate;
+    const gapLabel = gap >= 0 ? `+${fmtNum(gap)}pp ahead` : `−${fmtNum(Math.abs(gap))}pp behind`;
+    add('Your rate vs. needed', gapLabel, gap >= 0 ? 'jade' : 'danger', '&ldquo;pp&rdquo; means percentage points — the flat difference between your rate and the rate needed, not a relative percent change. Saving 20% against a 15% need is &ldquo;+5pp,&rdquo; not &ldquo;+33%.&rdquo;');
+  }
+
+  if (alreadyThere){
+    add('Status', 'Already there', 'jade');
+  } else {
+    [5, 10, 15, 20].forEach(rate => {
+      const r = rows[rate];
+      addTo(stripRates, `At ${rate}% savings rate`, isFinite(r.years) ? `${fmtNum(r.years)} yrs` : 'Never');
+    });
+  }
+
+  if (isFinite(targetAge)){
+    let label = `Rate to retire at ${fmtNum(targetAge)}`;
+    if (targetResult.status === 'already'){
+      addTo(stripRates, label, 'Already there', 'target');
+    } else if (targetResult.status === 'past'){
+      addTo(stripRates, label, 'Target age has passed', 'target');
+    } else if (targetResult.status === 'unreachable'){
+      addTo(stripRates, label, 'Not possible', 'target');
+    } else {
+      addTo(stripRates, label, `${fmtNum(targetResult.rate)}%`, 'target');
+    }
+  }
+  // Its own card only earns a place on the page when it actually has
+  // something in it — empty when alreadyThere and no target age is set.
+  $('ratesSection').style.display = stripRates.children.length ? '' : 'none';
+
+  // ---- table
+  const tbody = $('tableBody');
+  tbody.innerHTML = '';
+  rows.forEach(row => {
+    const tr = document.createElement('tr');
+    if (row.rate % 10 === 0) tr.classList.add('milestone');
+    else if (row.rate % 10 === 5) tr.classList.add('milestone-mid');
+    if (row.rate === targetRateRounded) tr.classList.add('target-row');
+    if (row.rate === currentRateRounded) tr.classList.add('current-row');
+    if (row.years === 0) tr.classList.add('reached');
+
+    const yearsCell = row.years === 0 ? 'Reached' : (isFinite(row.years) ? `${fmtNum(row.years)}` : '<span class="never">Never</span>');
+    const ageCell = row.years === 0 ? '—' : (isFinite(row.ageAt) ? fmtNum(row.ageAt) : '<span class="never">—</span>');
+    let diffCell = '—';
+    if (row.diff !== null){
+      const mag = Math.abs(row.diff) / maxDiff; // 0..1, higher = bigger time saved by this extra step
+      // Text is always the theme's own solid --jade (already tuned per
+      // theme for contrast against that theme's panel background, same
+      // token used site-wide) — only the background's *opacity* scales with
+      // magnitude, via color-mix against transparent. Fixes the old
+      // hardcoded hsl() heat scale, which assumed a light page background
+      // and read as illegible mush in Dark/Neon/LCARS.
+      const mixPct = Math.round(18 + mag * 42); // 18%–60% jade mixed into transparent
+      const sign = row.diff > 0 ? '+' : (row.diff < 0 ? '−' : '');
+      diffCell = `<span class="delta-chip" style="background:color-mix(in srgb, var(--jade) ${mixPct}%, transparent);">${sign}${fmtNum(Math.abs(row.diff))} yrs</span>`;
+    }
+
+    tr.innerHTML = `
+      <td>${row.rate}%</td>
+      <td>${fmtUSD(row.expenses)}</td>
+      <td>${fmtUSD(row.contribution)}</td>
+      <td>${fmtUSD(row.contribution / 12)}</td>
+      <td>${yearsCell}</td>
+      <td>${ageCell}</td>
+      <td>${diffCell}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // ---- chart: stacked bars, one per milestone savings rate (0,5,10,...,100),
+  // bottom segment = age reaching FI, top segment = years of freedom remaining vs. life expectancy,
+  // plus a leading reference bar showing life expectancy alone. Your actual
+  // current rate is folded into this same set (dedup'd against an existing
+  // 5%-step milestone if it happens to land on one) and flagged isCurrent
+  // so it renders as its own visually-distinct bar/point, at its real
+  // position among the 0–100% ledger rather than off to the side.
+  const chartRates = new Set(rows.filter(r => r.rate % 5 === 0).map(r => r.rate));
+  chartRates.add(currentRateRounded);
+  const sortedChartRates = Array.from(chartRates).sort((a, b) => a - b);
+  const chartItems = [
+    { label: 'Life exp.', isRef: true, isCurrent: false, age: null, freedom: lifespan },
+    ...sortedChartRates.map(rate => {
+      const rr = rows[rate];
+      return {
+        label: rate + '%',
+        isRef: false,
+        isCurrent: rate === currentRateRounded,
+        age: isFinite(rr.ageAt) ? rr.ageAt : null,
+        freedom: rr.freedomYears
+      };
+    })
+  ];
+  renderChart(chartItems, rows, lifespan, currentRateRounded);
+  renderMarginalChart(rows, diffStep, currentRateRounded);
+
+  renderMarginalDollarNote(state);
+  renderSensitivityNote(state);
+  renderGoalCheckNote(state);
+
+  updateTiSummary();
+}
+
+// ---------- inline SVG bar chart (no external chart library) ----------
+const svgNS = 'http://www.w3.org/2000/svg';
+const fiSvg = $('fiChart');
+const fiTooltip = $('fiTooltip');
+
+function niceCeil(v){
+  if (v <= 0) return 1;
+  const mag = Math.pow(10, Math.floor(Math.log10(v)));
+  const norm = v / mag;
+  let step;
+  if (norm <= 1) step = 1; else if (norm <= 2) step = 2; else if (norm <= 5) step = 5; else step = 10;
+  return step * mag;
+}
+
+let chartMode = 'line';
+let lastChartItems = null;
+let lastRows = null, lastLifespan = 0, lastCurrentRateRounded = 0;
+const ageFiChartSubEl = $('ageFiChartSub');
+
+function renderChart(items, rows, lifespan, currentRateRounded){
+  lastChartItems = items;
+  if (rows) lastRows = rows;
+  if (lifespan !== undefined) lastLifespan = lifespan;
+  if (currentRateRounded !== undefined) lastCurrentRateRounded = currentRateRounded;
+
+  fiSvg.innerHTML = '';
+
+  if (chartMode === 'line'){
+    if (ageFiChartSubEl) ageFiChartSubEl.textContent = 'EVERY SAVINGS RATE, 0%–100%, STEP 1%, MEASURED AGAINST LIFE EXPECTANCY';
+    renderChartLineFull(lastRows, lastLifespan, lastCurrentRateRounded);
+    return;
+  }
+  if (ageFiChartSubEl) ageFiChartSubEl.textContent = 'STACKED BY SAVINGS RATE, MEASURED AGAINST LIFE EXPECTANCY';
+
+  const W = 1120, H = 340;
+  const padL = 50, padR = 10, padT = 16, padB = 34;
+  const plotW = W - padL - padR;
+  const plotH = H - padT - padB;
+
+  const totals = items.map(it => (it.age || 0) + (it.freedom || 0));
+  const niceMax = niceCeil(Math.max(...totals, 1));
+
+  // gridlines
+  const steps = 5;
+  for (let i = 0; i <= steps; i++){
+    const val = niceMax * i / steps;
+    const y = padT + plotH - (val / niceMax) * plotH;
+    const line = document.createElementNS(svgNS, 'line');
+    line.setAttribute('x1', padL); line.setAttribute('x2', W - padR);
+    line.setAttribute('y1', y); line.setAttribute('y2', y);
+    line.setAttribute('class', 'fi-grid-line');
+    fiSvg.appendChild(line);
+
+    const label = document.createElementNS(svgNS, 'text');
+    label.setAttribute('x', padL - 8);
+    label.setAttribute('y', y + 4);
+    label.setAttribute('text-anchor', 'end');
+    label.setAttribute('class', 'fi-grid-label');
+    label.textContent = fmtNum(val);
+    fiSvg.appendChild(label);
+  }
+
+  const n = items.length;
+  const barGap = n > 15 ? 6 : 10;
+  const barW = Math.max((plotW / n) - barGap, 1);
+  const baseY = padT + plotH;
+  const xCenter = (i) => padL + i * (barW + barGap) + barW / 2;
+  const yFor = (v) => baseY - Math.max((v / niceMax) * plotH, 0);
+
+  // x-axis labels. Your current rate's label gets its own class so it
+  // reads as a landmark among the fixed 5% steps.
+  items.forEach((item, i) => {
+    const lbl = document.createElementNS(svgNS, 'text');
+    lbl.setAttribute('x', xCenter(i));
+    lbl.setAttribute('y', H - padB + 16);
+    lbl.setAttribute('text-anchor', 'middle');
+    lbl.setAttribute('class', 'fi-axis-label' + (item.isCurrent ? ' fi-axis-label-current' : ''));
+    lbl.textContent = item.label;
+    fiSvg.appendChild(lbl);
+  });
+
+  // Shared by every bar's mouse and keyboard handlers below — positions
+  // the tooltip either at the cursor (mouse) or centered above the bar's
+  // own rendered position (keyboard focus has no cursor coordinates).
+  function showFiBarTooltip(group, html){
+    const r = group.getBoundingClientRect();
+    fiTooltip.style.opacity = 1;
+    fiTooltip.style.left = (r.left + r.width / 2) + 'px';
+    fiTooltip.style.top = r.top + 'px';
+    fiTooltip.innerHTML = html;
+  }
+
+  items.forEach((item, i) => {
+    const x = padL + i * (barW + barGap);
+    const group = document.createElementNS(svgNS, 'g');
+    group.setAttribute('class', 'fi-bar-group');
+    group.setAttribute('tabindex', '0');
+    group.setAttribute('role', 'img');
+
+    if (item.isRef){
+      const h = Math.max((item.freedom / niceMax) * plotH, item.freedom > 0 ? 1 : 0);
+      const rect = document.createElementNS(svgNS, 'rect');
+      rect.setAttribute('class', 'fi-bar-ref');
+      rect.setAttribute('x', x);
+      rect.setAttribute('y', baseY - h);
+      rect.setAttribute('width', barW);
+      rect.setAttribute('height', h);
+      rect.setAttribute('rx', 1.5);
+      group.appendChild(rect);
+
+      group.setAttribute('aria-label', `Reference: life expectancy ${fmtNum(item.freedom)}`);
+      group.addEventListener('mousemove', (e) => {
+        fiTooltip.style.opacity = 1;
+        fiTooltip.style.left = e.clientX + 'px';
+        fiTooltip.style.top = e.clientY + 'px';
+        fiTooltip.innerHTML = `<div class="yr">Reference</div>Life expectancy <b>${fmtNum(item.freedom)}</b>`;
+      });
+      group.addEventListener('mouseleave', () => { fiTooltip.style.opacity = 0; });
+      group.addEventListener('focus', () => {
+        showFiBarTooltip(group, `<div class="yr">Reference</div>Life expectancy <b>${fmtNum(item.freedom)}</b>`);
+      });
+      group.addEventListener('blur', () => { fiTooltip.style.opacity = 0; });
+    } else {
+      const ageH = item.age !== null ? Math.max((item.age / niceMax) * plotH, item.age > 0 ? 1 : 0) : 0;
+      const freedomH = item.freedom !== null ? Math.max((item.freedom / niceMax) * plotH, item.freedom > 0 ? 1 : 0) : 0;
+
+      if (item.age !== null){
+        const rAge = document.createElementNS(svgNS, 'rect');
+        rAge.setAttribute('class', 'fi-bar-age' + (item.isCurrent ? ' fi-bar-current' : ''));
+        rAge.setAttribute('x', x);
+        rAge.setAttribute('y', baseY - ageH);
+        rAge.setAttribute('width', barW);
+        rAge.setAttribute('height', ageH);
+        group.appendChild(rAge);
+
+        const rFreedom = document.createElementNS(svgNS, 'rect');
+        rFreedom.setAttribute('class', 'fi-bar-freedom' + (item.isCurrent ? ' fi-bar-current' : ''));
+        rFreedom.setAttribute('x', x);
+        rFreedom.setAttribute('y', baseY - ageH - freedomH);
+        rFreedom.setAttribute('width', barW);
+        rFreedom.setAttribute('height', freedomH);
+        rFreedom.setAttribute('rx', 1.5);
+        group.appendChild(rFreedom);
+
+        // Small marker above your current-rate bar so it reads as a
+        // landmark even at a glance, not just a slightly different color.
+        if (item.isCurrent){
+          const topY = baseY - ageH - freedomH;
+          const marker = document.createElementNS(svgNS, 'polygon');
+          const mx = x + barW / 2;
+          marker.setAttribute('points', `${mx - 5},${topY - 12} ${mx + 5},${topY - 12} ${mx},${topY - 4}`);
+          marker.setAttribute('class', 'fi-current-marker');
+          group.appendChild(marker);
+        }
+      }
+
+      const barHtml = item.age !== null
+        ? `<div class="yr">Savings rate ${item.label}${item.isCurrent ? ' — your current rate' : ''}</div>Age at FI <b>${fmtNum(item.age)}</b><br>Years of freedom <b>${fmtNum(item.freedom)}</b>`
+        : `<div class="yr">Savings rate ${item.label}</div><b>Never reaches goal</b>`;
+      group.setAttribute('aria-label', item.age !== null
+        ? `Savings rate ${item.label}${item.isCurrent ? ', your current rate' : ''}: age at FI ${fmtNum(item.age)}, years of freedom ${fmtNum(item.freedom)}`
+        : `Savings rate ${item.label}: never reaches goal`);
+      group.addEventListener('mousemove', (e) => {
+        fiTooltip.style.opacity = 1;
+        fiTooltip.style.left = e.clientX + 'px';
+        fiTooltip.style.top = e.clientY + 'px';
+        fiTooltip.innerHTML = barHtml;
+      });
+      group.addEventListener('mouseleave', () => { fiTooltip.style.opacity = 0; });
+      group.addEventListener('focus', () => { showFiBarTooltip(group, barHtml); });
+      group.addEventListener('blur', () => { fiTooltip.style.opacity = 0; });
+    }
+
+    fiSvg.appendChild(group);
+  });
+}
+
+// alternate view of the same data — two trend lines (age at FI, years of
+// freedom) instead of stacked bars, plus life expectancy as a dashed
+// reference line instead of its own bar. Unlike bars mode (which only has
+// room for 5%-step milestones), this plots every 1% — the continuous curve
+// is the whole point of switching to Line, so it uses its own proportional
+// rate-based x-scale and its own y-scale (max of either series alone,
+// not the bars' stacked total) rather than reusing bar mode's spacing.
+function renderChartLineFull(rows, lifespan, currentRateRounded){
+  if (!rows) return;
+  const W = 1120, H = 340;
+  const padL = 50, padR = 10, padT = 16, padB = 34;
+  const plotW = W - padL - padR;
+  const plotH = H - padT - padB;
+  const baseY = padT + plotH;
+  const xFor = rate => padL + (rate / 100) * plotW;
+
+  const ages = rows.map(r => isFinite(r.ageAt) ? r.ageAt : null);
+  const freedoms = rows.map(r => (r.freedomYears !== null && isFinite(r.freedomYears)) ? r.freedomYears : null);
+  const finiteAll = [...ages, ...freedoms, lifespan].filter(v => v !== null && isFinite(v));
+  const niceMax = niceCeil(Math.max(...finiteAll, 1));
+  const yFor = v => baseY - Math.max((v / niceMax) * plotH, 0);
+
+  // gridlines
+  for (let i = 0; i <= 5; i++){
+    const val = niceMax * i / 5;
+    const y = yFor(val);
+    const line = document.createElementNS(svgNS, 'line');
+    line.setAttribute('x1', padL); line.setAttribute('x2', W - padR);
+    line.setAttribute('y1', y); line.setAttribute('y2', y);
+    line.setAttribute('class', 'fi-grid-line');
+    fiSvg.appendChild(line);
+
+    const label = document.createElementNS(svgNS, 'text');
+    label.setAttribute('x', padL - 8);
+    label.setAttribute('y', y + 4);
+    label.setAttribute('text-anchor', 'end');
+    label.setAttribute('class', 'fi-grid-label');
+    label.textContent = fmtNum(val);
+    fiSvg.appendChild(label);
+  }
+
+  // x-axis ticks every 10%
+  for (let rate = 0; rate <= 100; rate += 10){
+    const x = xFor(rate);
+    const label = document.createElementNS(svgNS, 'text');
+    label.setAttribute('x', x);
+    label.setAttribute('y', H - padB + 16);
+    label.setAttribute('text-anchor', 'middle');
+    label.setAttribute('class', 'fi-axis-label' + (rate === currentRateRounded ? ' fi-axis-label-current' : ''));
+    label.textContent = rate + '%';
+    fiSvg.appendChild(label);
+  }
+
+  // life expectancy reference line
+  const ry = yFor(lifespan);
+  const refLine = document.createElementNS(svgNS, 'line');
+  refLine.setAttribute('x1', padL); refLine.setAttribute('x2', W - padR);
+  refLine.setAttribute('y1', ry); refLine.setAttribute('y2', ry);
+  refLine.setAttribute('class', 'chart-ref-line');
+  fiSvg.appendChild(refLine);
+
+  const refLbl = document.createElementNS(svgNS, 'text');
+  refLbl.setAttribute('x', W - padR - 4);
+  refLbl.setAttribute('y', ry - 6);
+  refLbl.setAttribute('text-anchor', 'end');
+  refLbl.setAttribute('class', 'chart-ref-label');
+  refLbl.textContent = `Life expectancy: ${fmtNum(lifespan)}`;
+  fiSvg.appendChild(refLbl);
+
+  const buildPath = (series) => {
+    let d = '', started = false;
+    series.forEach((v, i) => {
+      if (v === null){ started = false; return; }
+      const x = xFor(i), y = yFor(v);
+      d += (started ? 'L' : 'M') + x.toFixed(2) + ',' + y.toFixed(2) + ' ';
+      started = true;
+    });
+    return d;
+  };
+
+  const ageLine = document.createElementNS(svgNS, 'path');
+  ageLine.setAttribute('d', buildPath(ages));
+  ageLine.setAttribute('class', 'chart-line');
+  ageLine.style.stroke = 'var(--gold)';
+  fiSvg.appendChild(ageLine);
+
+  const freedomLine = document.createElementNS(svgNS, 'path');
+  freedomLine.setAttribute('d', buildPath(freedoms));
+  freedomLine.setAttribute('class', 'chart-line');
+  freedomLine.style.stroke = 'var(--jade)';
+  fiSvg.appendChild(freedomLine);
+
+  if (ages[currentRateRounded] !== null){
+    const dot = document.createElementNS(svgNS, 'circle');
+    dot.setAttribute('cx', xFor(currentRateRounded));
+    dot.setAttribute('cy', yFor(ages[currentRateRounded]));
+    dot.setAttribute('r', 6);
+    dot.setAttribute('class', 'chart-line-dot fi-bar-age chart-line-dot-current');
+    fiSvg.appendChild(dot);
+  }
+  if (freedoms[currentRateRounded] !== null){
+    const dot = document.createElementNS(svgNS, 'circle');
+    dot.setAttribute('cx', xFor(currentRateRounded));
+    dot.setAttribute('cy', yFor(freedoms[currentRateRounded]));
+    dot.setAttribute('r', 6);
+    dot.setAttribute('class', 'chart-line-dot fi-bar-freedom chart-line-dot-current');
+    fiSvg.appendChild(dot);
+  }
+
+  // hover scrub — 101 points is too dense for per-point listeners, so a
+  // single hit-rect finds the nearest rate under the cursor instead.
+  const hoverLine = document.createElementNS(svgNS, 'line');
+  hoverLine.setAttribute('y1', padT); hoverLine.setAttribute('y2', baseY);
+  hoverLine.setAttribute('class', 'chart-hover-line');
+  hoverLine.style.opacity = 0;
+  fiSvg.appendChild(hoverLine);
+
+  const hoverDotAge = document.createElementNS(svgNS, 'circle');
+  hoverDotAge.setAttribute('r', 5);
+  hoverDotAge.setAttribute('class', 'chart-line-dot fi-bar-age');
+  hoverDotAge.style.opacity = 0;
+  fiSvg.appendChild(hoverDotAge);
+
+  const hoverDotFreedom = document.createElementNS(svgNS, 'circle');
+  hoverDotFreedom.setAttribute('r', 5);
+  hoverDotFreedom.setAttribute('class', 'chart-line-dot fi-bar-freedom');
+  hoverDotFreedom.style.opacity = 0;
+  fiSvg.appendChild(hoverDotFreedom);
+
+  const hitRect = document.createElementNS(svgNS, 'rect');
+  hitRect.setAttribute('x', padL); hitRect.setAttribute('y', padT);
+  hitRect.setAttribute('width', plotW); hitRect.setAttribute('height', plotH);
+  hitRect.setAttribute('class', 'chart-hover-rect');
+  fiSvg.appendChild(hitRect);
+
+  // Shared by the mouse-scrub handler below and the keyboard path further
+  // down — same tooltip/dot/line update either way, just fed screen
+  // coordinates from a MouseEvent in one case and computed from the SVG's
+  // own rendered size in the other (a keydown/focus event has no cursor
+  // position to anchor to).
+  function showRateAt(rate, clientX, clientY){
+    rate = Math.max(0, Math.min(100, rate));
+    const age = ages[rate], freedom = freedoms[rate];
+    if (age === null && freedom === null){
+      hoverLine.style.opacity = 0; hoverDotAge.style.opacity = 0; hoverDotFreedom.style.opacity = 0; fiTooltip.style.opacity = 0;
+      return null;
+    }
+    const x = xFor(rate);
+    hoverLine.setAttribute('x1', x); hoverLine.setAttribute('x2', x);
+    hoverLine.style.opacity = 1;
+    fiTooltip.style.opacity = 1;
+    fiTooltip.style.left = clientX + 'px';
+    fiTooltip.style.top = clientY + 'px';
+    let html = `<div class="yr">Savings rate ${rate}%${rate === currentRateRounded ? ' — your current rate' : ''}</div>`;
+    let text = `Savings rate ${rate}%${rate === currentRateRounded ? ', your current rate' : ''}. `;
+    if (age !== null){
+      hoverDotAge.setAttribute('cx', x); hoverDotAge.setAttribute('cy', yFor(age)); hoverDotAge.style.opacity = 1;
+      html += `Age at FI <b>${fmtNum(age)}</b><br>`;
+      text += `Age at FI ${fmtNum(age)}. `;
+    } else {
+      hoverDotAge.style.opacity = 0;
+      html += `<b>Never reaches goal</b><br>`;
+      text += `Never reaches goal. `;
+    }
+    if (freedom !== null){
+      hoverDotFreedom.setAttribute('cx', x); hoverDotFreedom.setAttribute('cy', yFor(freedom)); hoverDotFreedom.style.opacity = 1;
+      html += `Years of freedom <b>${fmtNum(freedom)}</b>`;
+      text += `Years of freedom ${fmtNum(freedom)}.`;
+    } else {
+      hoverDotFreedom.style.opacity = 0;
+    }
+    fiTooltip.innerHTML = html;
+    return text;
+  }
+
+  hitRect.addEventListener('mousemove', (e) => {
+    const loc = svgLocalPoint(fiSvg, e);
+    const rate = Math.round(((loc.x - padL) / plotW) * 100);
+    showRateAt(rate, e.clientX, e.clientY);
+  });
+  hitRect.addEventListener('mouseleave', () => {
+    hoverLine.style.opacity = 0; hoverDotAge.style.opacity = 0; hoverDotFreedom.style.opacity = 0; fiTooltip.style.opacity = 0;
+  });
+
+  // ---- keyboard access: arrow/Home/End keys step through savings rates
+  // once the hit-rect is focused — a mouse-only "scrub the chart" gesture
+  // otherwise has no keyboard equivalent at all. role="slider" is the
+  // correct ARIA pattern for a focusable, continuously-steppable value.
+  let keyboardRate = currentRateRounded;
+  hitRect.setAttribute('tabindex', '0');
+  hitRect.setAttribute('role', 'slider');
+  hitRect.setAttribute('aria-label', 'Chart: age at FI and years of freedom, by savings rate');
+  hitRect.setAttribute('aria-valuemin', '0');
+  hitRect.setAttribute('aria-valuemax', '100');
+  function showKeyboardTooltip(){
+    const x = xFor(keyboardRate);
+    const rect = fiSvg.getBoundingClientRect();
+    const clientX = rect.left + (x / W) * rect.width;
+    const clientY = rect.top + (padT / H) * rect.height;
+    const text = showRateAt(keyboardRate, clientX, clientY);
+    hitRect.setAttribute('aria-valuenow', String(keyboardRate));
+    if (text) hitRect.setAttribute('aria-valuetext', text);
+  }
+  hitRect.addEventListener('focus', showKeyboardTooltip);
+  hitRect.addEventListener('blur', () => {
+    hoverLine.style.opacity = 0; hoverDotAge.style.opacity = 0; hoverDotFreedom.style.opacity = 0; fiTooltip.style.opacity = 0;
+  });
+  hitRect.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowUp'){
+      keyboardRate = Math.min(100, keyboardRate + 1);
+      showKeyboardTooltip();
+      e.preventDefault();
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown'){
+      keyboardRate = Math.max(0, keyboardRate - 1);
+      showKeyboardTooltip();
+      e.preventDefault();
+    } else if (e.key === 'Home'){
+      keyboardRate = 0; showKeyboardTooltip(); e.preventDefault();
+    } else if (e.key === 'End'){
+      keyboardRate = 100; showKeyboardTooltip(); e.preventDefault();
+    }
+  });
+}
+
+// Converts a mouse event to SVG user-space coordinates via the element's
+// screen transform — shared by both full-resolution charts below for their
+// hover-scrub interaction (101 points is too dense for per-point listeners,
+// so a single hit-rect finds the nearest rate under the cursor instead).
+function svgLocalPoint(svg, evt){
+  const pt = svg.createSVGPoint();
+  pt.x = evt.clientX; pt.y = evt.clientY;
+  const ctm = svg.getScreenCTM();
+  if (!ctm) return {x: 0, y: 0};
+  return pt.matrixTransform(ctm.inverse());
+}
+
+// ---------- Marginal years saved (diminishing-returns curve) ----------
+// Plots the same per-row Δ the ledger's own column shows, but as a smooth
+// line across every 1% rate rather than one number per row — the shape
+// (steep early, flattening out) is the actual insight the table's numbers
+// don't make visible on their own.
+const marginalSvg = $('marginalChart');
+const marginalTooltip = $('marginalTooltip');
+
+function renderMarginalChart(rows, diffStep, currentRateRounded){
+  const W = 1120, H = 260;
+  const padL = 56, padR = 10, padT = 16, padB = 30;
+  const plotW = W - padL - padR;
+  const plotH = H - padT - padB;
+  const baseY = padT + plotH;
+  const xFor = rate => padL + (rate / 100) * plotW;
+
+  // row.diff is (higher-rate years − lower-rate years), i.e. negative or
+  // zero when the higher rate helps — flip sign so "years saved" reads as
+  // a positive, intuitive quantity.
+  const points = [];
+  for (let i = diffStep; i <= 100; i++){
+    const row = rows[i];
+    points.push({ rate: row.rate, value: (row.diff !== null) ? -row.diff : null });
+  }
+
+  const finiteVals = points.filter(p => p.value !== null).map(p => p.value);
+  const niceMax = niceCeil(Math.max(...finiteVals, 0.001));
+  const yFor = v => baseY - Math.max((v / niceMax) * plotH, 0);
+
+  marginalSvg.innerHTML = '';
+
+  for (let i = 0; i <= 5; i++){
+    const val = niceMax * i / 5;
+    const y = yFor(val);
+    const line = document.createElementNS(svgNS, 'line');
+    line.setAttribute('x1', padL); line.setAttribute('x2', W - padR);
+    line.setAttribute('y1', y); line.setAttribute('y2', y);
+    line.setAttribute('class', 'fi-grid-line');
+    marginalSvg.appendChild(line);
+
+    const label = document.createElementNS(svgNS, 'text');
+    label.setAttribute('x', padL - 8);
+    label.setAttribute('y', y + 4);
+    label.setAttribute('text-anchor', 'end');
+    label.setAttribute('class', 'fi-grid-label');
+    label.textContent = fmtNum(val);
+    marginalSvg.appendChild(label);
+  }
+
+  for (let rate = 0; rate <= 100; rate += 10){
+    const x = xFor(rate);
+    const label = document.createElementNS(svgNS, 'text');
+    label.setAttribute('x', x);
+    label.setAttribute('y', H - padB + 16);
+    label.setAttribute('text-anchor', 'middle');
+    label.setAttribute('class', 'fi-axis-label' + (rate === currentRateRounded ? ' fi-axis-label-current' : ''));
+    label.textContent = rate + '%';
+    marginalSvg.appendChild(label);
+  }
+
+  let d = '', started = false;
+  points.forEach(p => {
+    if (p.value === null){ started = false; return; }
+    const x = xFor(p.rate), y = yFor(p.value);
+    d += (started ? 'L' : 'M') + x.toFixed(2) + ',' + y.toFixed(2) + ' ';
+    started = true;
+  });
+  const path = document.createElementNS(svgNS, 'path');
+  path.setAttribute('d', d);
+  path.setAttribute('class', 'chart-line');
+  path.style.stroke = 'var(--jade)';
+  marginalSvg.appendChild(path);
+
+  const currentPoint = points.find(p => p.rate === currentRateRounded && p.value !== null);
+  if (currentPoint){
+    const dot = document.createElementNS(svgNS, 'circle');
+    dot.setAttribute('cx', xFor(currentPoint.rate));
+    dot.setAttribute('cy', yFor(currentPoint.value));
+    dot.setAttribute('r', 6);
+    dot.setAttribute('class', 'chart-line-dot fi-bar-freedom chart-line-dot-current');
+    marginalSvg.appendChild(dot);
+  }
+
+  const hoverLine = document.createElementNS(svgNS, 'line');
+  hoverLine.setAttribute('y1', padT); hoverLine.setAttribute('y2', baseY);
+  hoverLine.setAttribute('class', 'chart-hover-line');
+  hoverLine.style.opacity = 0;
+  marginalSvg.appendChild(hoverLine);
+
+  const hoverDot = document.createElementNS(svgNS, 'circle');
+  hoverDot.setAttribute('r', 5);
+  hoverDot.setAttribute('class', 'chart-line-dot fi-bar-freedom');
+  hoverDot.style.opacity = 0;
+  marginalSvg.appendChild(hoverDot);
+
+  const hitRect = document.createElementNS(svgNS, 'rect');
+  hitRect.setAttribute('x', padL); hitRect.setAttribute('y', padT);
+  hitRect.setAttribute('width', plotW); hitRect.setAttribute('height', plotH);
+  hitRect.setAttribute('class', 'chart-hover-rect');
+  marginalSvg.appendChild(hitRect);
+
+  // Shared by the mouse-scrub handler and the keyboard path below — see
+  // the same-shaped helper in renderChartLineFull for why.
+  function showMarginalRateAt(rate, clientX, clientY){
+    rate = Math.max(diffStep, Math.min(100, rate));
+    const p = points.find(pt => pt.rate === rate);
+    if (!p || p.value === null){
+      hoverLine.style.opacity = 0; hoverDot.style.opacity = 0; marginalTooltip.style.opacity = 0;
+      return null;
+    }
+    const x = xFor(p.rate), y = yFor(p.value);
+    hoverLine.setAttribute('x1', x); hoverLine.setAttribute('x2', x);
+    hoverLine.style.opacity = 1;
+    hoverDot.setAttribute('cx', x); hoverDot.setAttribute('cy', y);
+    hoverDot.style.opacity = 1;
+    marginalTooltip.style.opacity = 1;
+    marginalTooltip.style.left = clientX + 'px';
+    marginalTooltip.style.top = clientY + 'px';
+    const fromRate = p.rate - diffStep;
+    marginalTooltip.innerHTML = `<div class="yr">${fromRate}% &rarr; ${p.rate}%${p.rate === currentRateRounded ? ' (your rate)' : ''}</div>Saves <b>${fmtNum(p.value)} yrs</b>`;
+    return `${fromRate}% to ${p.rate}%${p.rate === currentRateRounded ? ', your rate' : ''}: saves ${fmtNum(p.value)} years.`;
+  }
+
+  hitRect.addEventListener('mousemove', (e) => {
+    const loc = svgLocalPoint(marginalSvg, e);
+    const rate = Math.round(((loc.x - padL) / plotW) * 100);
+    showMarginalRateAt(rate, e.clientX, e.clientY);
+  });
+  hitRect.addEventListener('mouseleave', () => {
+    hoverLine.style.opacity = 0; hoverDot.style.opacity = 0; marginalTooltip.style.opacity = 0;
+  });
+
+  // ---- keyboard access — see renderChartLineFull's own hit-rect for why.
+  let marginalKeyboardRate = Math.max(diffStep, currentRateRounded);
+  hitRect.setAttribute('tabindex', '0');
+  hitRect.setAttribute('role', 'slider');
+  hitRect.setAttribute('aria-label', 'Chart: years saved by each step up in savings rate');
+  hitRect.setAttribute('aria-valuemin', String(diffStep));
+  hitRect.setAttribute('aria-valuemax', '100');
+  function showMarginalKeyboardTooltip(){
+    const x = xFor(marginalKeyboardRate);
+    const rect = marginalSvg.getBoundingClientRect();
+    const clientX = rect.left + (x / W) * rect.width;
+    const clientY = rect.top + (padT / H) * rect.height;
+    const text = showMarginalRateAt(marginalKeyboardRate, clientX, clientY);
+    hitRect.setAttribute('aria-valuenow', String(marginalKeyboardRate));
+    if (text) hitRect.setAttribute('aria-valuetext', text);
+  }
+  hitRect.addEventListener('focus', showMarginalKeyboardTooltip);
+  hitRect.addEventListener('blur', () => {
+    hoverLine.style.opacity = 0; hoverDot.style.opacity = 0; marginalTooltip.style.opacity = 0;
+  });
+  hitRect.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowUp'){
+      marginalKeyboardRate = Math.min(100, marginalKeyboardRate + 1);
+      showMarginalKeyboardTooltip();
+      e.preventDefault();
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown'){
+      marginalKeyboardRate = Math.max(diffStep, marginalKeyboardRate - 1);
+      showMarginalKeyboardTooltip();
+      e.preventDefault();
+    } else if (e.key === 'Home'){
+      marginalKeyboardRate = diffStep; showMarginalKeyboardTooltip(); e.preventDefault();
+    } else if (e.key === 'End'){
+      marginalKeyboardRate = 100; showMarginalKeyboardTooltip(); e.preventDefault();
+    }
+  });
+}
+
+$('marginalDollarToggle').querySelectorAll('.ti-scenario-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    $('marginalDollarToggle').querySelectorAll('.ti-scenario-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    marginalBumpAmount = parseInt(btn.dataset.amt, 10);
+    if (lastFiState) renderMarginalDollarNote(lastFiState);
+  });
+});
+
+document.querySelectorAll('.chart-mode-toggle .chart-mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (btn.classList.contains('active')) return;
+    chartMode = btn.dataset.mode;
+    btn.parentElement.querySelectorAll('.chart-mode-btn').forEach(b => b.classList.toggle('active', b === btn));
+    if (lastChartItems) renderChart(lastChartItems);
+  });
+});
+
+const STORAGE_KEY = 'fi-runway-inputs';
+const DEFAULTS = {income:'90000', goal:'1500000', savings:'80000', age:'30', returnPct:'7', lifespan:'79', targetAge:'45', currentRate:'15', diffStep:'1'};
+const CURRENCY_FIELDS = ['income', 'goal', 'savings'];
+const ALL_FIELDS = ['income','goal','savings','age','returnPct','lifespan','targetAge','currentRate','diffStep'];
+
+function saveInputs(){
+  const vals = {};
+  ALL_FIELDS.forEach(id => { vals[id] = $(id).value; });
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(vals)); } catch(e) { /* storage unavailable, ignore */ }
+  if (lastFiState) logFiSnapshot(lastFiState);
+  updateSaveStatus();
+}
+function loadInputs(){
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const vals = JSON.parse(raw);
+    Object.keys(vals).forEach(id => { if ($(id)) $(id).value = vals[id]; });
+  } catch(e) { /* storage unavailable or corrupt, ignore */ }
+}
+
+// Persisting on every keystroke means an interrupted edit — select-all a
+// field to retype it, then get pulled away before finishing — saves
+// whatever partial digits were typed so far as the permanent value (e.g.
+// typing "3" as the first character of "300000" then switching tabs before
+// finishing leaves the goal at literally $3). render() still runs on every
+// keystroke for instant visual feedback; only the localStorage write is
+// debounced, so a normal typing pause settles on the finished number
+// instead of a mid-edit fragment. blur still saves immediately (the field
+// is done being edited at that point, nothing to debounce).
+let saveDebounceTimer = null;
+function scheduleSave(){
+  if (saveDebounceTimer) clearTimeout(saveDebounceTimer);
+  saveDebounceTimer = setTimeout(saveInputs, 500);
+}
+
+ALL_FIELDS.forEach(id => {
+  if (CURRENCY_FIELDS.includes(id)) return; // wired separately below with sanitization
+  $(id).addEventListener('input', () => { scheduleSave(); render(); });
+});
+CURRENCY_FIELDS.forEach(id => {
+  $(id).addEventListener('input', () => { sanitizeCurrencyInput(id); scheduleSave(); render(); });
+  $(id).addEventListener('blur', () => {
+    if (saveDebounceTimer) { clearTimeout(saveDebounceTimer); saveDebounceTimer = null; }
+    formatCurrencyField(id); saveInputs();
+  });
+});
+
+$('resetBtn').addEventListener('click', () => {
+  Object.keys(DEFAULTS).forEach(id => { $(id).value = DEFAULTS[id]; });
+  if (window.FNProfileAutofill) window.FNProfileAutofill.apply(true);
+  CURRENCY_FIELDS.forEach(formatCurrencyField);
+  saveInputs();
+  render();
+});
+
+// Fixed-position tooltip for any .stat-info-dot in the status strip — see
+// the .stat-tooltip-fixed comment in timeToFI.css for why this can't be a
+// plain CSS ::after nested inside .status. One shared element appended to
+// <body>, positioned via getBoundingClientRect() on hover/focus. Wired via
+// delegation on #statusStrip (mouseover/mouseout/focusin/focusout, which
+// all bubble — plain mouseenter/mouseleave/focus/blur don't) since the
+// status strip's own innerHTML — dot included — gets rebuilt from scratch
+// on every render() call.
+const statTooltip = document.createElement('div');
+statTooltip.className = 'stat-tooltip-fixed';
+document.body.appendChild(statTooltip);
+function showStatTooltip(dot){
+  statTooltip.textContent = dot.getAttribute('aria-label') || '';
+  const rect = dot.getBoundingClientRect();
+  statTooltip.style.left = (rect.left + rect.width / 2) + 'px';
+  statTooltip.style.top = (rect.bottom + 8) + 'px';
+  statTooltip.classList.add('visible');
+}
+function hideStatTooltip(){ statTooltip.classList.remove('visible'); }
+$('statusStrip').addEventListener('mouseover', (e) => {
+  const dot = e.target.closest('.stat-info-dot');
+  if (dot) showStatTooltip(dot);
+});
+$('statusStrip').addEventListener('mouseout', (e) => {
+  if (e.target.closest('.stat-info-dot')) hideStatTooltip();
+});
+$('statusStrip').addEventListener('focusin', (e) => {
+  const dot = e.target.closest('.stat-info-dot');
+  if (dot) showStatTooltip(dot);
+});
+$('statusStrip').addEventListener('focusout', (e) => {
+  if (e.target.closest('.stat-info-dot')) hideStatTooltip();
+});
+$('statusStripRates').addEventListener('mouseover', (e) => {
+  const dot = e.target.closest('.stat-info-dot');
+  if (dot) showStatTooltip(dot);
+});
+$('statusStripRates').addEventListener('mouseout', (e) => {
+  if (e.target.closest('.stat-info-dot')) hideStatTooltip();
+});
+$('statusStripRates').addEventListener('focusin', (e) => {
+  const dot = e.target.closest('.stat-info-dot');
+  if (dot) showStatTooltip(dot);
+});
+$('statusStripRates').addEventListener('focusout', (e) => {
+  if (e.target.closest('.stat-info-dot')) hideStatTooltip();
+});
+
+loadInputs();
+CURRENCY_FIELDS.forEach(formatCurrencyField);
+try { setInputsCollapsed(localStorage.getItem(COLLAPSE_KEY) === '1'); } catch(e) { setInputsCollapsed(false); }
+render();
+if (lastFiState) logFiSnapshot(lastFiState);
+</script>
+</body>
+</html>

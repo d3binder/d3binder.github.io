@@ -1,0 +1,47 @@
+[
+  {
+    "id": "example-urgent-tax-year",
+    "date": "2026-08-27",
+    "title": "New tax year — check your Contribution Limits",
+    "body": "IRS 401(k), HSA, and IRA limits change every year. Revisit Contribution Limits to make sure the numbers you're planning around are still current.",
+    "href": "ContributionLimits/index.html",
+    "label": "Open Contribution Limits",
+    "type": "urgent"
+  },
+  {
+    "id": "example-warning-backup",
+    "date": "2026-08-27",
+    "title": "Haven't backed up in a while?",
+    "body": "Everything you enter stays only in this browser. Clearing site data — or losing the device — can wipe it without warning. A Profile Manager export takes a few seconds.",
+    "href": "ProfileManager/index.html",
+    "label": "Open Profile Manager",
+    "type": "warning"
+  },
+  {
+    "id": "welcome-notifications",
+    "date": "2026-08-26",
+    "title": "Notifications are here",
+    "body": "This bell shows updates from the FireNate team, plus milestones you cross on your own — like paying off a debt or hitting a savings goal — computed right in your browser.",
+    "href": "",
+    "label": "",
+    "type": "info"
+  },
+  {
+    "id": "example-achievement-emergency-fund",
+    "date": "2026-08-26",
+    "title": "Emergency Fund: fully funded",
+    "body": "You've saved enough to cover your target months of expenses — a real safety net, not just a number on a page. Nice work.",
+    "href": "EmergencyFund/index.html",
+    "label": "Open Emergency Fund",
+    "type": "achievement"
+  },
+  {
+    "id": "example-scheduled-future",
+    "date": "2026-09-15T09:00",
+    "title": "Scheduled example — hidden until Sep 15, 9am",
+    "body": "\"date\" can carry a time (\"YYYY-MM-DDTHH:MM\"), not just a day — this entry stays completely out of the list, badge count, and everything else until that moment actually arrives. A plain \"YYYY-MM-DD\" still just means \"visible as soon as that day starts,\" same as every other example here.",
+    "href": "",
+    "label": "",
+    "type": "info"
+  }
+]

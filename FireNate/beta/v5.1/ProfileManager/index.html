@@ -1,0 +1,1569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script src="../assets/js/theme-init.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FireNate - Profile Manager</title>
+<meta name="description" content="Manage your saved profile and named what-if scenarios — save, load, and delete snapshots of your age, savings, goal, and return assumptions.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Antonio:wght@400;500;600;700&family=Michroma&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/site.css">
+<link rel="stylesheet" href="../assets/css/timeToFI.css">
+<script src="../assets/js/theme.js" defer></script>
+<script src="../assets/js/user-profile.js" defer></script>
+<script src="../assets/js/nav.js" defer></script>
+<script>
+window.FN_BASE = "../"; window.FN_PAGE = "profile-manager";
+</script>
+<style>
+  .pm-empty{
+    margin-top:24px; text-align:center; padding:56px 28px;
+    background:var(--surface); border:1px solid var(--line); border-top:4px solid var(--plum);
+    border-radius:var(--radius);
+  }
+  [data-theme="lcars"] .pm-empty h2{ font-family:var(--display); letter-spacing:.02em; }
+  .pm-empty h2{ font-family:var(--serif); font-size:26px; margin:0 0 10px; }
+  .pm-empty p{ color:var(--ink-dim); font-size:15px; max-width:48ch; margin:0 auto 22px; }
+
+  /* ---------- STORAGE USAGE METER ---------- */
+  .pm-storage-meter{
+    margin-top:22px; padding:16px 20px; background:var(--surface); border:1px solid var(--line);
+    border-radius:var(--radius);
+  }
+  .pm-storage-meter-head{
+    display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap;
+    margin-bottom:9px;
+  }
+  .pm-storage-meter-label{
+    font-family:var(--mono); font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-faint);
+  }
+  .pm-storage-meter-value{ font-family:var(--mono); font-size:13px; color:var(--ink); font-weight:600; font-variant-numeric:tabular-nums; }
+  .pm-storage-meter-track{
+    height:10px; border-radius:999px; background:var(--surface-2); border:1px solid var(--line);
+    overflow:hidden;
+  }
+  .pm-storage-meter-fill{
+    height:100%; border-radius:999px; width:0;
+    background:var(--jade); transition:width .5s ease, background .3s ease;
+  }
+  .pm-storage-meter-fill.gold{ background:var(--gold); }
+  .pm-storage-meter-fill.danger{ background:var(--danger); }
+  .pm-storage-meter-hint{ margin:9px 0 0; font-size:12.5px; color:var(--ink-faint); }
+  #pmPruneOldBtn{ margin-top:14px; }
+  .pm-btn[hidden]{ display:none; }
+  .pm-btn{
+    display:inline-flex; align-items:center; gap:8px;
+    background:linear-gradient(135deg, var(--gold), var(--gold-dim));
+    color:#201205; font-weight:700; font-size:13.5px;
+    padding:11px 22px; border-radius:999px; border:none; cursor:pointer;
+    font-family:var(--sans); transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .pm-btn:hover{ transform:translateY(-1px); box-shadow:0 8px 20px -6px rgba(217,132,15,0.45); }
+  .pm-btn:active{ transform:translateY(0); }
+  .pm-btn.pm-btn-ghost{
+    background:none; border:1px solid var(--line); color:var(--ink-dim); font-weight:600;
+  }
+  .pm-btn.pm-btn-ghost:hover{ border-color:var(--gold-dim); color:var(--gold); box-shadow:none; }
+  .pm-btn.pm-btn-danger{
+    background:none; border:1px solid var(--danger); color:var(--danger); font-weight:600; padding:7px 14px; font-size:12px;
+  }
+  .pm-btn.pm-btn-danger:hover{ background:var(--danger); color:#fff; }
+
+  .pm-editnote{
+    display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+    margin-top:4px; padding:14px 22px; background:var(--surface-2); border:1px solid var(--line);
+    border-radius:var(--radius); color:var(--ink-dim); font-size:13.5px;
+  }
+
+  /* ---------- LIVE PROFILE STAT GRID ---------- */
+  .pm-grid{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:14px;
+    margin-top:20px;
+  }
+  .pm-card{
+    background:var(--surface); border:1px solid var(--line); border-top:4px solid var(--gold);
+    border-radius:var(--radius); padding:16px 18px;
+  }
+  .pm-card.jade{ border-top-color:var(--jade); }
+  .pm-card.target{ border-top-color:var(--target); }
+  .pm-card .k{ font-family:var(--mono); font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:6px; }
+  [data-theme="lcars"] .pm-card .v{ font-family:var(--mono); font-variant-numeric:tabular-nums; }
+  .pm-card .v{ font-family:var(--serif); font-size:22px; color:var(--ink); font-weight:500; line-height:1.15; }
+  .pm-card .v.gold{ color:var(--gold); }
+  .pm-card .v.jade{ color:var(--jade); }
+  .pm-card .v.target{ color:var(--target); }
+
+  .pm-live-pagedata{ margin-top:18px; }
+  .pm-live-pagedata .label{
+    font-family:var(--mono); font-size:10px; letter-spacing:0.1em; text-transform:uppercase;
+    color:var(--ink-faint); margin-bottom:8px;
+  }
+  .pm-live-pagedata-tags{ display:flex; flex-wrap:wrap; gap:8px; }
+  .pm-live-pagedata-tag{
+    font-size:12.5px; font-weight:600; color:var(--ink);
+    background:var(--surface-2); border:1px solid var(--line);
+    padding:6px 12px; border-radius:999px;
+  }
+  .pm-live-pagedata-empty{ font-size:13px; color:var(--ink-faint); }
+
+  /* ---------- SAVE FORM ---------- */
+  .pm-save-ledger{
+    margin-top:4px; background:var(--surface); border:1px solid var(--line); border-top:4px solid var(--plum);
+    border-radius:var(--radius); padding:22px 24px; display:flex; align-items:flex-end; gap:16px; flex-wrap:wrap;
+  }
+  .pm-save-ledger .pm-field{ display:flex; flex-direction:column; gap:6px; flex:1 1 220px; }
+  .pm-save-ledger label{ font-size:12px; color:var(--ink-dim); margin:0; }
+  .pm-save-ledger input, .pm-save-ledger textarea{
+    background:var(--surface-2); border:1px solid var(--line); border-radius:8px; color:var(--ink);
+    font-family:var(--sans); font-size:14px; padding:10px 12px; outline:none;
+  }
+  .pm-save-ledger textarea{ resize:vertical; min-height:44px; font-family:var(--mono); font-size:12.5px; }
+  .pm-save-ledger input:focus, .pm-save-ledger textarea:focus{ border-color:var(--plum); }
+
+  .pm-btn.pm-btn-sm{ padding:6px 14px; font-size:12px; }
+
+  /* ---------- SHARE-AS-TEXT BOX (per saved-profile card) ---------- */
+  .pm-share-box{
+    margin-top:14px; padding:14px 16px; background:var(--surface-2); border:1px solid var(--line);
+    border-radius:10px; display:flex; flex-direction:column; gap:10px;
+  }
+  .pm-share-box label{ font-size:12.5px; color:var(--ink-dim); }
+  .pm-share-text{
+    width:100%; box-sizing:border-box; background:var(--surface); border:1px solid var(--line); border-radius:8px;
+    color:var(--ink); font-family:var(--mono); font-size:11.5px; line-height:1.5; padding:10px 12px;
+    resize:vertical; min-height:64px; word-break:break-all;
+  }
+  .pm-share-box-actions{ display:flex; }
+
+  .pm-scenario-empty{
+    margin-top:16px; padding:28px; text-align:center; color:var(--ink-faint); font-size:13.5px;
+    background:var(--surface-2); border:1px dashed var(--line); border-radius:var(--radius);
+  }
+
+  .pm-scenario-card{
+    background:var(--surface); border:1px solid var(--line); border-top:4px solid var(--target);
+    border-radius:var(--radius); padding:20px 22px; margin-top:14px;
+  }
+  .pm-scenario-card.is-live{ border-top-color:var(--jade); }
+  .pm-scenario-head{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+  .pm-scenario-head-left{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; min-width:0; }
+  [data-theme="lcars"] .pm-scenario-head h4{ font-family:var(--display); letter-spacing:.02em; }
+  .pm-scenario-head h4{ font-family:var(--serif); font-size:19px; font-weight:600; margin:0; }
+  .pm-scenario-head .when{ font-family:var(--mono); font-size:11px; color:var(--ink-faint); }
+  .pm-rename-btn{
+    background:none; border:none; color:var(--ink-faint); cursor:pointer; padding:4px; border-radius:6px;
+    display:inline-flex; align-items:center; flex-shrink:0;
+  }
+  .pm-rename-btn:hover{ color:var(--gold); background:var(--surface-2); }
+  [data-theme="lcars"] .pm-rename-input{ font-family:var(--display); letter-spacing:.02em; }
+  .pm-rename-input{
+    font-family:var(--serif); font-size:19px; font-weight:600; color:var(--ink);
+    background:var(--surface-2); border:1px solid var(--plum); border-radius:8px; padding:3px 10px;
+    outline:none; min-width:0; max-width:100%;
+  }
+  .pm-compare-check{
+    display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--ink-dim);
+    background:var(--surface-2); border:1px solid var(--line); padding:5px 11px; border-radius:999px;
+    cursor:pointer; flex-shrink:0; user-select:none;
+  }
+  .pm-compare-check:has(input:checked){ border-color:var(--plum); color:var(--plum); }
+  .pm-compare-check input{ accent-color:var(--plum); margin:0; }
+  .pm-prune-check{
+    display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--ink-dim);
+    background:var(--surface-2); border:1px solid var(--line); padding:5px 11px; border-radius:999px;
+    cursor:pointer; flex-shrink:0; user-select:none;
+  }
+  .pm-prune-check:has(input:checked){ border-color:var(--danger); color:var(--danger); }
+  .pm-prune-check input{ accent-color:var(--danger); margin:0; }
+  .pm-prune-bar{
+    display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;
+    margin-top:12px; padding:12px 18px; background:var(--surface-2); border:1px dashed var(--line);
+    border-radius:var(--radius); font-size:13px; color:var(--ink-dim);
+  }
+  .pm-prune-actions{ display:flex; gap:8px; flex-wrap:wrap; }
+  .pm-autosnap-bar{
+    display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;
+    margin-top:12px; padding:12px 18px; background:var(--surface-2); border:1px dashed var(--line);
+    border-radius:var(--radius); font-size:13px; color:var(--ink-dim);
+  }
+  /* [hidden] alone loses to .pm-prune-bar's own display:flex rule above
+     (higher specificity here wins outright) — without this, the `hidden`
+     attribute silently does nothing */
+  .pm-prune-bar[hidden]{ display:none; }
+  .pm-autosnap-control{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .pm-autosnap-control select{
+    background:var(--surface); border:1px solid var(--line); border-radius:8px; color:var(--ink);
+    font-family:var(--sans); font-size:13px; padding:7px 10px; outline:none; cursor:pointer;
+  }
+  .pm-autosnap-control select:focus{ border-color:var(--plum); }
+  .pm-scenario-pagedata{ font-size:12px; color:var(--ink-faint); margin:-8px 0 14px; }
+  .pm-live-badge{
+    font-family:var(--mono); font-size:10.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase;
+    color:var(--jade); background:rgba(79,219,143,0.15); padding:3px 10px; border-radius:999px;
+  }
+  .pm-scenario-stats{ display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:14px; margin-bottom:14px; }
+  .pm-scenario-stats .k{ font-family:var(--mono); font-size:10px; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:4px; }
+  .pm-scenario-stats .v{ font-family:var(--mono); font-size:15px; color:var(--ink); font-weight:600; }
+  .pm-scenario-actions{ display:flex; gap:10px; flex-wrap:wrap; }
+
+  /* ---------- EXPORT / IMPORT ---------- */
+  .pm-io-row{
+    display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+    margin-top:40px; margin-bottom:4px;
+  }
+  .pm-io-actions{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+
+  /* ---------- "LOAD INTO MY PROFILE" CONFIRMATION FX ---------- */
+  .pm-load-fx{
+    position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:14px; pointer-events:none; z-index:9999; opacity:0;
+  }
+  .pm-load-fx.show{ animation:pm-load-fx-fade .95s ease forwards; }
+  @keyframes pm-load-fx-fade{
+    0%{ opacity:0; } 10%{ opacity:1; } 72%{ opacity:1; } 100%{ opacity:0; }
+  }
+  .pm-load-fx-badge{
+    width:64px; height:64px; border-radius:50%;
+    background:var(--jade); color:#fff;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 10px 30px -6px rgba(79,219,143,0.55);
+    transform:scale(0.3);
+  }
+  .pm-load-fx.show .pm-load-fx-badge{ animation:pm-load-fx-pop .5s cubic-bezier(.34,1.56,.64,1) .05s forwards; }
+  @keyframes pm-load-fx-pop{
+    0%{ transform:scale(0.3) rotate(-10deg); }
+    60%{ transform:scale(1.15) rotate(4deg); }
+    100%{ transform:scale(1) rotate(0deg); }
+  }
+  .pm-load-fx-label{
+    font-family:var(--sans); font-size:13px; font-weight:700; letter-spacing:.03em;
+    color:var(--ink); background:var(--surface); border:1px solid var(--line);
+    padding:7px 16px; border-radius:999px; opacity:0;
+  }
+  .pm-load-fx.show .pm-load-fx-label{ animation:pm-load-fx-label-in .4s ease .32s forwards; }
+  @keyframes pm-load-fx-label-in{
+    from{ opacity:0; transform:translateY(4px); }
+    to{ opacity:1; transform:translateY(0); }
+  }
+  .pm-load-fx-confetti{ position:absolute; top:50%; left:50%; width:0; height:0; }
+  .pm-load-fx-confetti span{
+    position:absolute; top:0; left:0; width:7px; height:7px; border-radius:2px;
+    background:var(--c); opacity:0;
+  }
+  .pm-load-fx.show .pm-load-fx-confetti span{ animation:pm-load-fx-confetti .8s ease-out .05s forwards; }
+  @keyframes pm-load-fx-confetti{
+    0%{ opacity:0; transform:translate(-50%,-50%) rotate(var(--angle)) translateY(0) scale(1); }
+    14%{ opacity:1; }
+    100%{ opacity:0; transform:translate(-50%,-50%) rotate(var(--angle)) translateY(-95px) scale(0.4); }
+  }
+  .pm-scenario-actions [data-load].just-loaded{ animation:pm-load-btn-pulse .5s ease-out; }
+  @keyframes pm-load-btn-pulse{
+    0%{ box-shadow:0 0 0 0 rgba(79,219,143,0.6); }
+    100%{ box-shadow:0 0 0 10px rgba(79,219,143,0); }
+  }
+  .pm-io-status{
+    font-size:12.5px; color:var(--ink-dim); opacity:0; transition:opacity .25s ease;
+  }
+  .pm-io-status.show{ opacity:1; }
+  .pm-io-status.is-error{ color:var(--danger); }
+
+  /* ---------- COMPARE ---------- */
+  .pm-compare-bar{
+    display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;
+    margin-top:16px; padding:12px 18px; background:var(--surface-2); border:1px dashed var(--line);
+    border-radius:var(--radius); font-size:13px; color:var(--ink-dim);
+  }
+  .pm-compare-actions{ display:flex; gap:8px; flex-wrap:wrap; }
+  .pm-compare-card{
+    margin-top:16px; background:var(--surface); border:1px solid var(--line); border-top:4px solid var(--plum);
+    border-radius:var(--radius); padding:20px 22px;
+  }
+  [data-theme="lcars"] .pm-compare-card h4{ font-family:var(--display); letter-spacing:.02em; }
+  .pm-compare-card h4{ font-family:var(--serif); font-size:18px; font-weight:600; margin:0 0 14px; }
+  .pm-compare-table{ width:100%; border-collapse:collapse; font-size:13px; }
+  .pm-compare-table th, .pm-compare-table td{
+    padding:8px 10px; text-align:right; border-bottom:1px solid var(--line);
+    font-variant-numeric:tabular-nums;
+  }
+  .pm-compare-table th:first-child, .pm-compare-table td:first-child{ text-align:left; color:var(--ink-faint); font-size:11px; text-transform:uppercase; letter-spacing:.05em; font-family:var(--mono); }
+  .pm-compare-table th{ font-family:var(--sans); font-weight:700; color:var(--ink); }
+  .pm-compare-table td.jade{ color:var(--jade); }
+  .pm-compare-table td.danger{ color:var(--danger); }
+</style>
+</head>
+<body>
+<div id="fn-site-nav"></div>
+
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">FIRE Nate - Profile Manager</p>
+    <h1 id="pageTitleHeader">Every version of your plan, <em>in one place</em>.</h1>
+    <p class="lede">Your live profile powers every calculator on the site. Save it as a named snapshot before trying a different return rate, retirement age, or goal — then load any snapshot back whenever you want.</p>
+  </header>
+
+  <div class="pm-storage-meter" id="pmStorageMeter">
+    <div class="pm-storage-meter-head">
+      <span class="pm-storage-meter-label">Browser storage used</span>
+      <span class="pm-storage-meter-value" id="pmStorageMeterValue">—</span>
+    </div>
+    <div class="pm-storage-meter-track">
+      <div class="pm-storage-meter-fill" id="pmStorageMeterFill"></div>
+    </div>
+    <p class="pm-storage-meter-hint" id="pmStorageMeterHint">Estimated against roughly 5&nbsp;MB, the conservative floor most browsers guarantee per site — includes your profile, saved snapshots, and every calculator's history, not just what's on this page.</p>
+    <button type="button" class="pm-btn pm-btn-ghost pm-btn-sm" id="pmPruneOldBtn" hidden>Delete snapshots older than 90 days</button>
+  </div>
+  <div class="pm-autosnap-bar">
+    <span>An automatic in-browser snapshot is saved as an extra safety net &mdash; not a substitute for actually exporting a backup file.</span>
+    <div class="pm-autosnap-control">
+      <label for="pmAutoSnapInterval">Snapshot frequency</label>
+      <select id="pmAutoSnapInterval"></select>
+    </div>
+  </div>
+
+  <div id="pmEmptyState" class="pm-empty" style="display:none;">
+    <h2>Let's set up your profile first</h2>
+    <p>Add your age, savings, goal, and target retirement age once, and every calculator on the site — plus this manager — will use them.</p>
+    <button type="button" class="pm-btn" id="pmOpenProfileBtn">Set up my profile</button>
+  </div>
+
+  <div id="pmLive" style="display:none;">
+    <h2 class="ledger-title" style="margin-top:40px; margin-bottom:4px;">Your live profile</h2>
+    <div class="pm-editnote">
+      <span>This is what every calculator on the site currently reads.</span>
+      <button type="button" class="pm-btn pm-btn-ghost" id="pmEditProfileBtn">Edit my profile &rarr;</button>
+    </div>
+    <div class="pm-grid" id="pmLiveGrid"></div>
+    <div class="pm-live-pagedata" id="pmLivePageData"></div>
+  </div>
+
+  <h2 class="ledger-title" style="margin-top:48px; margin-bottom:4px;">Save a snapshot</h2>
+  <p class="lede" style="margin-bottom:16px;">Duplicate your current profile into a labeled snapshot — try a different return rate, retirement age, or savings goal, then compare them side by side.</p>
+
+  <div class="pm-save-ledger">
+    <div class="pm-field">
+      <label for="pmScenarioName">Snapshot name</label>
+      <input type="text" id="pmScenarioName" placeholder="e.g. Conservative 6% return">
+    </div>
+    <button type="button" class="pm-btn" id="pmSaveScenarioBtn">Save current profile as snapshot</button>
+    <button type="button" class="pm-btn pm-btn-ghost" id="pmQuickSnapshotBtn" title="Instantly saves your current profile and every calculator's inputs — no name needed">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+      Quick snapshot (everything)
+    </button>
+  </div>
+
+  <div class="pm-share-import">
+    <h2 class="ledger-title" style="margin-top:40px; margin-bottom:4px;">Add a shared snapshot</h2>
+    <p class="lede" style="margin-bottom:16px;">Got a snapshot text string from someone else, or from another device? Paste it here to add it as one of your saved profiles below.</p>
+    <div class="pm-save-ledger">
+      <div class="pm-field" style="flex:1 1 100%;">
+        <label for="pmImportText">Shared snapshot text</label>
+        <textarea id="pmImportText" rows="2" placeholder="Paste the shared text string here…"></textarea>
+      </div>
+      <button type="button" class="pm-btn pm-btn-ghost" id="pmImportTextBtn">Add as saved profile</button>
+    </div>
+  </div>
+
+  <div class="pm-io-row">
+    <h2 class="ledger-title" style="margin:0;">Saved profiles</h2>
+    <div class="pm-io-actions">
+      <span class="pm-io-status" id="pmImportExportStatus"></span>
+      <button type="button" class="pm-btn pm-btn-ghost" id="pmExportBtn">Export profiles</button>
+      <button type="button" class="pm-btn pm-btn-ghost" id="pmImportBtn">Import profiles</button>
+      <input type="file" id="pmImportFile" accept="application/json,.json" style="display:none;">
+    </div>
+  </div>
+  <div class="pm-compare-bar">
+    <span id="pmCompareStatus">Check two saved profiles below to compare them side by side.</span>
+    <div class="pm-compare-actions">
+      <button type="button" class="pm-btn pm-btn-ghost pm-btn-sm" id="pmCompareBtn" disabled>Compare selected</button>
+      <button type="button" class="pm-btn pm-btn-ghost pm-btn-sm" id="pmCompareClearBtn" style="display:none;">Clear selection</button>
+    </div>
+  </div>
+  <div id="pmCompareResult"></div>
+
+  <div class="pm-prune-bar" id="pmPruneBar" hidden>
+    <span id="pmPruneStatus">—</span>
+    <div class="pm-prune-actions">
+      <button type="button" class="pm-btn pm-btn-ghost pm-btn-sm" id="pmPruneSelectAllBtn">Select all</button>
+      <button type="button" class="pm-btn pm-btn-danger pm-btn-sm" id="pmPruneSelectedBtn" style="display:none;">Delete selected</button>
+    </div>
+  </div>
+
+  <div id="pmScenarioList"></div>
+
+  <div class="pm-example-section">
+    <h2 class="ledger-title" style="margin-top:48px; margin-bottom:4px;">Just exploring?</h2>
+    <p class="lede" style="margin-bottom:16px;">Add a saved profile filled with realistic example numbers across your profile and every calculator on the site — a quick way to see everything in action without touching your own data.</p>
+    <button type="button" class="pm-btn pm-btn-ghost" id="pmExampleBtn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"></rect><line x1="8" y1="8" x2="16" y2="8"></line><line x1="8" y1="12" x2="16" y2="12"></line><line x1="8" y1="16" x2="13" y2="16"></line></svg>
+      Create example data snapshot
+    </button>
+  </div>
+
+  <div class="pm-raw-export-section">
+    <h2 class="ledger-title" style="margin-top:48px; margin-bottom:4px;">Full raw backup</h2>
+    <p class="lede" style="margin-bottom:16px;">Downloads every single key FireNate has saved in this browser — your profile, every calculator's inputs, saved profiles, your theme choice, and every small on-page preference — exactly as stored, with no processing. This is a raw debugging/backup copy, not the same file "Export profiles" makes above — use that one (and "Import profiles") for actually moving your data to another device. Restoring one writes every key from the file straight back into storage, unprocessed — it can't be validated field by field the way "Import profiles" is, so only restore a raw backup you made yourself.</p>
+    <div class="pm-io-actions" style="margin-bottom:6px;">
+      <button type="button" class="pm-btn pm-btn-ghost" id="pmRawExportBtn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>
+        Export raw local storage
+      </button>
+      <button type="button" class="pm-btn pm-btn-ghost" id="pmRawImportBtn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path><line x1="12" y1="10" x2="12" y2="16"></line><polyline points="9 13 12 10 15 13"></polyline></svg>
+        Import raw local storage
+      </button>
+      <input type="file" id="pmRawImportFile" accept="application/json,.json" style="display:none;">
+    </div>
+    <span class="pm-io-status" id="pmRawImportExportStatus"></span>
+  </div>
+</div>
+
+<footer id="site-footer"></footer>
+
+<script>
+const $ = id => document.getElementById(id);
+const fmtUSD = n => n.toLocaleString('en-US', {style:'currency', currency:'USD', maximumFractionDigits:0});
+const fmtNum = n => n.toLocaleString('en-US', {maximumFractionDigits:1});
+
+// a "?highlight=io" link (e.g. from Getting Started's "Show me export/import"
+// button) draws the eye to these two buttons on arrival — same pulse the
+// nav's profile panel uses, reused here via the shared .fn-attn class
+(function highlightFromQuery(){
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('highlight') !== 'io') return;
+  const exportBtn = $('pmExportBtn');
+  const importBtn = $('pmImportBtn');
+  [exportBtn, importBtn].forEach(el => {
+    if (!el) return;
+    el.classList.add('fn-attn');
+    el.addEventListener('animationend', () => el.classList.remove('fn-attn'), { once: true });
+    setTimeout(() => el.classList.remove('fn-attn'), 1600);
+  });
+  if (exportBtn) exportBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  window.history.replaceState({}, document.title, window.location.pathname);
+})();
+
+function crossoverAmount(goal, r, yearsRemaining){
+  const yrs = Math.max(0, yearsRemaining);
+  const base = 1 + r;
+  if (base <= 0) return goal;
+  return goal / Math.pow(base, yrs);
+}
+
+function deriveMetrics(profile){
+  const age = window.FNProfile.getAge(profile);
+  const savings = parseFloat(profile.currentSavings) || 0;
+  const goal = parseFloat(profile.goalAmount) || 0;
+  const retireAge = parseFloat(profile.retireAge) || 0;
+  const r = (parseFloat(profile.expectedReturn) || 0) / 100;
+  const yearsToRetire = age !== null ? Math.max(0, retireAge - age) : null;
+  const progressPct = goal > 0 ? (savings / goal) * 100 : 0;
+  const requiredNow = (age !== null && yearsToRetire !== null) ? crossoverAmount(goal, r, yearsToRetire) : null;
+  const coastFI = requiredNow !== null ? savings >= requiredNow : null;
+  return { age, savings, goal, retireAge, r, progressPct, coastFI };
+}
+
+function profileComplete(profile){
+  return !!(profile && profile.birthday && profile.goalAmount && profile.retireAge && profile.currentSavings !== undefined && profile.currentSavings !== '');
+}
+
+// deliberately looser than profileComplete() above — used only to decide
+// whether to show "Let's set up your profile first" at all. A visitor who's
+// filled in just one or two fields (or imported a profile from another
+// device that's missing one of the four profileComplete() requires) has
+// clearly already started, and re-showing the "set up" nudge on top of
+// their own real data reads as broken, not helpful. deriveMetrics()/
+// renderLiveGrid() already fall back to 0/"—" for whichever fields are
+// still missing, so the live grid renders fine on partial data too.
+function hasAnyProfileData(profile){
+  const keys = ["birthday", "currentIncome", "currentSavings", "goalAmount", "retireAge", "expectedReturn"];
+  return !!(profile && keys.some(k => profile[k] !== undefined && profile[k] !== null && profile[k] !== ''));
+}
+
+function renderLiveGrid(m){
+  const grid = $('pmLiveGrid');
+  grid.innerHTML = '';
+  const add = (k, v, cls) => {
+    const div = document.createElement('div');
+    div.className = 'pm-card' + (cls ? ' ' + cls : '');
+    div.innerHTML = `<div class="k">${k}</div><div class="v${cls ? ' ' + cls : ''}">${v}</div>`;
+    grid.appendChild(div);
+  };
+  add('Age', m.age === null ? '—' : fmtNum(m.age));
+  add('Savings', fmtUSD(m.savings), 'jade');
+  add('Goal Amount', fmtUSD(m.goal), 'gold');
+  add('Retirement Age', fmtNum(m.retireAge));
+  add('Annual Return Rate', fmtNum(m.r * 100) + '%', 'target');
+  add('Progress', fmtNum(Math.max(0, m.progressPct)) + '%', 'jade');
+}
+
+// lists which calculator pages currently have their own saved inputs, so
+// "Your live profile" reflects the whole site's state — not just the 6
+// shared fields shown in the stat grid above it
+function renderLivePageData(){
+  const host = $('pmLivePageData');
+  if (!host) return;
+  const names = pageDataLabels(collectPageData());
+  host.innerHTML = names.length
+    ? `<div class="label">Calculators with saved inputs</div>
+       <div class="pm-live-pagedata-tags">${names.map(n => `<span class="pm-live-pagedata-tag">${escapeHtml(n)}</span>`).join('')}</div>`
+    : `<div class="pm-live-pagedata-empty">No calculator-specific inputs saved yet — visit a calculator and its inputs will show up here.</div>`;
+}
+
+function renderLive(){
+  const profile = window.FNProfile.get();
+  const hasData = hasAnyProfileData(profile);
+  $('pmEmptyState').style.display = hasData ? 'none' : '';
+  $('pmLive').style.display = hasData ? '' : 'none';
+  if (!hasData) return;
+  renderLiveGrid(deriveMetrics(profile));
+  renderLivePageData();
+}
+
+// pop + color-cycle glow on the profile icon and panel so the jump from
+// this page over to the nav actually catches the eye, instead of a dropdown
+// silently appearing somewhere the user wasn't looking
+function pulseAttention(el){
+  if (!el) return;
+  el.classList.remove('fn-attn');
+  void el.offsetWidth; // force reflow so the animation restarts on repeat clicks
+  el.classList.add('fn-attn');
+  var cleared = false;
+  var clear = function(){
+    if (cleared) return;
+    cleared = true;
+    el.classList.remove('fn-attn');
+  };
+  el.addEventListener('animationend', clear, { once: true });
+  setTimeout(clear, 1400);
+}
+// full-screen checkmark + confetti burst so clicking "Load into my profile"
+// has an unmistakable, fun payoff — same reflow-restart + animationend/
+// timeout cleanup pattern used for the camera-flash and clear-all effects
+// in nav.js, kept as a lazily-created child of <body> so it always covers
+// the real viewport regardless of this page's own layout
+function triggerLoadFx(){
+  let fx = document.getElementById('pmLoadFx');
+  if (!fx){
+    const colors = ['var(--gold)', 'var(--jade)', 'var(--plum)', 'var(--target)'];
+    const count = 12;
+    let confettiHtml = '';
+    for (let i = 0; i < count; i++){
+      const angle = Math.round((360 / count) * i);
+      confettiHtml += `<span style="--angle:${angle}deg;--c:${colors[i % colors.length]}"></span>`;
+    }
+    fx = document.createElement('div');
+    fx.id = 'pmLoadFx';
+    fx.className = 'pm-load-fx';
+    fx.setAttribute('aria-hidden', 'true');
+    fx.innerHTML = `
+      <div class="pm-load-fx-confetti">${confettiHtml}</div>
+      <div class="pm-load-fx-badge">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+      </div>
+      <div class="pm-load-fx-label">Loaded into your profile</div>
+    `;
+    document.body.appendChild(fx);
+  }
+  fx.classList.remove('show');
+  void fx.offsetWidth;
+  fx.classList.add('show');
+  let cleared = false;
+  const clear = () => {
+    if (cleared) return;
+    cleared = true;
+    fx.classList.remove('show');
+  };
+  fx.addEventListener('animationend', clear, { once: true });
+  setTimeout(clear, 1200);
+}
+
+function openProfilePanelWithAttention(){
+  const toggle = document.querySelector('.fn-profile-toggle');
+  if (toggle) toggle.click();
+  pulseAttention(document.querySelector('.fn-profile-toggle'));
+  pulseAttention(document.querySelector('.fn-profile-panel'));
+}
+
+// stopPropagation matters here: these buttons live outside #fn-site-nav, so
+// once the nested .click() below opens the profile panel, letting this
+// original click event keep bubbling to document would hit nav.js's own
+// "click outside the nav closes every panel" listener — which sees this
+// button (outside the nav) as the click target and immediately closes the
+// panel that was just opened.
+$('pmOpenProfileBtn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  openProfilePanelWithAttention();
+});
+$('pmEditProfileBtn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  openProfilePanelWithAttention();
+});
+
+document.addEventListener('fn-profile-change', renderLive);
+
+// ---------- scenarios ----------
+const SCENARIO_KEY = 'fn-scenarios';
+// ids of saved profiles currently checked for the "Compare" feature —
+// capped at 2, kept as module state (not localStorage) since it's a
+// transient view choice, not saved data
+const compareSelection = new Set();
+// same idea, separate Set — ids checked for bulk deletion ("Select" on
+// each card, distinct from "Compare"), also transient view state
+const pruneSelection = new Set();
+function loadScenarios(){
+  try {
+    const raw = localStorage.getItem(SCENARIO_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch(e) { return []; }
+}
+function saveScenarios(list){
+  try { localStorage.setItem(SCENARIO_KEY, JSON.stringify(list)); } catch(e) {}
+}
+
+// reads every calculator's own saved-inputs key (the shared registry nav.js
+// exposes as window.FN_PAGE_DATA_KEYS) into a plain { key: rawJsonString }
+// bag, so a snapshot captures a user's full site state — not just the 6
+// shared profile fields shown in "Your info"
+function collectPageData(){
+  const data = {};
+  (window.FN_PAGE_DATA_KEYS || []).forEach(key => {
+    let raw = null;
+    try { raw = localStorage.getItem(key); } catch(e) {}
+    if (raw !== null) data[key] = raw;
+  });
+  return data;
+}
+// writes a previously-collected page-data bag straight back into
+// localStorage under each of its original keys — each page's own
+// loadInputs() picks the values up the next time it's visited
+function applyPageData(pageData){
+  if (!pageData) return;
+  Object.keys(pageData).forEach(key => {
+    try { localStorage.setItem(key, pageData[key]); } catch(e) {}
+  });
+}
+// friendly calculator names for whichever page-data keys are present in a
+// { key: rawJsonString } bag (a scenario's own pageData, or the live one
+// from collectPageData()), using the shared registry nav.js exposes as
+// window.FN_PAGE_DATA_LABELS — falls back to the raw key so an
+// unrecognized/future key still shows up rather than silently vanishing
+function pageDataLabels(pageData){
+  if (!pageData) return [];
+  const labels = window.FN_PAGE_DATA_LABELS || {};
+  return Object.keys(pageData).map(key => labels[key] || key);
+}
+
+function fmtWhen(ts){
+  const d = new Date(ts);
+  return d.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) + ' ' +
+    d.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'});
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function renderScenarios(){
+  const list = loadScenarios();
+  const host = $('pmScenarioList');
+  host.innerHTML = '';
+
+  // drop any compare/prune selections whose snapshot no longer exists
+  // (deleted, or this is a fresh page load with nothing selected yet)
+  Array.from(compareSelection).forEach(id => {
+    if (!list.some(s => s.id === id)) compareSelection.delete(id);
+  });
+  Array.from(pruneSelection).forEach(id => {
+    if (!list.some(s => s.id === id)) pruneSelection.delete(id);
+  });
+  updateCompareBar();
+  updatePruneBar(list);
+  updateStorageCleanupBar(list);
+  renderStorageMeter();
+
+  if (!list.length){
+    host.innerHTML = '<div class="pm-scenario-empty">No saved snapshots yet. Name one above and save it to start comparing.</div>';
+    return;
+  }
+  list.slice().reverse().forEach(scenario => {
+    const m = deriveMetrics(scenario.profile);
+    const card = document.createElement('div');
+    card.className = 'pm-scenario-card';
+    const coastLabel = m.coastFI === null ? '—' : (m.coastFI ? 'Coast-FI ✓' : 'Not yet');
+    const pageDataNames = pageDataLabels(scenario.pageData);
+    card.innerHTML = `
+      <div class="pm-scenario-head">
+        <div class="pm-scenario-head-left">
+          <h4>${escapeHtml(scenario.name)}</h4>
+          <button type="button" class="pm-rename-btn" data-rename="${scenario.id}" aria-label="Rename this snapshot" title="Rename this snapshot">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path></svg>
+          </button>
+          <label class="pm-compare-check">
+            <input type="checkbox" data-compare="${scenario.id}"${compareSelection.has(scenario.id) ? ' checked' : ''}>
+            Compare
+          </label>
+          <label class="pm-prune-check">
+            <input type="checkbox" data-prune="${scenario.id}"${pruneSelection.has(scenario.id) ? ' checked' : ''}>
+            Select
+          </label>
+        </div>
+        <span class="when">Saved ${fmtWhen(scenario.savedAt)}</span>
+      </div>
+      ${pageDataNames.length ? `<div class="pm-scenario-pagedata">Also includes: ${pageDataNames.map(escapeHtml).join(', ')}</div>` : ''}
+      <div class="pm-scenario-stats">
+        <div><div class="k">Age</div><div class="v">${m.age === null ? '—' : fmtNum(m.age)}</div></div>
+        <div><div class="k">Savings</div><div class="v">${fmtUSD(m.savings)}</div></div>
+        <div><div class="k">Goal</div><div class="v">${fmtUSD(m.goal)}</div></div>
+        <div><div class="k">Retire age</div><div class="v">${fmtNum(m.retireAge)}</div></div>
+        <div><div class="k">Return</div><div class="v">${fmtNum(m.r * 100)}%</div></div>
+        <div><div class="k">Progress</div><div class="v">${fmtNum(Math.max(0, m.progressPct))}%</div></div>
+        <div><div class="k">Coast-FI</div><div class="v">${coastLabel}</div></div>
+      </div>
+      <div class="pm-scenario-actions">
+        <button type="button" class="pm-btn pm-btn-ghost" data-load="${scenario.id}">Load into my profile</button>
+        <button type="button" class="pm-btn pm-btn-ghost" data-share="${scenario.id}">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+          Share as text
+        </button>
+        <button type="button" class="pm-btn pm-btn-danger" data-delete="${scenario.id}">Delete</button>
+      </div>
+    `;
+    host.appendChild(card);
+  });
+
+  host.querySelectorAll('[data-load]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-load');
+      const scenario = loadScenarios().find(s => s.id === id);
+      if (!scenario) return;
+      window.FNProfile.set(scenario.profile);
+      applyPageData(scenario.pageData);
+      renderLive();
+      triggerLoadFx();
+      btn.classList.remove('just-loaded');
+      void btn.offsetWidth;
+      btn.classList.add('just-loaded');
+      setTimeout(() => btn.classList.remove('just-loaded'), 500);
+    });
+  });
+  host.querySelectorAll('[data-delete]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-delete');
+      const ok = window.confirm('Delete this saved snapshot? This can\'t be undone.');
+      if (!ok) return;
+      const next = loadScenarios().filter(s => s.id !== id);
+      saveScenarios(next);
+      renderScenarios();
+    });
+  });
+  host.querySelectorAll('[data-share]').forEach(btn => {
+    btn.addEventListener('click', () => openShareBox(btn));
+  });
+  host.querySelectorAll('[data-rename]').forEach(btn => {
+    btn.addEventListener('click', () => startRename(btn));
+  });
+  host.querySelectorAll('[data-compare]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const id = cb.getAttribute('data-compare');
+      if (cb.checked){
+        if (compareSelection.size >= 2){
+          cb.checked = false; // cap at 2 — compare is a pairwise view, not a multi-select
+          showPmStatus('You can compare 2 at a time — uncheck one first.', true);
+          return;
+        }
+        compareSelection.add(id);
+      } else {
+        compareSelection.delete(id);
+      }
+      updateCompareBar();
+    });
+  });
+  host.querySelectorAll('[data-prune]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const id = cb.getAttribute('data-prune');
+      if (cb.checked) pruneSelection.add(id); else pruneSelection.delete(id);
+      updatePruneBar(loadScenarios());
+    });
+  });
+}
+
+// swaps a snapshot's name into an inline text input so it can be edited in
+// place, rather than a browser prompt() — matches the site's preference for
+// inline UI over native dialogs wherever there's room for one
+function startRename(btn){
+  const id = btn.getAttribute('data-rename');
+  const card = btn.closest('.pm-scenario-card');
+  if (!card || card.querySelector('.pm-rename-input')) return; // already editing
+  const headEl = card.querySelector('.pm-scenario-head-left h4');
+  if (!headEl) return;
+  const currentName = headEl.textContent;
+
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'pm-rename-input';
+  input.value = currentName;
+  headEl.replaceWith(input);
+  input.focus();
+  input.select();
+
+  let done = false;
+  function commit(){
+    if (done) return;
+    done = true;
+    const newName = input.value.trim();
+    if (newName && newName !== currentName){
+      const list = loadScenarios();
+      const scenario = list.find(s => s.id === id);
+      if (scenario){ scenario.name = newName; saveScenarios(list); }
+    }
+    renderScenarios();
+  }
+  function cancel(){
+    if (done) return;
+    done = true;
+    renderScenarios();
+  }
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') commit();
+    else if (e.key === 'Escape') cancel();
+  });
+  input.addEventListener('blur', commit);
+}
+
+// ---------- compare two saved profiles side by side ----------
+function updateCompareBar(){
+  const status = $('pmCompareStatus');
+  const btn = $('pmCompareBtn');
+  const clearBtn = $('pmCompareClearBtn');
+  if (!status || !btn || !clearBtn) return;
+  const n = compareSelection.size;
+  status.textContent = n === 0 ? 'Check two saved profiles below to compare them side by side.' :
+    n === 1 ? '1 selected — check one more to compare.' :
+    '2 selected — ready to compare.';
+  btn.disabled = n !== 2;
+  clearBtn.style.display = n > 0 ? '' : 'none';
+}
+
+const PRUNE_OLD_DAYS = 90;
+
+// rough on-disk size of a saved-scenarios list, for the "N snapshots ·
+// ~X KB" summary — same JSON.stringify-length proxy currentBackupDataSize()
+// (nav.js) uses for the same purpose, just scoped to this one list
+function fmtKB(bytes){
+  return bytes < 1024 ? bytes + ' B' : (bytes / 1024).toFixed(bytes < 102400 ? 1 : 0) + ' KB';
+}
+
+function updatePruneBar(list){
+  const bar = $('pmPruneBar');
+  const status = $('pmPruneStatus');
+  const selectAllBtn = $('pmPruneSelectAllBtn');
+  const selectedBtn = $('pmPruneSelectedBtn');
+  if (!bar || !status || !selectAllBtn || !selectedBtn) return;
+
+  if (!list.length){
+    bar.hidden = true;
+    return;
+  }
+  bar.hidden = false;
+
+  const size = fmtKB(JSON.stringify(list).length);
+  const n = pruneSelection.size;
+  status.textContent = n > 0
+    ? `${n} of ${list.length} saved snapshot${list.length === 1 ? '' : 's'} selected`
+    : `${list.length} saved snapshot${list.length === 1 ? '' : 's'} · ~${size}`;
+
+  const allSelected = list.every(s => pruneSelection.has(s.id));
+  selectAllBtn.textContent = allSelected ? 'Deselect all' : 'Select all';
+
+  selectedBtn.style.display = n > 0 ? '' : 'none';
+  selectedBtn.textContent = `Delete selected (${n})`;
+}
+
+// lives up near the storage usage graphic (not the prune bar down by the
+// scenario list) since it's a storage-management action, not a
+// selection-based one — same PRUNE_OLD_DAYS cutoff, just its own bar
+function updateStorageCleanupBar(list){
+  const oldBtn = $('pmPruneOldBtn');
+  if (!oldBtn) return;
+
+  if (!list.length){
+    oldBtn.hidden = true;
+    return;
+  }
+  oldBtn.hidden = false;
+
+  const cutoff = Date.now() - PRUNE_OLD_DAYS * 24 * 60 * 60 * 1000;
+  const oldCount = list.filter(s => (s.savedAt || 0) < cutoff).length;
+  oldBtn.disabled = oldCount === 0;
+  oldBtn.textContent = oldCount > 0
+    ? `Delete ${oldCount} snapshot${oldCount === 1 ? '' : 's'} older than ${PRUNE_OLD_DAYS} days`
+    : `Delete snapshots older than ${PRUNE_OLD_DAYS} days`;
+}
+
+// reads the exact same total/quota the storage-size warning notification
+// (nav.js) checks against, via window.FNStorageInfo, rather than a second
+// copy of the estimate or the size-summing loop — same three-stage
+// coloring (jade/gold/danger) as everywhere else on this page
+function renderStorageMeter(){
+  const fill = $('pmStorageMeterFill');
+  const value = $('pmStorageMeterValue');
+  if (!fill || !value || !window.FNStorageInfo) return;
+
+  const used = window.FNStorageInfo.used();
+  const quota = window.FNStorageInfo.QUOTA_ESTIMATE;
+  const ratio = Math.min(used / quota, 1);
+  const pct = Math.round(ratio * 100);
+
+  fill.style.width = pct + '%';
+  fill.className = 'pm-storage-meter-fill' + (ratio >= 0.9 ? ' danger' : ratio >= 0.5 ? ' gold' : '');
+  value.textContent = `${fmtKB(used)} of ~${Math.round(quota / (1024 * 1024))} MB (${pct}%)`;
+}
+
+function renderCompareResult(a, b){
+  const host = $('pmCompareResult');
+  if (!host) return;
+  const ma = deriveMetrics(a.profile);
+  const mb = deriveMetrics(b.profile);
+
+  const rows = [
+    { k: 'Age', a: ma.age, b: mb.age, type: 'num' },
+    { k: 'Savings', a: ma.savings, b: mb.savings, type: 'usd' },
+    { k: 'Goal', a: ma.goal, b: mb.goal, type: 'usd' },
+    { k: 'Retire age', a: ma.retireAge, b: mb.retireAge, type: 'num' },
+    { k: 'Return', a: ma.r * 100, b: mb.r * 100, type: 'pct' },
+    { k: 'Progress', a: ma.progressPct, b: mb.progressPct, type: 'pct' }
+  ];
+  const fmtCell = (v, type) => v === null || v === undefined ? '—' :
+    type === 'usd' ? fmtUSD(v) : type === 'pct' ? fmtNum(Math.max(0, v)) + '%' : fmtNum(v);
+  const deltaCell = (row) => {
+    if (row.a === null || row.b === null || row.a === undefined || row.b === undefined) return '<td>—</td>';
+    const d = row.b - row.a;
+    if (Math.abs(d) < 0.005) return '<td>—</td>';
+    const cls = d > 0 ? 'jade' : 'danger';
+    const sign = d > 0 ? '+' : '−';
+    const magnitude = row.type === 'usd' ? fmtUSD(Math.abs(d)) : row.type === 'pct' ? fmtNum(Math.abs(d)) + '%' : fmtNum(Math.abs(d));
+    return `<td class="${cls}">${sign}${magnitude}</td>`;
+  };
+  const coastLabel = m => m.coastFI === null ? '—' : (m.coastFI ? 'Coast-FI ✓' : 'Not yet');
+
+  host.innerHTML = `
+    <div class="pm-compare-card">
+      <h4>Comparing "${escapeHtml(a.name)}" vs. "${escapeHtml(b.name)}"</h4>
+      <div style="overflow-x:auto;">
+        <table class="pm-compare-table">
+          <thead>
+            <tr><th style="text-align:left;">Metric</th><th>${escapeHtml(a.name)}</th><th>${escapeHtml(b.name)}</th><th>Difference</th></tr>
+          </thead>
+          <tbody>
+            ${rows.map(row => `<tr><td>${row.k}</td><td>${fmtCell(row.a, row.type)}</td><td>${fmtCell(row.b, row.type)}</td>${deltaCell(row)}</tr>`).join('')}
+            <tr><td>Coast-FI</td><td>${coastLabel(ma)}</td><td>${coastLabel(mb)}</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+  host.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+$('pmCompareBtn').addEventListener('click', () => {
+  if (compareSelection.size !== 2) return;
+  const ids = Array.from(compareSelection);
+  const list = loadScenarios();
+  const a = list.find(s => s.id === ids[0]);
+  const b = list.find(s => s.id === ids[1]);
+  if (!a || !b) return;
+  renderCompareResult(a, b);
+});
+$('pmCompareClearBtn').addEventListener('click', () => {
+  compareSelection.clear();
+  $('pmCompareResult').innerHTML = '';
+  renderScenarios();
+});
+
+$('pmPruneSelectAllBtn').addEventListener('click', () => {
+  const list = loadScenarios();
+  const allSelected = list.length > 0 && list.every(s => pruneSelection.has(s.id));
+  if (allSelected){
+    pruneSelection.clear();
+  } else {
+    list.forEach(s => pruneSelection.add(s.id));
+  }
+  renderScenarios();
+});
+
+$('pmPruneOldBtn').addEventListener('click', () => {
+  const cutoff = Date.now() - PRUNE_OLD_DAYS * 24 * 60 * 60 * 1000;
+  const list = loadScenarios();
+  const old = list.filter(s => (s.savedAt || 0) < cutoff);
+  if (!old.length) return;
+  const ok = window.confirm(
+    `Delete ${old.length} snapshot${old.length === 1 ? '' : 's'} older than ${PRUNE_OLD_DAYS} days? This can't be undone.`
+  );
+  if (!ok) return;
+  saveScenarios(list.filter(s => (s.savedAt || 0) >= cutoff));
+  renderScenarios();
+});
+
+$('pmPruneSelectedBtn').addEventListener('click', () => {
+  const n = pruneSelection.size;
+  if (!n) return;
+  const ok = window.confirm(`Delete ${n} selected snapshot${n === 1 ? '' : 's'}? This can't be undone.`);
+  if (!ok) return;
+  const ids = new Set(pruneSelection);
+  saveScenarios(loadScenarios().filter(s => !ids.has(s.id)));
+  pruneSelection.clear();
+  renderScenarios();
+});
+
+// toggles an inline "here's the text, copy it" box under the scenario card
+// whose Share button was clicked — built as plain text (not a URL) per the
+// user's ask, so it can be pasted anywhere (email, chat, a text file) and
+// re-imported via "Add a shared snapshot" above on another device
+function openShareBox(btn){
+  const card = btn.closest('.pm-scenario-card');
+  if (!card) return;
+  const existing = card.querySelector('.pm-share-box');
+  if (existing) { existing.remove(); return; } // second click closes it
+
+  const id = btn.getAttribute('data-share');
+  const scenario = loadScenarios().find(s => s.id === id);
+  if (!scenario) return;
+  const encode = window.FN_encodeSharePayload;
+  const text = encode ? encode({
+    kind: 'scenario-share',
+    version: 1,
+    name: scenario.name,
+    profile: scenario.profile,
+    pageData: scenario.pageData
+  }) : null;
+  if (!text) { showPmStatus("Couldn't generate a share string.", true); return; }
+
+  const box = document.createElement('div');
+  box.className = 'pm-share-box';
+  box.innerHTML = `
+    <label>Copy this text and send it to another device — paste it into "Add a shared snapshot" above.</label>
+    <textarea readonly class="pm-share-text"></textarea>
+    <div class="pm-share-box-actions">
+      <button type="button" class="pm-btn pm-btn-ghost pm-btn-sm" data-copy-share>Copy text</button>
+    </div>
+  `;
+  card.appendChild(box);
+  const ta = box.querySelector('.pm-share-text');
+  ta.value = text;
+  ta.addEventListener('click', () => ta.select());
+  box.querySelector('[data-copy-share]').addEventListener('click', () => {
+    ta.select();
+    const onFail = () => showPmStatus('Could not copy automatically — the text is selected, press Ctrl/Cmd+C.', true);
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => showPmStatus('Copied to clipboard.')).catch(onFail);
+    } else {
+      try {
+        document.execCommand('copy') ? showPmStatus('Copied to clipboard.') : onFail();
+      } catch (e) { onFail(); }
+    }
+  });
+}
+
+// shared by the named "Save" button and the one-click "Quick snapshot"
+// button below — both capture the exact same thing (live profile + every
+// calculator's own saved inputs), they just differ in how the name is chosen
+function buildScenario(name, profile, pageData){
+  return {
+    id: 'sc_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+    name,
+    savedAt: Date.now(),
+    profile: {
+      name: profile.name || '',
+      birthday: profile.birthday || '',
+      currentIncome: profile.currentIncome || '',
+      currentSavings: profile.currentSavings || '',
+      goalAmount: profile.goalAmount || '',
+      retireAge: profile.retireAge || '',
+      expectedReturn: profile.expectedReturn || ''
+    },
+    pageData: pageData || {}
+  };
+}
+
+// prefixes an auto-generated snapshot name with the profile's own name
+// (set in the nav's "Your info" panel), so snapshots stay identifiable once
+// there's more than one person's numbers ever loaded on this device — never
+// applied to a name the user typed in themselves
+function withProfileNamePrefix(autoName){
+  const profileName = (window.FNProfile.get().name || '').trim();
+  return profileName ? `${profileName} — ${autoName}` : autoName;
+}
+
+$('pmSaveScenarioBtn').addEventListener('click', () => {
+  const nameInput = $('pmScenarioName');
+  const name = nameInput.value.trim() || withProfileNamePrefix(`Snapshot ${new Date().toLocaleDateString('en-US', {month:'short', day:'numeric'})}`);
+  const list = loadScenarios();
+  list.push(buildScenario(name, window.FNProfile.get(), collectPageData()));
+  saveScenarios(list);
+  nameInput.value = '';
+  renderScenarios();
+});
+
+// one click, no name required — captures the live profile plus every
+// calculator's own saved inputs, same scope as the named Save button above,
+// just skipping straight to an auto-generated, date-stamped name
+$('pmQuickSnapshotBtn').addEventListener('click', () => {
+  const profile = window.FNProfile.get();
+  const pageData = collectPageData();
+  const profileKeys = ['birthday', 'currentIncome', 'currentSavings', 'goalAmount', 'retireAge', 'expectedReturn'];
+  const hasProfileData = profileKeys.some(k => profile[k] !== undefined && profile[k] !== null && profile[k] !== '');
+  const hasPageData = Object.keys(pageData).length > 0;
+  if (!hasProfileData && !hasPageData) {
+    showPmStatus('Nothing to snapshot yet — set up your profile or use a calculator first.', true);
+    return;
+  }
+  const now = new Date();
+  const name = withProfileNamePrefix('Quick Snapshot ' +
+    now.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) +
+    ' ' + now.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'}));
+  const list = loadScenarios();
+  list.push(buildScenario(name, profile, pageData));
+  saveScenarios(list);
+  renderScenarios();
+  showPmStatus('Quick snapshot saved — your profile and every calculator\'s inputs are captured.');
+});
+
+// ---------- import a shared snapshot (pasted text, not a file) ----------
+$('pmImportTextBtn').addEventListener('click', () => {
+  const ta = $('pmImportText');
+  const raw = ta.value.trim();
+  if (!raw) { showPmStatus('Paste a shared snapshot text string first.', true); return; }
+  const decode = window.FN_decodeSharePayload;
+  const payload = decode ? decode(raw) : null;
+  const validKind = payload && (payload.kind === 'scenario-share' || payload.kind === 'profile-share');
+  if (!validKind || !payload.profile || typeof payload.profile !== 'object') {
+    showPmStatus("That doesn't look like a valid FireNate snapshot string.", true);
+    return;
+  }
+  const list = loadScenarios();
+  list.push(buildScenario(
+    payload.name ? String(payload.name) : 'Imported snapshot',
+    payload.profile,
+    (payload.pageData && typeof payload.pageData === 'object') ? payload.pageData : {}
+  ));
+  saveScenarios(list);
+  ta.value = '';
+  renderScenarios();
+  showPmStatus('Added the shared snapshot as one of your saved profiles.');
+});
+
+// ---------- example data ----------
+// one plausible value set per calculator's own saved-inputs schema (field
+// IDs and shapes copied from each page's own STORAGE_KEY/DEFAULTS so this
+// is guaranteed to load cleanly there) — built fresh on each click so dates
+// (NetWorth history, the NetWorth "last saved" stamp) stay relative to today
+function buildExampleData(){
+  const pad2 = n => String(n).padStart(2, '0');
+  const d = new Date();
+  const netWorthSavedAt = `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())} ${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
+  const monthsAgo = n => {
+    const dt = new Date();
+    dt.setMonth(dt.getMonth() - n);
+    return `${dt.getFullYear()}-${pad2(dt.getMonth() + 1)}-${pad2(dt.getDate())}`;
+  };
+
+  // matches ReverseTimeToFI's own fixed 20-row expense table (name is
+  // positional there, not saved — only amount/freq are stored per row)
+  const rtfExpenses = [
+    {amount:2000, freq:'monthly'}, {amount:2000, freq:'annually'}, {amount:500, freq:'monthly'},
+    {amount:1000, freq:'monthly'}, {amount:1500, freq:'monthly'}, {amount:200, freq:'monthly'},
+    {amount:400, freq:'monthly'}, {amount:200, freq:'monthly'}, {amount:100, freq:'monthly'},
+    {amount:200, freq:'monthly'}, {amount:200, freq:'monthly'}, {amount:100, freq:'monthly'},
+    {amount:200, freq:'monthly'}, {amount:100, freq:'monthly'}, {amount:200, freq:'monthly'},
+    {amount:100, freq:'bimonthly'}, {amount:200, freq:'monthly'}, {amount:200, freq:'monthly'},
+    {amount:5000, freq:'annually'}, {amount:25, freq:'weekly'}
+  ];
+
+  return {
+    profile: {
+      name: 'Example',
+      birthday: '1990-06-15',
+      currentIncome: '95000',
+      currentSavings: '150000',
+      goalAmount: '1200000',
+      retireAge: '55',
+      expectedReturn: '7'
+    },
+    pageData: {
+      'fi-runway-inputs': JSON.stringify({income:'90000', goal:'1500000', savings:'80000', age:'30', returnPct:'7', lifespan:'79', targetAge:'45'}),
+      'payoffOrInvestInputs': JSON.stringify({excess:'500', loanBalance:'342000', loanRate:'2.75', loanPayment:'1880', investBalance:'342000', investReturn:'10'}),
+      'cashOutOrHoldInputs': JSON.stringify({debtBalance:'15000', debtRate:'22', withdrawal:'15000', gainsPct:'35', gainsDollar:'5250', taxRate:'15', investReturn:'8', years:'10', gainsMode:'pct', holdingPeriod:'long'}),
+      'emergencyFundInputs': JSON.stringify({monthlyExpenses:'3000', targetMonths:'6', currentEfSavings:'0', monthlyContribution:'200', apy:'4.5'}),
+      'crossoverPointInputs': JSON.stringify({goal:'3000000', currentSavings:'0', age:'24', targetAge:'60', returnPct:'11'}),
+      'compoundCalcState': JSON.stringify({amount:'750', rate:'9.5', frequency:'12', years:'25', ageHighlight:'36', targetAmount:'1,200,000', targetAge:'55', savedAmount:'25,000', inputsCollapsed:false, savedAt:new Date().toISOString()}),
+      'swrInputs': JSON.stringify({startPortfolio:'1000000', withdrawRate:'4', retireLength:'30', feeRate:'0.10'}),
+      'firenate_fi_calculator_v1': JSON.stringify({
+        savedAt: Date.now(), birthday: '1990-06-15', retireAge: '55', currentSavings: 100000, ssIncome: 0,
+        inflationRate: '3.0', withdrawalRate: '4.0', roi: '8.0', expenses: rtfExpenses
+      }),
+      'carBuyingInputs': JSON.stringify({vehiclePrice:'35000', downPayment:'5000', taxRate:'7', fees:'600', apr:'7.5', termMonths:'60', insurance:'1400', maintenance:'900', fuel:'1800', horizonYears:'5', resaleValue:'14000'}),
+      'fireMilestonesInputs': JSON.stringify({currentAge:'30', retireAge:'60', currentSavings:'80000', annualContribution:'20000', annualExpenses:'50000', returnPct:'7', swrPct:'4', baristaIncome:'20000', leanPct:'75', fatPct:'140'}),
+      'ssBridgeInputs': JSON.stringify({currentAge:'45', retireAge:'55', currentSavings:'400000', annualExpenses:'60000', returnPct:'6', swrPct:'4', ssAt62:'18000', ssAt67:'26000', ssAt70:'32000'}),
+      'rothLadderInputs': JSON.stringify({currentAge:'40', retireAge:'45', traditionalBalance:'800000', taxableBalance:'150000', rothBasis:'40000', annualExpenses:'50000', annualConversion:'50000', returnPct:'6', taxRatePct:'12', simYears:'20'}),
+      'variableWithdrawalInputs': JSON.stringify({startPortfolio:'1000000', initialRate:'5', retireLength:'30', feeRate:'0.10', strategy:'guardrails', cutPct:'10', drawdownTrigger:'15', bufferYears:'2', cashReturn:'0.5'}),
+      'debtSnowballInputs': JSON.stringify({
+        debts: [
+          { id:'d1', name:'Credit Card A', balance:4500, apr:24.99, minPayment:110 },
+          { id:'d2', name:'Credit Card B', balance:2200, apr:19.99, minPayment:65 },
+          { id:'d3', name:'Car Loan', balance:12000, apr:6.5, minPayment:310 },
+          { id:'d4', name:'Student Loan', balance:18000, apr:5.0, minPayment:190 }
+        ],
+        extraPayment: '200.00', strategy: 'snowball'
+      }),
+      'healthcareBridgeInputs': JSON.stringify({currentAge:'45', retireAge:'55', householdSize:'2', magi:'60000', benchmarkPremium:'14000', subsidyRules:'enhanced', fplBase:'15060', fplPerPerson:'5380'}),
+      'netWorthInputs': JSON.stringify({
+        ca_checking:'8000.00', ca_savings:'15000.00', ca_brokerage1:'42000.00',
+        lta_401k1:'95000.00', lta_rothIra:'30000.00', lta_house:'350000.00', lta_cars:'18000.00',
+        cl_cc1:'1200.00', ltl_mortgage:'210000.00', ltl_carLoan:'9000.00',
+        calc_avgMonthlyExpenses:'4200.00', calc_cashOnHand:'6000.00',
+        _savedAt: netWorthSavedAt
+      }),
+      'netWorthHistory': JSON.stringify([
+        { date: monthsAgo(6), assets: 480000, liabilities: 232000, netWorth: 248000 },
+        { date: monthsAgo(3), assets: 498000, liabilities: 226000, netWorth: 272000 },
+        { date: monthsAgo(0), assets: 518000, liabilities: 219000, netWorth: 299000 }
+      ]),
+      'rentVsBuyInputs': JSON.stringify({homePrice:'400000', downPct:'20', mortgageRate:'6.5', termYears:'30', propTaxPct:'1.1', insuranceAnnual:'1800', maintenancePct:'1', hoaMonthly:'0', closingPct:'3', sellingPct:'6', appreciationPct:'3.5', monthlyRent:'2200', rentGrowthPct:'3', renterInsuranceAnnual:'200', investReturnPct:'7', horizonYears:'10'}),
+      'loanCalculatorInputs': JSON.stringify({loanAmountStr:'420,000', rate:'6.25', termUnit:'years', termValue:30, startDate:'2024-06-01'}),
+      'realEstateVsStocksInputs': JSON.stringify({price:'750,000', down:'150,000', rate:'6.75%', escrow:'1.10%', appreciation:'4.00%', stockreturn:'8.50%', rentalincome:'0', termYears:30, isRental:false}),
+      'coastFireInputs': JSON.stringify({currentAge:'30', retireAge:'55', currentSavings:'60000', goalAmount:'1000000', returnPct:'7', currentContribMonthly:'1500', baristaStartAge:'40', baristaContribMonthly:'200'}),
+      'rmdInputs': JSON.stringify({currentAge:'65', currentBalance:'800000', returnPct:'6', rmdStartAge:'73', taxRatePct:'22', horizonAge:'95'}),
+      'monteCarloInputs': JSON.stringify({startPortfolio:'1000000', withdrawRate:'4', retireLength:'30', feeRate:'0.10', numTrials:'2000'}),
+      'budgetCalculatorInputs': JSON.stringify({
+        bcIncome:'6,200',
+        n_housing:'1,600', n_utilities:'220', n_groceries:'500', n_transportation:'300', n_insurance:'250', n_minDebt:'150', n_healthcare:'100', n_other:'150',
+        w_dining:'300', w_entertainment:'120', w_shopping:'200', w_travel:'150', w_other:'80',
+        s_retirement:'500', s_extraDebt:'200', s_other:'100'
+      }),
+      'budgetHistory': JSON.stringify([
+        { date: monthsAgo(6), income: 5800, needs: 3050, wants: 900, savings: 600, surplus: 1250 },
+        { date: monthsAgo(3), income: 6000, needs: 3080, wants: 870, savings: 700, surplus: 1350 },
+        { date: monthsAgo(0), income: 6200, needs: 3270, wants: 850, savings: 800, surplus: 1280 }
+      ]),
+      'contributionLimitsInputs': JSON.stringify({
+        year:'2026', age:'36', income:'95000', payFreq:'26', hsaCoverage:'family', retireAge:'55', returnPct:'7',
+        have401k:'9500', haveHsa:'2000', haveIra:'3000',
+        contribPct401k:'12', matchPct401k:'4', balance401k:'85000', contribMode401k:'pct',
+        contribPctHsa:'5', matchPctHsa:'0', balanceHsa:'9000', contribModeHsa:'pct',
+        contribPctIra:'3', matchPctIra:'0', balanceIra:'15000', contribModeIra:'pct'
+      })
+    }
+  };
+}
+
+$('pmExampleBtn').addEventListener('click', () => {
+  const example = buildExampleData();
+  // Replace any existing "Example Data" snapshot rather than piling up
+  // another one alongside it — a second click after this page's own example
+  // data has been extended (new fields, updated numbers) would otherwise
+  // leave an old, now-stale "Example Data" card sitting next to the fresh
+  // one, both named identically and impossible to tell apart at a glance.
+  const list = loadScenarios().filter(s => s.name !== 'Example Data');
+  list.push(buildScenario('Example Data', example.profile, example.pageData));
+  saveScenarios(list);
+  renderScenarios();
+  showPmStatus('Added an example-data snapshot — load it from the list below to explore with sample numbers.');
+});
+
+// ---------- export / import ----------
+// targetId defaults to the curated export/import row's own status element;
+// the raw backup section (further down the page) has its own so a message
+// there shows up next to the button that triggered it, not scrolled away
+// near "Saved profiles" — each element tracks its own fade timer so the
+// two never cancel each other's message early
+function showPmStatus(msg, isError, targetId){
+  const el = $(targetId || 'pmImportExportStatus');
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.toggle('is-error', !!isError);
+  el.classList.add('show');
+  clearTimeout(el._pmStatusTimer);
+  el._pmStatusTimer = setTimeout(() => el.classList.remove('show'), 5000);
+}
+
+$('pmExportBtn').addEventListener('click', () => {
+  const scenarios = loadScenarios();
+  const profile = window.FNProfile.get();
+  const pageData = collectPageData();
+  const payload = {
+    app: 'FireNate',
+    kind: 'profile-export',
+    version: 2,
+    exportedAt: new Date().toISOString(),
+    profile,
+    pageData,
+    scenarios
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const now = new Date();
+  const pad2 = n => String(n).padStart(2, '0');
+  const stamp = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}-` +
+    `${pad2(now.getHours())}-${pad2(now.getMinutes())}-${pad2(now.getSeconds())}`;
+  // filesystem-safe slug of the profile's own name, if set, so exports from
+  // different people/devices don't all download as the same generic filename
+  const profileNameSlug = (profile.name || '').trim().replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  a.download = profileNameSlug ? `FireNate-${profileNameSlug}-Profiles-${stamp}.json` : `FireNate-Profiles-${stamp}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  if (window.FNBackupTracker) window.FNBackupTracker.record();
+  const hasLiveState = profileComplete(profile) || Object.keys(pageData).length > 0;
+  showPmStatus(`Exported ${scenarios.length} saved profile${scenarios.length === 1 ? '' : 's'}${hasLiveState ? ' + your live profile and calculator inputs' : ''}.`);
+});
+
+// unlike "Export profiles" above (a curated payload built from
+// FN_PAGE_DATA_KEYS + the profile + scenarios), this walks every single key
+// actually sitting in localStorage right now — theme choice, dismissed-hint
+// flags, collapsed-toolbar states, anything — with no filtering or
+// processing. A raw debug/backup copy, not meant to round-trip through
+// "Import profiles" (that one only ever reads the curated shape above).
+$('pmRawExportBtn').addEventListener('click', () => {
+  const raw = {};
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    raw[key] = localStorage.getItem(key);
+  }
+  const keyCount = Object.keys(raw).length;
+  const payload = {
+    app: 'FireNate',
+    kind: 'raw-localstorage-dump',
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    origin: window.location.origin,
+    data: raw
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const now = new Date();
+  const pad2 = n => String(n).padStart(2, '0');
+  const stamp = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}-` +
+    `${pad2(now.getHours())}-${pad2(now.getMinutes())}-${pad2(now.getSeconds())}`;
+  a.download = `FireNate-RawLocalStorage-${stamp}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  if (keyCount === 0) {
+    showPmStatus('Nothing in local storage to export yet.', false, 'pmRawImportExportStatus');
+  } else {
+    if (window.FNBackupTracker) window.FNBackupTracker.record();
+    showPmStatus(`Exported ${keyCount} raw local storage key${keyCount === 1 ? '' : 's'}.`, false, 'pmRawImportExportStatus');
+  }
+});
+
+// counterpart to the raw export above — writes every key from the file
+// straight back into localStorage, unprocessed, same "no filtering" spirit.
+// Unlike "Import profiles" (which validates each scenario's shape before
+// touching anything), there's nothing here to validate against — a raw
+// dump is just whatever was in storage, so this can only sanity-check that
+// the file itself looks like one of these dumps, not what's inside it.
+// Merges rather than replaces: only the keys the file actually has are
+// overwritten, anything else currently in storage is left alone.
+$('pmRawImportBtn').addEventListener('click', () => {
+  $('pmRawImportFile').click();
+});
+
+$('pmRawImportFile').addEventListener('change', (e) => {
+  const file = e.target.files && e.target.files[0];
+  e.target.value = ''; // clear so re-selecting the same file later still fires "change"
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    let parsed;
+    try { parsed = JSON.parse(reader.result); }
+    catch (err) { showPmStatus("That file isn't valid JSON.", true, 'pmRawImportExportStatus'); return; }
+
+    const data = (parsed && parsed.kind === 'raw-localstorage-dump' && parsed.data && typeof parsed.data === 'object') ? parsed.data : null;
+    if (!data) {
+      showPmStatus("That doesn't look like a raw local storage backup.", true, 'pmRawImportExportStatus');
+      return;
+    }
+    const keys = Object.keys(data);
+    if (!keys.length) {
+      showPmStatus('That backup has nothing in it.', true, 'pmRawImportExportStatus');
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Restore ${keys.length} raw local storage key${keys.length === 1 ? '' : 's'} from this file?\n\n` +
+      "This writes every key from the file straight back into storage, unprocessed — it can overwrite your profile, every calculator's inputs, saved profiles, and site preferences with whatever this backup had. Anything currently stored that this file doesn't mention is left alone. This can't be undone."
+    );
+    if (!confirmed) return;
+
+    // same pre-restore safety net "Import profiles" uses — covers the
+    // profile + calculator inputs at least, even though a raw restore's
+    // own blast radius is broader than that
+    const backedUp = backupCurrentProfileIfNeeded();
+    if (backedUp) renderScenarios();
+
+    let restoredCount = 0;
+    keys.forEach(key => {
+      try { localStorage.setItem(key, data[key]); restoredCount++; }
+      catch (err) { /* quota or blocked storage — skip this one key, keep going */ }
+    });
+
+    showPmStatus(
+      `Restored ${restoredCount} of ${keys.length} raw local storage key${keys.length === 1 ? '' : 's'}${backedUp ? ' (backed up your previous profile first)' : ''}. Reloading…`,
+      false,
+      'pmRawImportExportStatus'
+    );
+    setTimeout(() => window.location.reload(), 900);
+  };
+  reader.onerror = () => showPmStatus('Could not read that file.', true, 'pmRawImportExportStatus');
+  reader.readAsText(file);
+});
+
+// mirrors nav.js's own "Backup " safety net ahead of "Clear my info" —
+// reused here so starting an import never risks silently losing whatever
+// was in the live profile (and every calculator page's own saved inputs)
+// beforehand. Skips saving a blank backup if there's nothing anywhere on
+// the site yet. Returns true if it actually saved one.
+function backupCurrentProfileIfNeeded(){
+  const current = window.FNProfile.get();
+  const profileKeys = ['birthday', 'currentIncome', 'currentSavings', 'goalAmount', 'retireAge', 'expectedReturn'];
+  const hasProfileData = profileKeys.some(k => current[k] !== undefined && current[k] !== null && current[k] !== '');
+  const pageData = collectPageData();
+  const hasPageData = Object.keys(pageData).length > 0;
+  if (!hasProfileData && !hasPageData) return false;
+  const now = new Date();
+  const name = withProfileNamePrefix('Backup ' +
+    now.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) +
+    ' ' + now.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'}));
+  const list = loadScenarios();
+  list.push(buildScenario(name, current, pageData));
+  saveScenarios(list);
+  return true;
+}
+
+$('pmImportBtn').addEventListener('click', () => {
+  $('pmImportFile').click();
+});
+
+$('pmImportFile').addEventListener('change', (e) => {
+  const file = e.target.files && e.target.files[0];
+  e.target.value = ''; // clear so re-selecting the same file later still fires "change"
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    let data;
+    try { data = JSON.parse(reader.result); }
+    catch (err) { showPmStatus("That file isn't valid JSON.", true); return; }
+
+    const incoming = Array.isArray(data && data.scenarios) ? data.scenarios : Array.isArray(data) ? data : [];
+    const valid = incoming.filter(s => s && typeof s === 'object' && s.profile && typeof s.profile === 'object');
+    const hasLiveProfileFields = !!(data && data.profile && typeof data.profile === 'object' && profileComplete(data.profile));
+    const importPageData = (data && data.pageData && typeof data.pageData === 'object') ? data.pageData : null;
+    const hasLivePageData = !!(importPageData && Object.keys(importPageData).length);
+    const hasLiveState = hasLiveProfileFields || hasLivePageData;
+
+    if (!valid.length && !hasLiveState) {
+      showPmStatus('No profiles found in that file.', true);
+      return;
+    }
+
+    const backedUp = backupCurrentProfileIfNeeded();
+    if (backedUp) renderScenarios();
+
+    if (valid.length) {
+      // fresh ids on import so re-importing the same file (or one from
+      // another device) never collides with — or silently overwrites —
+      // anything already saved on this one
+      const imported = valid.map(s => ({
+        id: 'sc_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+        name: s.name ? String(s.name) : 'Imported profile',
+        savedAt: s.savedAt || Date.now(),
+        profile: {
+          name: s.profile.name || '',
+          birthday: s.profile.birthday || '',
+          currentIncome: s.profile.currentIncome || '',
+          currentSavings: s.profile.currentSavings || '',
+          goalAmount: s.profile.goalAmount || '',
+          retireAge: s.profile.retireAge || '',
+          expectedReturn: s.profile.expectedReturn || ''
+        },
+        pageData: (s.pageData && typeof s.pageData === 'object') ? s.pageData : {}
+      }));
+      saveScenarios(loadScenarios().concat(imported));
+      renderScenarios();
+    }
+
+    let loadedLive = false;
+    if (hasLiveState) {
+      // catches the easy footgun of importing an old file and not
+      // noticing it's about to overwrite more recent numbers — compares
+      // the file's own exportedAt against the live profile's lastSaved
+      // (set on every field edit), not against when this file happens to
+      // be opened, so it's meaningful regardless of how long the file sat
+      // around before being imported
+      const currentProfile = window.FNProfile.get();
+      const fileExportedAt = data && data.exportedAt ? new Date(data.exportedAt).getTime() : null;
+      const currentLastSaved = currentProfile && currentProfile.lastSaved ? currentProfile.lastSaved : null;
+      const looksStale = fileExportedAt && currentLastSaved && !isNaN(fileExportedAt) && fileExportedAt < currentLastSaved;
+
+      const ok = window.confirm(
+        (looksStale
+          ? `Heads up: this file looks OLDER than what's already here — exported ${fmtWhen(fileExportedAt)}, but your current data was last changed ${fmtWhen(currentLastSaved)}. Loading it will replace your more recent numbers with these older ones.\n\n`
+          : "") +
+        "This file also has a live profile in it (your age/savings/goal fields, plus your saved calculator inputs). Load it as your current data too?\n\n" +
+        (backedUp
+          ? "Your current profile and calculator inputs were just backed up as a snapshot, so you can get them back anytime. This will still replace what's currently there."
+          : "This replaces what's currently there.")
+      );
+      if (ok) {
+        if (hasLiveProfileFields) window.FNProfile.set(data.profile);
+        if (hasLivePageData) applyPageData(importPageData);
+        renderLive();
+        loadedLive = true;
+      }
+    }
+
+    showPmStatus(`Imported ${valid.length} saved profile${valid.length === 1 ? '' : 's'}${backedUp ? ' (backed up your previous live profile)' : ''}${loadedLive ? ' + set as your live profile' : ''}.`);
+  };
+  reader.onerror = () => showPmStatus('Could not read that file.', true);
+  reader.readAsText(file);
+});
+
+// populated from window.FNAutoSnapshot.OPTIONS (nav.js) rather than a
+// second copy of the six options here, so the two pages can never drift
+// apart on what "Every 7 days" actually means in hours
+function setupAutoSnapshotSelect(){
+  const select = $('pmAutoSnapInterval');
+  if (!select || !window.FNAutoSnapshot) return;
+  const current = window.FNAutoSnapshot.read();
+  select.innerHTML = window.FNAutoSnapshot.OPTIONS.map(o =>
+    `<option value="${o.hours}"${o.hours === current ? ' selected' : ''}>${escapeHtml(o.label)}</option>`
+  ).join('');
+  select.addEventListener('change', () => {
+    window.FNAutoSnapshot.write(parseFloat(select.value));
+  });
+}
+
+function init(){
+  renderLive();
+  renderScenarios();
+  setupAutoSnapshotSelect();
+}
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", init);
+} else {
+  init();
+}
+</script>
+</body>
+</html>

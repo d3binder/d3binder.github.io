@@ -1,0 +1,1360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script src="../assets/js/theme-init.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FireNate - Contribution Limits</title>
+<meta name="description" content="See this year's 401(k), HSA, and IRA contribution limits broken down into monthly and per-paycheck amounts, plus how close you are to maxing them out.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&family=Antonio:wght@400;500;600;700&family=Michroma&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/site.css">
+<script src="../assets/js/theme.js" defer></script>
+<script src="../assets/js/user-profile.js" defer></script>
+<script src="../assets/js/nav.js" defer></script>
+<script src="../assets/js/profile-autofill.js" defer></script>
+<script src="../assets/js/field-help.js" defer></script>
+<script src="../assets/data/benefits-limits-data.js"></script>
+<script>
+window.FN_BASE = "../"; window.FN_PAGE = "contribution-limits";
+window.FN_PROFILE_FIELDS = {
+  currentAge: "#age",
+  currentIncome: "#income",
+  retireAge: "#retireAge",
+  expectedReturn: "#returnPct"
+};
+window.FN_PROFILE_LEGACY_KEY = "contributionLimitsInputs";
+window.FN_FIELD_HELP = {
+  title: "About this Tool",
+  intro: "IRS contribution limits for tax-advantaged accounts, broken into what that actually means per paycheck — plus how close you are to maxing them out if you enter what you've contributed so far.",
+  sections: [
+    { heading: "Inputs", items: [
+      { label: "Year", text: "Which tax year's limits to use. Defaults to the newest year this page has data for." },
+      { label: "Age", text: "Used to figure out which catch-up contribution amounts you're eligible for (50+, and the larger 60–63 range for 401(k) plans starting in 2025)." },
+      { label: "Annual Income", text: "Your gross annual income — used to show each limit as a percent of income." },
+      { label: "Pay Frequency", text: "How often you're paid — used to split each limit into a per-paycheck amount." },
+      { label: "HSA Coverage", text: "Self-only or family HDHP coverage — HSA limits are meaningfully different between the two." },
+      { label: "Retirement Age & Expected Return", text: "Used only for the growth projection below — how many years your current balance and ongoing contributions have left to compound, and at what average annual rate." },
+      { label: "Marginal Tax Rate", text: "Your combined federal + state marginal tax rate — used only to estimate the tax savings from your own pretax contributions. Leave at 0% to hide that estimate." }
+    ]},
+    { heading: "Per-account inputs (401(k), HSA, IRA)", items: [
+      { label: "Your Contribution", text: "What you've set to contribute — enter it as a percent of income, or switch the %/$ per mo/$ per yr toggle above the field to enter a flat dollar amount instead. Either way it's used to figure out your dollar contribution and, if it's above the IRS limit, to flag that your actual contribution would be capped there." },
+      { label: "Employer Match %", text: "The percent of your annual income your employer contributes on top of your own. For 401(k), this combines with your own contribution against the higher combined IRS limit (401(k) elective deferrals and employer contributions are capped separately). For HSA and IRA, your contribution and any employer contribution share one single limit." },
+      { label: "Current Balance", text: "What's already in the account today — the starting point for the growth projection below. Leave at $0 to project only from this year's contributions onward." },
+      { label: "Contributed YTD (optional)", text: "What you've put into the account so far this year — enter it to see your remaining gap to this year's max, split across your remaining paychecks." }
+    ]},
+    { heading: "Accounts covered", items: [
+      { label: "401(k) / 403(b) / 457(b)", text: "Employee elective-deferral limit — traditional and Roth contributions to the same plan share this one limit." },
+      { label: "HSA", text: "Health Savings Account — requires enrollment in a qualifying high-deductible health plan (HDHP)." },
+      { label: "IRA", text: "Traditional and Roth IRA contributions combined share one limit, separate from your 401(k)." }
+    ]}
+  ]
+};
+</script>
+<style>
+  :root{
+    --ink: #F6F3EC;
+    --card: #ffffff;
+    --card-2: #FCF3DE;
+    --line: rgba(154,79,42,0.16);
+    --paper: #26221C;
+    --paper-dim: #8C5A46;
+    --copper: #DB6A2E;
+    --copper-dim: #A6491C;
+    --green: #1F9254;
+    --green-dim: #0F5C34;
+    --gold: #D9840F;
+    --plum: #9C3FAE;
+  }
+
+  /* ---------- VIBRANT DARK MODE ---------- */
+  :root[data-theme="dark"]{
+    --ink: #15111A;
+    --card: #1E1826;
+    --card-2: #241C30;
+    --line: rgba(255,255,255,0.14);
+    --paper: #F3EEE4;
+    --paper-dim: #B8A8C0;
+    --copper: #FF9A6E;
+    --copper-dim: #FFB088;
+    --green: #4FDB8F;
+    --green-dim: #7DE8AC;
+    --gold: #F3B23A;
+    --plum: #D98CE8;
+  }
+
+  /* ---------- MODERN NEON GLASS ---------- */
+  :root[data-theme="neon"]{
+    --ink: #020617;
+    --card: rgba(255,255,255,0.06);
+    --card-2: rgba(255,255,255,0.09);
+    --line: rgba(168,85,247,0.3);
+    --paper: #e5e7eb;
+    --paper-dim: #9ca3af;
+    --copper: #ec4899;
+    --copper-dim: #f472b6;
+    --green: #34d399;
+    --green-dim: #10b981;
+    --gold: #a855f7;
+    --plum: #c084fc;
+  }
+
+  /* ---------- MODERN SUNSHINE GLASS ---------- */
+  :root[data-theme="sunshine"]{
+    --ink: #eaf5fd;
+    --card: rgba(255,255,255,0.62);
+    --card-2: rgba(255,247,235,0.72);
+    --line: rgba(31,92,110,0.18);
+    --paper: #1F3540;
+    --paper-dim: #4C6672;
+    --copper: #FF6F59;
+    --copper-dim: #D9503B;
+    --green: #2C8C5E;
+    --green-dim: #1F6B44;
+    --gold: #C1841A;
+    --plum: #B266CC;
+  }
+
+  /* ---------- LCARS ---------- */
+  :root[data-theme="lcars"]{
+    --ink: #000000;
+    --card: #0d0d0d;
+    --card-2: #161616;
+    --line: rgba(255,159,28,0.3);
+    --paper: #FFE3BA;
+    --paper-dim: #C9A97E;
+    --copper: #FF9F1C;
+    --copper-dim: #CC7A0E;
+    --green: #B5D96C;
+    --green-dim: #8FB84D;
+    --gold: #FF9F1C;
+    --plum: #CC99CC;
+  }
+
+  [data-theme="neon"] .limit-card, [data-theme="sunshine"] .limit-card,
+  [data-theme="neon"] .gap-card, [data-theme="sunshine"] .gap-card,
+  [data-theme="neon"] .chart-card, [data-theme="sunshine"] .chart-card,
+  [data-theme="neon"] .scope-callout, [data-theme="sunshine"] .scope-callout{
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+  [data-theme="lcars"] .limit-card, [data-theme="lcars"] .gap-card,
+  [data-theme="lcars"] .chart-card, [data-theme="lcars"] .scope-callout{
+    border-color: var(--line);
+    position:relative; overflow:hidden;
+  }
+  [data-theme="lcars"] .limit-card::before, [data-theme="lcars"] .gap-card::before,
+  [data-theme="lcars"] .chart-card::before, [data-theme="lcars"] .scope-callout::before{
+    content:""; position:absolute; top:0; left:0; bottom:0; width:12px;
+  }
+  [data-theme="lcars"] .limit-card{ padding-left:30px; border-radius:26px 8px 8px 8px; }
+  [data-theme="lcars"] .limit-card::before{ background:var(--gold); border-radius:26px 0 0 0; }
+  [data-theme="lcars"] .limit-card:nth-of-type(2)::before{ background:var(--green); }
+  [data-theme="lcars"] .limit-card:nth-of-type(3)::before{ background:var(--plum); }
+  [data-theme="lcars"] .gap-card{ padding-left:30px; border-radius:8px 8px 8px 26px; }
+  [data-theme="lcars"] .gap-card::before{ background:var(--copper); border-radius:0 0 0 26px; }
+  [data-theme="lcars"] .chart-card{ padding-left:26px; border-radius:26px 8px 8px 8px; }
+  [data-theme="lcars"] .chart-card::before{ background:var(--gold); border-radius:26px 0 0 0; }
+  [data-theme="lcars"] .scope-callout{ padding-left:26px; border-radius:8px 8px 8px 22px; }
+  [data-theme="lcars"] .scope-callout::before{ background:var(--plum); border-radius:0 0 0 22px; }
+
+  /* ---------- STICKY COLLAPSIBLE INPUT TOOLBAR ---------- */
+  :root{
+    --toolbar-bg: linear-gradient(115deg, #4A2F12 0%, #2E1740 100%);
+    --toolbar-bg-solid:#2E1740;
+    --toolbar-line: rgba(243,238,221,0.18);
+    --toolbar-text:#F8F3E8;
+    --toolbar-muted:#C9BFDA;
+    --toolbar-muted-2:#9C8FAE;
+    --gold-bright:#F3B23A;
+    --sage-bright:#4FDB8F;
+    --teal-bright:#4FD8E8;
+    --rust-bright:#FF7A5C;
+    --plum-bright:#D98CE8;
+  }
+  :root[data-theme="dark"]{
+    --toolbar-bg: linear-gradient(115deg, #241C30 0%, #123B33 100%);
+    --toolbar-bg-solid:#241C30;
+  }
+  :root[data-theme="neon"]{
+    --toolbar-bg: linear-gradient(115deg, #1e1b4b 0%, #020617 100%);
+    --toolbar-bg-solid:#0b1120;
+    --toolbar-line: rgba(168,85,247,0.35);
+    --toolbar-text:#e5e7eb;
+    --toolbar-muted:#b8c2d9;
+    --toolbar-muted-2:#7c8aa8;
+    --gold-bright:#a855f7;
+    --sage-bright:#34d399;
+    --teal-bright:#22d3ee;
+    --rust-bright:#f472b6;
+    --plum-bright:#c084fc;
+  }
+  :root[data-theme="sunshine"]{
+    --toolbar-bg: linear-gradient(115deg, #B8790F 0%, #6B3480 100%);
+    --toolbar-bg-solid:#1F6B44;
+  }
+  :root[data-theme="lcars"]{
+    --toolbar-bg: linear-gradient(100deg, #000000 0%, #000000 82%, #4A2200 82%, #4A2200 100%);
+    --toolbar-bg-solid:#000000;
+    --toolbar-line: rgba(255,159,28,0.35);
+    --toolbar-text:#FFE3BA;
+    --toolbar-muted:#C9A97E;
+    --toolbar-muted-2:#9C8058;
+    --gold-bright:#FF9F1C;
+    --sage-bright:#B5D96C;
+    --teal-bright:#9999FF;
+    --rust-bright:#FF6B6B;
+    --plum-bright:#CC99CC;
+  }
+  .bl-inputs{
+    position:sticky; top:60px; z-index:38;
+    background:var(--toolbar-bg);
+    color:var(--toolbar-text);
+    border-bottom:1px solid var(--toolbar-line);
+    box-shadow:0 12px 28px rgba(0,0,0,0.22);
+  }
+  .bl-summary-row{ max-width:980px; margin:0 auto; display:flex; justify-content:center; padding:11px 24px 0; }
+  .bl-summary{
+    max-width:100%;
+    font-family:'IBM Plex Mono', monospace; font-weight:600; font-size:12px;
+    background:linear-gradient(90deg, var(--gold-bright), var(--rust-bright) 35%, var(--plum-bright) 65%, var(--teal-bright));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:center;
+  }
+  .bl-toggle-row{ max-width:980px; margin:0 auto; display:flex; justify-content:center; padding:8px 24px 12px; }
+  .bl-toggle{
+    display:inline-flex; align-items:center; gap:7px; flex-shrink:0;
+    background:rgba(217,140,232,0.16); border:1px solid var(--plum-bright); color:var(--plum-bright);
+    font-family:'IBM Plex Mono', monospace; font-size:11px; font-weight:600; letter-spacing:.05em; text-transform:uppercase;
+    padding:6px 14px; border-radius:20px; cursor:pointer;
+    transition:background-color .15s, border-color .15s, color .15s; white-space:nowrap;
+  }
+  .bl-toggle:hover{ background:linear-gradient(90deg, var(--plum-bright), var(--teal-bright)); border-color:var(--plum-bright); color:var(--toolbar-bg-solid); }
+  .bl-toggle:active{ transform:translateY(1px); }
+  .bl-toggle:focus-visible{ outline:2px solid var(--plum-bright); outline-offset:2px; }
+  .bl-chevron{ transition:transform .2s ease; flex-shrink:0; }
+  .bl-inputs.collapsed .bl-chevron{ transform:rotate(180deg); }
+  .bl-content{
+    max-height:1500px; overflow:hidden; opacity:1;
+    transition:max-height .25s ease, opacity .2s ease;
+  }
+  .bl-inputs.collapsed .bl-content{ max-height:0; opacity:0; pointer-events:none; }
+  .bl-inner{
+    max-width:980px; margin:0 auto;
+    padding:4px 24px 16px;
+    display:flex; align-items:flex-end; flex-wrap:wrap; gap:18px 30px;
+  }
+  .bl-groups{ display:flex; align-items:flex-end; flex-wrap:wrap; gap:18px 30px; flex:1 1 auto; }
+  .bl-group{ display:flex; flex-direction:column; gap:9px; }
+  .bl-group-label{
+    font-family:'IBM Plex Mono', monospace; font-size:10px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--toolbar-muted-2);
+  }
+  .bl-group-you .bl-group-label{ color:var(--teal-bright); }
+  .bl-group-401k .bl-group-label{ color:var(--gold-bright); }
+  .bl-group-hsa .bl-group-label{ color:var(--sage-bright); }
+  .bl-group-ira .bl-group-label{ color:var(--plum-bright); }
+  .bl-group-toggle{
+    display:flex; align-items:center; gap:6px;
+    background:none; border:none; padding:0; margin:0; cursor:pointer; font:inherit; color:inherit;
+  }
+  .bl-group-chevron{ transition:transform .2s ease; flex-shrink:0; opacity:.75; }
+  .bl-group-toggle:hover .bl-group-chevron{ opacity:1; }
+  .bl-group.collapsed .bl-group-chevron{ transform:rotate(-90deg); }
+  .bl-group.collapsed .bl-fields{ max-height:0; opacity:0; overflow:hidden; margin-top:-9px; pointer-events:none; }
+  .bl-fields{
+    display:flex; align-items:flex-end; flex-wrap:wrap; gap:16px;
+    max-height:400px; opacity:1; overflow:visible;
+    transition:max-height .2s ease, opacity .15s ease, margin-top .2s ease;
+  }
+  .contrib-mode-toggle{ display:flex; gap:3px; }
+  .contrib-mode-btn{
+    background:rgba(0,0,0,0.22); border:1px solid transparent; border-radius:5px; color:var(--toolbar-muted);
+    font-family:'IBM Plex Mono', monospace; font-size:10px; font-weight:600; padding:3px 6px; cursor:pointer;
+    transition:background-color .15s, border-color .15s, color .15s;
+  }
+  .contrib-mode-btn:hover{ border-color:var(--gold-bright); color:var(--toolbar-text); }
+  .contrib-mode-btn.active{ background:var(--gold-bright); border-color:var(--gold-bright); color:var(--toolbar-bg-solid); }
+  .bl-field{ display:flex; flex-direction:column; gap:6px; }
+  .bl-field label{
+    font-family:'IBM Plex Mono', monospace; font-size:10.5px; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--toolbar-muted); white-space:nowrap;
+  }
+  .bl-input-row{ display:flex; align-items:center; gap:4px; }
+  .bl-prefix, .bl-suffix{ font-family:'IBM Plex Mono', monospace; font-size:14px; color:var(--gold-bright); font-weight:500; }
+  .bl-field input, .bl-field select{
+    background:rgba(0,0,0,0.22); border:1px solid transparent; border-radius:7px; color:var(--toolbar-text);
+    font-family:'IBM Plex Mono', monospace; font-size:14.5px; font-weight:500; padding:8px 10px; outline:none;
+    transition:border-color .15s, box-shadow .15s; box-shadow:0 1px 2px rgba(0,0,0,0.2);
+    width:112px; font-variant-numeric:tabular-nums;
+  }
+  .bl-field select{ cursor:pointer; }
+  .bl-field input.bl-narrow, .bl-field select.bl-narrow{ width:82px; }
+  .bl-field input:focus, .bl-field select:focus{ border-color:var(--gold-bright); box-shadow:0 0 0 3px rgba(243,178,58,0.28); }
+  .bl-divider{ width:1px; align-self:stretch; background:var(--toolbar-line); }
+  .bl-save{ display:flex; flex-direction:column; align-items:flex-end; gap:8px; margin-left:auto; }
+  .bl-save .save-status{ font-family:'IBM Plex Mono', monospace; font-size:11.5px; letter-spacing:.04em; color:var(--toolbar-muted-2); white-space:nowrap; }
+  .bl-save .reset-btn{
+    background:rgba(255,122,92,0.08); border:1px solid var(--rust-bright); color:var(--rust-bright);
+    font-family:'IBM Plex Mono', monospace; font-size:11.5px; letter-spacing:.05em; text-transform:uppercase;
+    padding:7px 16px; border-radius:20px; cursor:pointer; transition:background-color .15s, color .15s; white-space:nowrap;
+  }
+  .bl-save .reset-btn:hover{ background:var(--rust-bright); color:var(--toolbar-bg-solid); }
+  .bl-save .reset-btn:active{ transform:translateY(1px); }
+
+  @media (max-width:820px){
+    .bl-divider{ display:none; }
+    .bl-save{ margin-left:0; align-items:flex-start; flex-direction:row; justify-content:space-between; width:100%; }
+  }
+
+  *{ box-sizing: border-box; }
+  html{ scroll-behavior: smooth; }
+  body{
+    margin:0;
+    background: var(--ink);
+    background-image:
+      radial-gradient(circle at 15% 0%, rgba(31,146,84,0.14), transparent 45%),
+      radial-gradient(circle at 85% 15%, rgba(217,132,15,0.14), transparent 45%),
+      radial-gradient(circle at 50% 100%, rgba(156,63,174,0.08), transparent 50%);
+    color: var(--paper);
+    font-family: 'Inter', sans-serif;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  [data-theme="neon"] body{
+    background-image: radial-gradient(circle at top left, #1e1b4b 0, #0b1120 45%, #020617 100%);
+  }
+  [data-theme="sunshine"] body{
+    background-image: radial-gradient(circle at top left, #1e1b4b 0, #0b1120 45%, #020617 100%);
+  }
+  [data-theme="lcars"] body{
+    background-image:
+      radial-gradient(circle at top left, rgba(255,159,28,0.1), transparent 45%),
+      radial-gradient(circle at bottom right, rgba(153,153,255,0.08), transparent 50%);
+  }
+  .wrap{ max-width: 980px; margin: 0 auto; padding: 0 24px 120px; }
+
+  .hero{ padding: 72px 0 40px; text-align:center; }
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--green); margin: 0 0 18px;
+  }
+  h1.headline{
+    font-family:'Fraunces', serif; font-optical-sizing: auto; font-weight: 600;
+    font-size: clamp(34px, 6vw, 58px); line-height: 1.05; letter-spacing: -0.01em; margin: 0 0 20px;
+  }
+  [data-theme="lcars"] h1.headline{ font-family:'Michroma', 'Antonio', 'Arial Narrow', sans-serif; font-weight:400; letter-spacing:0; }
+  h1.headline em{ font-style: italic; font-weight: 500; color: var(--paper-dim); }
+  .sub{ max-width: 620px; margin: 0 auto; color: var(--paper-dim); font-size: 16px; }
+
+  .scope-callout{
+    max-width: 780px; margin: 8px auto 0; background: var(--card-2); border: 1px solid var(--gold);
+    border-radius: 12px; padding: 20px 24px;
+  }
+  .scope-callout .scope-title{
+    font-family:'IBM Plex Mono', monospace; font-size: 11px; letter-spacing:0.1em; text-transform:uppercase;
+    color: var(--gold); margin: 0 0 8px; font-weight:700;
+  }
+  .scope-callout p{ margin: 0 0 10px; font-size: 13.5px; color: var(--paper-dim); line-height:1.6; }
+  .scope-callout p:last-child{ margin-bottom:0; }
+  .scope-callout b{ color: var(--paper); }
+
+  .section-head{ display:flex; align-items:baseline; gap: 14px; margin: 64px 0 20px; }
+  .section-head .tag{
+    font-family:'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--ink); background: var(--paper); padding: 3px 9px; border-radius: 4px; flex-shrink:0;
+  }
+  .section-head.green .tag{ background: var(--green); color: #071a11; }
+  .section-head.copper .tag{ background: var(--copper); color: #1a0d05; }
+  .section-head h2{ font-family:'Fraunces', serif; font-weight: 600; font-size: 22px; margin: 0; }
+  [data-theme="lcars"] .section-head h2{ font-family:'Antonio', 'Arial Narrow', sans-serif; letter-spacing:.02em; }
+  .section-head .line{ flex:1; height:1px; background: var(--line); }
+
+  .limits-grid{ display:grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .limit-card{ border-radius: 10px; padding: 20px 22px; border: 1px solid var(--line); background: var(--card); }
+  .limit-card .lbl{
+    font-family:'IBM Plex Mono', monospace; font-size: 12px; letter-spacing:0.08em; text-transform:uppercase; color: var(--paper-dim);
+  }
+  .limit-card .amt{ font-family:'IBM Plex Mono', monospace; font-weight:700; font-size: 30px; margin-top: 8px; }
+  .limit-card:nth-of-type(1) .amt{ color: var(--gold); }
+  .limit-card:nth-of-type(2) .amt{ color: var(--green); }
+  .limit-card:nth-of-type(3) .amt{ color: var(--plum); }
+  .limit-card .breakdown{ margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+  .limit-card .breakdown-row{ display:flex; justify-content:space-between; gap:10px; font-size: 13.5px; color: var(--paper-dim); padding: 4px 0; }
+  .limit-card .breakdown-row b{ color: var(--paper); font-family:'IBM Plex Mono', monospace; font-variant-numeric:tabular-nums; }
+  .limit-card .catchup-note{ margin-top: 10px; font-size: 12px; color: var(--paper-dim); }
+  .limit-card .limit-warn{ margin-top: 10px; font-size: 12px; color: var(--copper); font-weight: 600; }
+  .limit-card .proj-balance{ margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+  .limit-card .proj-balance .lbl{ margin-bottom: 6px; }
+  .limit-card .proj-balance .amt{ font-size: 22px; margin-top: 0; }
+
+  .gap-card{
+    border-radius: 10px; padding: 18px 22px; border: 1px solid var(--line); background: var(--card);
+    margin-top: 14px;
+  }
+  .gap-card .top{ display:flex; justify-content:space-between; align-items:baseline; gap:12px; flex-wrap:wrap; }
+  .gap-card .name{ font-family:'Fraunces', serif; font-weight:600; font-size:16px; }
+  .gap-card .status{ font-family:'IBM Plex Mono', monospace; font-size: 12.5px; color: var(--paper-dim); }
+  .gap-bar{ height:10px; border-radius:999px; background: var(--line); overflow:hidden; margin-top:12px; }
+  .gap-bar-fill{ height:100%; border-radius:999px; background: var(--green); transition:width .3s ease; }
+  .gap-card.behind .gap-bar-fill{ background: var(--copper); }
+  .gap-note{ margin-top: 12px; font-size: 13.5px; color: var(--paper-dim); line-height:1.55; }
+  .gap-note b{ color: var(--paper); }
+
+  .insight-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:14px; margin-top:14px; }
+  .insight-card{
+    border-radius:10px; padding:18px 20px; border:1px solid var(--line); background:var(--card);
+    font-size:13.5px; color:var(--paper-dim); line-height:1.6;
+  }
+  .insight-card[hidden]{ display:none; }
+  .insight-card b{ color:var(--paper); }
+  .insight-card.accent-green{ border-color:var(--green); }
+  .insight-card .lbl{ margin-bottom:8px; display:block; }
+
+  .no-gap-note{
+    text-align:center; color: var(--paper-dim); font-size:13.5px; padding: 18px 20px;
+    background: var(--card-2); border-radius:10px; border:1px dashed var(--line); margin-top:14px;
+  }
+
+  .chart-card{
+    border: 1px solid var(--line); border-radius: 10px; background: var(--card); margin-top: 22px; overflow:hidden;
+  }
+  .chart-head{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; padding: 18px 20px 0; }
+  .chart-head h3{ font-family:'Fraunces', serif; font-weight:600; font-size:17px; margin:0; }
+  [data-theme="lcars"] .chart-head h3{ font-family:'Antonio','Arial Narrow',sans-serif; letter-spacing:.02em; }
+  .chart-legend{ display:flex; gap:20px; flex-wrap:wrap; padding: 10px 20px 4px; font-family:'IBM Plex Mono', monospace; font-size:12px; }
+  .chart-legend span{ display:flex; align-items:center; gap:7px; color: var(--paper-dim); }
+  .chart-legend .sw{ width:14px; height:3px; display:inline-block; border-radius:2px; }
+  .chart-legend .sw.gold{ background: var(--gold); }
+  .chart-legend .sw.green{ background: var(--green); }
+  .chart-legend .sw.plum{ background: var(--plum); }
+  .chart-wrap{ padding: 8px 20px 20px; }
+  .chart-wrap svg{ width:100%; height:auto; display:block; overflow:visible; }
+  .grid-line{ stroke: var(--line); stroke-width:1; }
+  .axis-label{ font-family:'IBM Plex Mono', monospace; font-size:10px; fill: var(--paper-dim); }
+  .line-401k{ fill:none; stroke: var(--gold); stroke-width:2.5; }
+  .line-hsa{ fill:none; stroke: var(--green); stroke-width:2.5; }
+  .line-ira{ fill:none; stroke: var(--plum); stroke-width:2.5; }
+  .chart-dot{ stroke: var(--card); stroke-width:2; }
+
+  .bl-footer{
+    text-align:center; color: var(--paper-dim); font-size: 12px; margin-top: 60px; font-family:'IBM Plex Mono', monospace;
+  }
+
+  @media (max-width: 720px){
+    .limits-grid{ grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div id="fn-site-nav"></div>
+
+<div class="bl-inputs" id="blInputs">
+  <div class="bl-summary-row" style="position:relative">
+    <div class="bl-summary" id="blSummary">&mdash;</div>
+    <button type="button" class="fn-help-btn" style="position:absolute; right:20px; top:50%; transform:translateY(-50%)" aria-label="What do these inputs mean?">?</button>
+  </div>
+  <div class="bl-content" id="blContent">
+    <div class="bl-inner">
+      <div class="bl-groups">
+        <div class="bl-group bl-group-you">
+          <button type="button" class="bl-group-toggle" data-group="you" aria-expanded="true" aria-controls="blFields-you">
+            <svg class="bl-group-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+            <span class="bl-group-label">You</span>
+          </button>
+          <div class="bl-fields" id="blFields-you">
+            <div class="bl-field">
+              <label for="year">Year</label>
+              <select id="year" class="bl-narrow"></select>
+            </div>
+            <div class="bl-field">
+              <label for="age">Age</label>
+              <div class="bl-input-row"><input class="bl-narrow" type="number" id="age" value="30" min="0" max="100" step="1"></div>
+            </div>
+            <div class="bl-field">
+              <label for="income">Annual Income</label>
+              <div class="bl-input-row"><span class="bl-prefix">$</span><input type="text" inputmode="decimal" id="income" value="90,000.00"></div>
+            </div>
+            <div class="bl-field">
+              <label for="payFreq">Pay Frequency</label>
+              <select id="payFreq" class="bl-narrow">
+                <option value="52">Weekly</option>
+                <option value="26" selected>Biweekly</option>
+                <option value="24">Semimonthly</option>
+                <option value="12">Monthly</option>
+              </select>
+            </div>
+            <div class="bl-field">
+              <label for="hsaCoverage">HSA Coverage</label>
+              <select id="hsaCoverage" class="bl-narrow">
+                <option value="self" selected>Self-only</option>
+                <option value="family">Family</option>
+              </select>
+            </div>
+            <div class="bl-field">
+              <label for="retireAge">Retirement Age</label>
+              <div class="bl-input-row"><input class="bl-narrow" type="number" id="retireAge" value="65" min="0" max="100" step="1"></div>
+            </div>
+            <div class="bl-field">
+              <label for="returnPct">Expected Return</label>
+              <div class="bl-input-row"><input class="bl-narrow" type="number" id="returnPct" value="7" min="0" max="20" step="0.1"><span class="bl-suffix">%</span></div>
+            </div>
+            <div class="bl-field">
+              <label for="taxRatePct">Marginal Tax Rate</label>
+              <div class="bl-input-row"><input class="bl-narrow" type="number" id="taxRatePct" value="0" min="0" max="50" step="0.5"><span class="bl-suffix">%</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bl-divider"></div>
+
+        <div class="bl-group bl-group-401k">
+          <button type="button" class="bl-group-toggle" data-group="k401" aria-expanded="true" aria-controls="blFields-k401">
+            <svg class="bl-group-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+            <span class="bl-group-label">401(k)</span>
+          </button>
+          <div class="bl-fields" id="blFields-k401">
+            <div class="bl-field bl-field-contrib">
+              <label for="contribPct401k">Your Contribution</label>
+              <div class="contrib-mode-toggle">
+                <button type="button" class="contrib-mode-btn active" data-acct="401k" data-mode="pct">%</button>
+                <button type="button" class="contrib-mode-btn" data-acct="401k" data-mode="monthly">$/mo</button>
+                <button type="button" class="contrib-mode-btn" data-acct="401k" data-mode="yearly">$/yr</button>
+              </div>
+              <div class="bl-input-row">
+                <span class="bl-prefix contrib-prefix" data-acct="401k" hidden>$</span>
+                <input class="bl-narrow" type="text" inputmode="decimal" id="contribPct401k" value="0">
+                <span class="bl-suffix contrib-suffix" data-acct="401k">%</span>
+              </div>
+              <input type="hidden" id="contribMode401k" value="pct">
+            </div>
+            <div class="bl-field">
+              <label for="matchPct401k">Employer Match</label>
+              <div class="bl-input-row"><input class="bl-narrow" type="number" inputmode="decimal" id="matchPct401k" value="0" min="0" max="100" step="0.5"><span class="bl-suffix">%</span></div>
+            </div>
+            <div class="bl-field">
+              <label for="balance401k">Current Balance</label>
+              <div class="bl-input-row"><span class="bl-prefix">$</span><input type="text" inputmode="decimal" id="balance401k" value="0"></div>
+            </div>
+            <div class="bl-field">
+              <label for="have401k">Contributed YTD</label>
+              <div class="bl-input-row"><span class="bl-prefix">$</span><input type="text" inputmode="decimal" id="have401k" value="0"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bl-divider"></div>
+
+        <div class="bl-group bl-group-hsa">
+          <button type="button" class="bl-group-toggle" data-group="hsa" aria-expanded="true" aria-controls="blFields-hsa">
+            <svg class="bl-group-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+            <span class="bl-group-label">HSA</span>
+          </button>
+          <div class="bl-fields" id="blFields-hsa">
+            <div class="bl-field bl-field-contrib">
+              <label for="contribPctHsa">Your Contribution</label>
+              <div class="contrib-mode-toggle">
+                <button type="button" class="contrib-mode-btn active" data-acct="Hsa" data-mode="pct">%</button>
+                <button type="button" class="contrib-mode-btn" data-acct="Hsa" data-mode="monthly">$/mo</button>
+                <button type="button" class="contrib-mode-btn" data-acct="Hsa" data-mode="yearly">$/yr</button>
+              </div>
+              <div class="bl-input-row">
+                <span class="bl-prefix contrib-prefix" data-acct="Hsa" hidden>$</span>
+                <input class="bl-narrow" type="text" inputmode="decimal" id="contribPctHsa" value="0">
+                <span class="bl-suffix contrib-suffix" data-acct="Hsa">%</span>
+              </div>
+              <input type="hidden" id="contribModeHsa" value="pct">
+            </div>
+            <div class="bl-field">
+              <label for="matchPctHsa">Employer Match</label>
+              <div class="bl-input-row"><input class="bl-narrow" type="number" inputmode="decimal" id="matchPctHsa" value="0" min="0" max="100" step="0.5"><span class="bl-suffix">%</span></div>
+            </div>
+            <div class="bl-field">
+              <label for="balanceHsa">Current Balance</label>
+              <div class="bl-input-row"><span class="bl-prefix">$</span><input type="text" inputmode="decimal" id="balanceHsa" value="0"></div>
+            </div>
+            <div class="bl-field">
+              <label for="haveHsa">Contributed YTD</label>
+              <div class="bl-input-row"><span class="bl-prefix">$</span><input type="text" inputmode="decimal" id="haveHsa" value="0"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bl-divider"></div>
+
+        <div class="bl-group bl-group-ira">
+          <button type="button" class="bl-group-toggle" data-group="ira" aria-expanded="true" aria-controls="blFields-ira">
+            <svg class="bl-group-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+            <span class="bl-group-label">IRA</span>
+          </button>
+          <div class="bl-fields" id="blFields-ira">
+            <div class="bl-field bl-field-contrib">
+              <label for="contribPctIra">Your Contribution</label>
+              <div class="contrib-mode-toggle">
+                <button type="button" class="contrib-mode-btn active" data-acct="Ira" data-mode="pct">%</button>
+                <button type="button" class="contrib-mode-btn" data-acct="Ira" data-mode="monthly">$/mo</button>
+                <button type="button" class="contrib-mode-btn" data-acct="Ira" data-mode="yearly">$/yr</button>
+              </div>
+              <div class="bl-input-row">
+                <span class="bl-prefix contrib-prefix" data-acct="Ira" hidden>$</span>
+                <input class="bl-narrow" type="text" inputmode="decimal" id="contribPctIra" value="0">
+                <span class="bl-suffix contrib-suffix" data-acct="Ira">%</span>
+              </div>
+              <input type="hidden" id="contribModeIra" value="pct">
+            </div>
+            <div class="bl-field">
+              <label for="matchPctIra">Employer Match</label>
+              <div class="bl-input-row"><input class="bl-narrow" type="number" inputmode="decimal" id="matchPctIra" value="0" min="0" max="100" step="0.5"><span class="bl-suffix">%</span></div>
+            </div>
+            <div class="bl-field">
+              <label for="balanceIra">Current Balance</label>
+              <div class="bl-input-row"><span class="bl-prefix">$</span><input type="text" inputmode="decimal" id="balanceIra" value="0"></div>
+            </div>
+            <div class="bl-field">
+              <label for="haveIra">Contributed YTD</label>
+              <div class="bl-input-row"><span class="bl-prefix">$</span><input type="text" inputmode="decimal" id="haveIra" value="0"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="bl-save">
+        <span class="save-status" id="blSaveStatus">Not saved yet</span>
+        <button type="button" id="resetBtn" class="reset-btn">Reset to defaults</button>
+      </div>
+    </div>
+  </div>
+  <div class="bl-toggle-row">
+    <button id="blToggle" type="button" class="bl-toggle" aria-expanded="true" aria-controls="blContent">
+      <svg class="bl-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+      <span id="blToggleLabel">Hide inputs</span>
+    </button>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="hero">
+    <p class="eyebrow">Benefits &amp; Contribution Limits</p>
+    <h1 class="headline">Max out what your <em>employer already gave you.</em></h1>
+    <p class="sub">The IRS sets a new ceiling on tax-advantaged accounts every year. Here's this year's numbers, broken into what they actually mean per paycheck — and how far you are from hitting them.</p>
+  </div>
+
+  <div class="scope-callout">
+    <p class="scope-title">What this page covers</p>
+    <p>These are the <b>employee contribution limits</b> the IRS sets for 401(k)/403(b)/457(b) plans, HSAs, and IRAs — the same limits regardless of which specific employer or brokerage holds the account. Your own plan may have additional rules (vesting schedules, after-tax contribution options, employer match formulas) this page doesn't know about.</p>
+    <p>An HSA also requires you to be enrolled in a qualifying high-deductible health plan (HDHP) — this page assumes you already are, if you're using the HSA numbers. Not financial or tax advice; verify against your plan documents and irs.gov before making contribution decisions.</p>
+  </div>
+
+  <div class="section-head green">
+    <span class="tag">01</span>
+    <h2 id="limitsHeading">Your limits at a glance</h2>
+    <div class="line"></div>
+  </div>
+
+  <div class="limits-grid" id="limitsGrid"></div>
+
+  <div class="section-head copper">
+    <span class="tag">02</span>
+    <h2>Where you stand</h2>
+    <div class="line"></div>
+  </div>
+
+  <div id="gapSection"></div>
+  <div class="insight-grid" id="insightGrid">
+    <div class="insight-card" id="freeMoneyNote" hidden></div>
+    <div class="insight-card" id="taxSavingsNote" hidden></div>
+    <div class="insight-card" id="priorityNote" hidden></div>
+  </div>
+
+  <div class="section-head">
+    <span class="tag">03</span>
+    <h2>Where this could take you</h2>
+    <div class="line"></div>
+  </div>
+
+  <div class="limits-grid" id="projGrid"></div>
+
+  <div class="chart-card" id="projChartCard">
+    <div class="chart-head">
+      <h3>Projected growth to retirement</h3>
+      <span class="chart-note" id="projChartNote"></span>
+    </div>
+    <div class="chart-legend">
+      <span><i class="sw gold"></i>401(k)</span>
+      <span><i class="sw green"></i>HSA</span>
+      <span><i class="sw plum"></i>IRA</span>
+    </div>
+    <div class="chart-wrap" id="projChartWrap">
+      <svg id="projChart" viewBox="0 0 900 320" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Line chart of projected 401k, HSA, and IRA balances by age"></svg>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-head">
+      <h3>How these limits have grown</h3>
+      <span class="chart-note" id="chartNote"></span>
+    </div>
+    <div class="chart-legend">
+      <span><i class="sw gold"></i>401(k) employee limit</span>
+      <span><i class="sw green"></i>HSA (self-only)</span>
+      <span><i class="sw plum"></i>IRA</span>
+    </div>
+    <div class="chart-wrap" id="chartWrap">
+      <svg id="blChart" viewBox="0 0 900 320" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Line chart of 401k, HSA, and IRA contribution limits by year"></svg>
+    </div>
+  </div>
+
+  <footer class="bl-footer">Figures sourced from IRS.gov, current as of this page's last update. Contribution limits change annually — always confirm against irs.gov before acting on these numbers. Not financial or tax advice.</footer>
+</div>
+<footer id="site-footer"></footer>
+
+<script>
+const $ = id => document.getElementById(id);
+const fmt0 = n => '$' + Math.round(n).toLocaleString('en-US');
+const fmtPct1 = n => n.toFixed(1) + '%';
+const parseNum = v => parseFloat(String(v).replace(/[^0-9.-]/g, '')) || 0;
+
+const LIMITS = (window.FN_BENEFITS_LIMITS || []).slice().sort((a, b) => b.year - a.year);
+
+const currencyIds = ['income', 'have401k', 'haveHsa', 'haveIra', 'balance401k', 'balanceHsa', 'balanceIra', 'contribPct401k', 'contribPctHsa', 'contribPctIra'];
+const projectionInputIds = ['matchPct401k', 'matchPctHsa', 'matchPctIra', 'retireAge', 'returnPct', 'taxRatePct'];
+function formatCurrencyField(el){
+  const n = parseNum(el.value);
+  el.value = n.toLocaleString('en-US', { maximumFractionDigits: 0 });
+}
+function rawCurrencyField(el){
+  const n = parseNum(el.value);
+  el.value = n === 0 ? '' : String(n);
+}
+
+// ---------- "Your Contribution" unit switch (%, $/mo, $/yr) ----------
+// The account prefixes below ('401k'/'Hsa'/'Ira') match the casing baked
+// into each field's own id (contribPct401k / contribPctHsa / contribPctIra),
+// so 'contribMode' + prefix and 'contribPct' + prefix always resolve to the
+// right element without a separate lookup table.
+const CONTRIB_ACCOUNT_PREFIXES = ['401k', 'Hsa', 'Ira'];
+function contribModeEl(prefix){ return $('contribMode' + prefix); }
+function contribInputEl(prefix){ return $('contribPct' + prefix); }
+
+function setContribDisplay(prefix){
+  const mode = (contribModeEl(prefix) || {}).value || 'pct';
+  const isDollar = mode !== 'pct';
+  const prefixEl = document.querySelector('.contrib-prefix[data-acct="' + prefix + '"]');
+  const suffixEl = document.querySelector('.contrib-suffix[data-acct="' + prefix + '"]');
+  if (prefixEl) prefixEl.hidden = !isDollar;
+  if (suffixEl) suffixEl.textContent = mode === 'monthly' ? '/mo' : (mode === 'yearly' ? '/yr' : '%');
+  document.querySelectorAll('.contrib-mode-btn[data-acct="' + prefix + '"]').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.mode === mode);
+  });
+}
+
+// Converts whatever's in the input to an effective contribution % of income
+// — the one thing every downstream calculation (limit checks, projections)
+// actually needs, regardless of which unit the user chose to type it in.
+function getEffectiveContribPct(prefix, income){
+  const mode = (contribModeEl(prefix) || {}).value || 'pct';
+  const raw = parseNum(contribInputEl(prefix).value);
+  if (mode === 'pct') return raw;
+  const annualDollar = mode === 'monthly' ? raw * 12 : raw;
+  return income > 0 ? (annualDollar / income) * 100 : 0;
+}
+
+// The exact phrase used in the projection cards ("You (12.0%)" / "You
+// ($1,000/mo)") — shows the number back in the unit the user actually typed
+// it in, rather than always re-deriving a percent.
+function formatContribInputLabel(prefix){
+  const mode = (contribModeEl(prefix) || {}).value || 'pct';
+  const raw = parseNum(contribInputEl(prefix).value);
+  if (mode === 'pct') return fmtPct1(raw);
+  return fmt0(raw) + (mode === 'monthly' ? '/mo' : '/yr');
+}
+
+// Switching units re-expresses the same real contribution in the new unit
+// (via its annual-dollar equivalent) rather than resetting the field, so
+// "12%" and "$1,050/mo" on a $105k income stay the same actual amount
+// across a switch instead of silently changing what the field means.
+function switchContribMode(prefix, newMode){
+  const modeEl = contribModeEl(prefix);
+  const inputEl = contribInputEl(prefix);
+  const oldMode = modeEl.value || 'pct';
+  if (oldMode === newMode) return;
+
+  const income = parseNum($('income').value);
+  const raw = parseNum(inputEl.value);
+  let annualDollar;
+  if (oldMode === 'pct') annualDollar = income * (raw / 100);
+  else if (oldMode === 'monthly') annualDollar = raw * 12;
+  else annualDollar = raw;
+
+  let newRaw;
+  if (newMode === 'pct') newRaw = income > 0 ? (annualDollar / income) * 100 : 0;
+  else if (newMode === 'monthly') newRaw = annualDollar / 12;
+  else newRaw = annualDollar;
+
+  modeEl.value = newMode;
+  inputEl.value = newMode === 'pct' ? (Math.round(newRaw * 10) / 10) : Math.round(newRaw);
+  formatCurrencyField(inputEl);
+  setContribDisplay(prefix);
+  render();
+  scheduleSave();
+}
+
+document.querySelectorAll('.contrib-mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => switchContribMode(btn.dataset.acct, btn.dataset.mode));
+});
+
+// ---------- collapsible input-toolbar groups (You / 401(k) / HSA / IRA) ----------
+const GROUP_COLLAPSE_KEY = 'contributionLimitsGroupCollapse';
+const GROUP_IDS = ['you', 'k401', 'hsa', 'ira'];
+function loadGroupCollapse(){
+  try {
+    const raw = localStorage.getItem(GROUP_COLLAPSE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch(e){ return {}; }
+}
+function saveGroupCollapse(state){
+  try { localStorage.setItem(GROUP_COLLAPSE_KEY, JSON.stringify(state)); } catch(e) {}
+}
+const groupCollapseState = loadGroupCollapse();
+function setGroupCollapsed(groupId, collapsed){
+  groupCollapseState[groupId] = collapsed;
+  saveGroupCollapse(groupCollapseState);
+  const toggle = document.querySelector('.bl-group-toggle[data-group="' + groupId + '"]');
+  const groupEl = toggle ? toggle.closest('.bl-group') : null;
+  if (groupEl) groupEl.classList.toggle('collapsed', collapsed);
+  if (toggle) toggle.setAttribute('aria-expanded', String(!collapsed));
+}
+document.querySelectorAll('.bl-group-toggle').forEach(btn => {
+  btn.addEventListener('click', () => setGroupCollapsed(btn.dataset.group, !groupCollapseState[btn.dataset.group]));
+});
+
+// ---------- year select, populated from the data file ----------
+const yearSelect = $('year');
+LIMITS.forEach(entry => {
+  const opt = document.createElement('option');
+  opt.value = entry.year;
+  opt.textContent = entry.year;
+  yearSelect.appendChild(opt);
+});
+
+function findYearData(year){
+  return LIMITS.find(e => e.year === Number(year)) || LIMITS[0];
+}
+
+// ---------- catch-up-aware limit lookups ----------
+function get401k(yearData, age){
+  const base = yearData.k401.employee;
+  if (age >= 60 && age <= 63 && yearData.k401.catchup60to63 != null){
+    return { base, catchup: yearData.k401.catchup60to63, total: base + yearData.k401.catchup60to63, note: 'age 60–63 catch-up' };
+  }
+  if (age >= 50){
+    return { base, catchup: yearData.k401.catchup50, total: base + yearData.k401.catchup50, note: 'age 50+ catch-up' };
+  }
+  return { base, catchup: 0, total: base, note: null };
+}
+function getHsa(yearData, age, coverage){
+  const base = coverage === 'family' ? yearData.hsa.family : yearData.hsa.self;
+  const catchup = age >= 55 ? yearData.hsa.catchup55 : 0;
+  return { base, catchup, total: base + catchup, note: catchup ? 'age 55+ catch-up' : null };
+}
+function getIra(yearData, age){
+  const base = yearData.ira.limit;
+  const catchup = age >= 50 ? yearData.ira.catchup50 : 0;
+  return { base, catchup, total: base + catchup, note: catchup ? 'age 50+ catch-up' : null };
+}
+
+// ---------- sticky, collapsible input toolbar ----------
+const STORAGE_KEY = 'contributionLimitsInputs';
+const COLLAPSE_KEY = 'contributionLimitsInputsCollapsed';
+const DEFAULTS = {
+  age:'30', income:'90000', payFreq:'26', hsaCoverage:'self', retireAge:'65', returnPct:'7', taxRatePct:'0',
+  have401k:'0', haveHsa:'0', haveIra:'0',
+  contribPct401k:'0', matchPct401k:'0', balance401k:'0', contribMode401k:'pct',
+  contribPctHsa:'0', matchPctHsa:'0', balanceHsa:'0', contribModeHsa:'pct',
+  contribPctIra:'0', matchPctIra:'0', balanceIra:'0', contribModeIra:'pct'
+};
+const ALL_FIELDS = [
+  'year', 'age', 'income', 'payFreq', 'hsaCoverage', 'retireAge', 'returnPct', 'taxRatePct',
+  'have401k', 'haveHsa', 'haveIra',
+  'contribPct401k', 'matchPct401k', 'balance401k', 'contribMode401k',
+  'contribPctHsa', 'matchPctHsa', 'balanceHsa', 'contribModeHsa',
+  'contribPctIra', 'matchPctIra', 'balanceIra', 'contribModeIra'
+];
+
+const blInputsEl = $('blInputs');
+const blToggle = $('blToggle');
+const blToggleLabel = $('blToggleLabel');
+const blSummary = $('blSummary');
+const blSaveStatus = $('blSaveStatus');
+
+let blInputsCollapsed = false;
+function setBlInputsCollapsed(collapsed){
+  blInputsCollapsed = collapsed;
+  if (blInputsEl) blInputsEl.classList.toggle('collapsed', collapsed);
+  if (blToggle) blToggle.setAttribute('aria-expanded', String(!collapsed));
+  if (blToggleLabel) blToggleLabel.textContent = collapsed ? 'Show inputs' : 'Hide inputs';
+  try { localStorage.setItem(COLLAPSE_KEY, collapsed ? '1' : '0'); } catch(e) {}
+}
+if (blToggle) blToggle.addEventListener('click', () => setBlInputsCollapsed(!blInputsCollapsed));
+
+function blPad2(n){ return String(n).padStart(2, '0'); }
+function updateSaveStatus(){
+  if (!blSaveStatus) return;
+  const d = new Date();
+  blSaveStatus.textContent = `Last saved: ${blPad2(d.getHours())}:${blPad2(d.getMinutes())}:${blPad2(d.getSeconds())}`;
+}
+function saveInputs(){
+  const vals = {};
+  ALL_FIELDS.forEach(id => { vals[id] = $(id).value; });
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(vals)); } catch(e) {}
+  updateSaveStatus();
+}
+function loadInputs(){
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const vals = JSON.parse(raw);
+    Object.keys(vals).forEach(id => { if ($(id) && vals[id] !== undefined && vals[id] !== '') $(id).value = vals[id]; });
+  } catch(e) {}
+}
+
+function updateSummary(){
+  if (!blSummary) return;
+  const yearData = findYearData(yearSelect.value);
+  const age = parseNum($('age').value);
+  const k401 = get401k(yearData, age);
+  const hsa = getHsa(yearData, age, $('hsaCoverage').value);
+  const ira = getIra(yearData, age);
+  blSummary.textContent = `${yearData.year}  |  401(k): ${fmt0(k401.total)}  |  HSA: ${fmt0(hsa.total)}  |  IRA: ${fmt0(ira.total)}`;
+}
+
+// ---------- SVG helper, shared with the history chart ----------
+const SVG_NS = 'http://www.w3.org/2000/svg';
+function svgEl(tag, attrs){
+  const el = document.createElementNS(SVG_NS, tag);
+  for (const k in attrs) el.setAttribute(k, attrs[k]);
+  return el;
+}
+
+function drawHistoryChart(){
+  const wrap = $('chartWrap');
+  const years = LIMITS.slice().sort((a, b) => a.year - b.year);
+  wrap.innerHTML = '<svg id="blChart" viewBox="0 0 900 320" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Line chart of 401k, HSA, and IRA contribution limits by year"></svg>';
+  const svg = $('blChart');
+  const W = 900, H = 320, padL = 70, padR = 20, padT = 20, padB = 36;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+
+  const maxVal = Math.max(...years.map(y => y.k401.employee)) * 1.1 || 1;
+  const x = (i) => padL + (years.length > 1 ? (i / (years.length - 1)) * plotW : plotW / 2);
+  const y = (v) => padT + plotH - (Math.max(v, 0) / maxVal) * plotH;
+
+  const gridCount = 4;
+  for (let i = 0; i <= gridCount; i++){
+    const val = (maxVal / gridCount) * i;
+    const yy = y(val);
+    svg.appendChild(svgEl('line', { x1: padL, x2: W - padR, y1: yy, y2: yy, class: 'grid-line' }));
+    const lbl = svgEl('text', { x: padL - 10, y: yy + 4, class: 'axis-label', 'text-anchor': 'end' });
+    lbl.textContent = '$' + Math.round(val / 1000) + 'K';
+    svg.appendChild(lbl);
+  }
+  years.forEach((yr, i) => {
+    const xx = x(i);
+    const lbl = svgEl('text', { x: xx, y: H - padB + 18, class: 'axis-label', 'text-anchor': 'middle' });
+    lbl.textContent = yr.year;
+    svg.appendChild(lbl);
+  });
+
+  const seriesPath = (key) => {
+    let d = '';
+    years.forEach((yr, i) => {
+      const v = key(yr);
+      d += `${i === 0 ? 'M' : 'L'}${x(i).toFixed(2)},${y(v).toFixed(2)} `;
+    });
+    return d;
+  };
+  const series = [
+    { get: yr => yr.k401.employee, cls: 'line-401k', dot: 'var(--gold)' },
+    { get: yr => yr.hsa.self, cls: 'line-hsa', dot: 'var(--green)' },
+    { get: yr => yr.ira.limit, cls: 'line-ira', dot: 'var(--plum)' }
+  ];
+  series.forEach(s => {
+    svg.appendChild(svgEl('path', { d: seriesPath(s.get), class: s.cls }));
+    years.forEach((yr, i) => {
+      svg.appendChild(svgEl('circle', { cx: x(i), cy: y(s.get(yr)), r: 4, fill: s.dot, class: 'chart-dot' }));
+    });
+  });
+
+  $('chartNote').textContent = years[0].year + '–' + years[years.length - 1].year;
+}
+
+function renderLimitsGrid(yearData, age, income, payFreqLabel, payPeriods){
+  const grid = $('limitsGrid');
+  $('limitsHeading').textContent = 'Your ' + yearData.year + ' limits at a glance';
+
+  const accounts = [
+    { id: 'k401', label: '401(k) / 403(b) / 457(b)', data: get401k(yearData, age) },
+    { id: 'hsa', label: 'HSA (' + ($('hsaCoverage').value === 'family' ? 'family' : 'self-only') + ')', data: getHsa(yearData, age, $('hsaCoverage').value) }
+  ];
+  const ira = getIra(yearData, age);
+  accounts.push({ id: 'ira', label: 'IRA (traditional + Roth)', data: ira });
+
+  grid.innerHTML = accounts.map(acc => {
+    const t = acc.data.total;
+    const monthly = t / 12;
+    const perPaycheck = t / payPeriods;
+    const pctIncome = income > 0 ? (t / income * 100) : null;
+    const catchupLine = acc.data.catchup > 0
+      ? `<div class="breakdown-row"><span>Base + catch-up</span><b>${fmt0(acc.data.base)} + ${fmt0(acc.data.catchup)}</b></div>`
+      : '';
+    return `
+      <div class="limit-card">
+        <div class="lbl">${acc.label}</div>
+        <div class="amt">${fmt0(t)}</div>
+        <div class="breakdown">
+          ${catchupLine}
+          <div class="breakdown-row"><span>Per month</span><b>${fmt0(monthly)}</b></div>
+          <div class="breakdown-row"><span>Per paycheck (${payFreqLabel})</span><b>${fmt0(perPaycheck)}</b></div>
+          ${pctIncome !== null ? `<div class="breakdown-row"><span>% of income</span><b>${fmtPct1(pctIncome)}</b></div>` : ''}
+        </div>
+        ${acc.data.note ? `<div class="catchup-note">Includes your ${acc.data.note}.</div>` : ''}
+      </div>`;
+  }).join('');
+}
+
+function renderGapSection(yearData, age, payPeriods){
+  const section = $('gapSection');
+  const accounts = [
+    { id: 'k401', label: '401(k)', have: parseNum($('have401k').value), data: get401k(yearData, age) },
+    { id: 'hsa', label: 'HSA', have: parseNum($('haveHsa').value), data: getHsa(yearData, age, $('hsaCoverage').value) },
+    { id: 'ira', label: 'IRA', have: parseNum($('haveIra').value), data: getIra(yearData, age) }
+  ];
+  const active = accounts.filter(a => a.have > 0);
+
+  if (!active.length){
+    section.innerHTML = '<div class="no-gap-note">Enter what you\'ve already contributed this year above (401(k), HSA, or IRA) to see your gap to the max and what that means per paycheck.</div>';
+    return;
+  }
+
+  const isCurrentYear = yearData.year === new Date().getFullYear();
+  let remainingPeriods = payPeriods;
+  if (isCurrentYear){
+    const now = new Date();
+    const startOfYear = new Date(now.getFullYear(), 0, 1);
+    const endOfYear = new Date(now.getFullYear(), 11, 31);
+    const fracRemaining = Math.max(0, (endOfYear - now) / (endOfYear - startOfYear));
+    remainingPeriods = Math.max(1, Math.round(payPeriods * fracRemaining));
+  }
+
+  section.innerHTML = active.map(acc => {
+    const remaining = Math.max(0, acc.data.total - acc.have);
+    const pct = acc.data.total > 0 ? Math.min(100, acc.have / acc.data.total * 100) : 0;
+    const behind = remaining > 0;
+    const perRemainingPaycheck = remaining / remainingPeriods;
+
+    let note;
+    if (!behind){
+      note = `<b>Maxed out</b> — you've already contributed ${fmt0(acc.have)} of the ${fmt0(acc.data.total)} limit.`;
+    } else if (isCurrentYear){
+      note = `<b>${fmt0(remaining)}</b> left to max out — that's <b>${fmt0(perRemainingPaycheck)}</b> per paycheck across your ${remainingPeriods} remaining pay period${remainingPeriods === 1 ? '' : 's'} this year.`;
+    } else {
+      note = `<b>${fmt0(remaining)}</b> left to reach the ${yearData.year} max — spread over a full year at your pay frequency, that's about <b>${fmt0(remaining / payPeriods)}</b> per paycheck.`;
+    }
+
+    return `
+      <div class="gap-card${behind ? ' behind' : ''}">
+        <div class="top">
+          <span class="name">${acc.label}</span>
+          <span class="status">${fmt0(acc.have)} of ${fmt0(acc.data.total)} (${fmtPct1(pct)})</span>
+        </div>
+        <div class="gap-bar"><div class="gap-bar-fill" style="width:${Math.max(2, pct)}%;"></div></div>
+        <div class="gap-note">${note}</div>
+      </div>`;
+  }).join('');
+}
+
+// ---------- projections: contribution % + employer match, growth to retirement ----------
+
+// 401(k) has two separate caps: the employee's own elective-deferral limit
+// (employeeLimit), and a higher combined employee+employer limit under IRC
+// 415(c) (combinedLimit). HSA and IRA only have one limit covering employee
+// and employer contributions together — pass employeeLimit as null for
+// those so only the single combinedLimit check applies.
+function computeAccountContribution(income, contribPct, matchPct, employeeLimit, combinedLimit){
+  const rawEmployeeAmt = income * (contribPct / 100);
+  const employerAmt = income * (matchPct / 100);
+  let employeeAmt = rawEmployeeAmt;
+  let employeeOverLimit = false;
+  if (employeeLimit != null && rawEmployeeAmt > employeeLimit){
+    employeeAmt = employeeLimit;
+    employeeOverLimit = true;
+  }
+  const rawTotalAmt = employeeAmt + employerAmt;
+  const totalOverLimit = rawTotalAmt > combinedLimit;
+  const totalAmt = totalOverLimit ? combinedLimit : rawTotalAmt;
+  return { rawEmployeeAmt, employeeAmt, employerAmt, rawTotalAmt, totalAmt, employeeOverLimit, totalOverLimit, employeeLimit, combinedLimit };
+}
+
+// Year-by-year simulation (loop, not a closed-form annuity formula — matches
+// how the rest of the site models compounding, e.g. Debt Snowball's payoff
+// simulation) — one point per age from now through retirement, growing at
+// returnPct and adding this account's (capped) total annual contribution
+// every year.
+function projectBalanceSeries(startBalance, annualContrib, ageStart, ageEnd, returnPct){
+  const r = returnPct / 100;
+  const points = [];
+  let bal = startBalance;
+  for (let a = ageStart; a <= ageEnd; a++){
+    points.push({ age: a, balance: bal });
+    bal = bal * (1 + r) + annualContrib;
+  }
+  return points;
+}
+
+function buildProjectionAccounts(yearData, age, income){
+  const k401Data = get401k(yearData, age);
+  const hsaData = getHsa(yearData, age, $('hsaCoverage').value);
+  const iraData = getIra(yearData, age);
+  const accounts = [
+    { id: 'k401', prefix: '401k', label: '401(k) / 403(b) / 457(b)', cls: 'line-401k', dot: 'var(--gold)',
+      employeeLimit: k401Data.total, combinedLimit: yearData.k401.overall415c,
+      contribPct: getEffectiveContribPct('401k', income), matchPct: parseNum($('matchPct401k').value), balance: parseNum($('balance401k').value) },
+    { id: 'hsa', prefix: 'Hsa', label: 'HSA (' + ($('hsaCoverage').value === 'family' ? 'family' : 'self-only') + ')', cls: 'line-hsa', dot: 'var(--green)',
+      employeeLimit: null, combinedLimit: hsaData.total,
+      contribPct: getEffectiveContribPct('Hsa', income), matchPct: parseNum($('matchPctHsa').value), balance: parseNum($('balanceHsa').value) },
+    { id: 'ira', prefix: 'Ira', label: 'IRA (traditional + Roth)', cls: 'line-ira', dot: 'var(--plum)',
+      employeeLimit: null, combinedLimit: iraData.total,
+      contribPct: getEffectiveContribPct('Ira', income), matchPct: parseNum($('matchPctIra').value), balance: parseNum($('balanceIra').value) }
+  ];
+  accounts.forEach(acc => {
+    acc.contribution = computeAccountContribution(income, acc.contribPct, acc.matchPct, acc.employeeLimit, acc.combinedLimit);
+  });
+  return accounts;
+}
+
+function renderProjectionSection(accounts, age, retireAge){
+  const grid = $('projGrid');
+  const yearsToRetirement = retireAge - age;
+
+  grid.innerHTML = accounts.map(acc => {
+    const c = acc.contribution;
+    const warnLines = [];
+    if (c.employeeOverLimit){
+      warnLines.push(`Your ${formatContribInputLabel(acc.prefix)} contribution works out to ${fmt0(c.rawEmployeeAmt)}/yr, above the ${fmt0(c.employeeLimit)} elective-deferral limit — you'd hit the cap before contributing the full amount.`);
+    }
+    if (c.totalOverLimit){
+      warnLines.push(`Your contribution plus employer match totals ${fmt0(c.rawTotalAmt)}/yr, above the ${fmt0(c.combinedLimit)} combined limit.`);
+    }
+
+    const projHtml = yearsToRetirement > 0 && acc.series
+      ? `<div class="proj-balance"><div class="lbl">Projected balance at age ${retireAge}</div><div class="amt">${fmt0(acc.series[acc.series.length - 1].balance)}</div></div>`
+      : `<div class="proj-balance"><div class="lbl">Projected balance</div><div class="catchup-note">Set a retirement age after your current age to see a projection.</div></div>`;
+
+    return `
+      <div class="limit-card">
+        <div class="lbl">${acc.label}</div>
+        <div class="amt">${fmt0(c.totalAmt)}</div>
+        <div class="breakdown">
+          <div class="breakdown-row"><span>You (${formatContribInputLabel(acc.prefix)})</span><b>${fmt0(c.employeeAmt)}</b></div>
+          <div class="breakdown-row"><span>Employer match (${fmtPct1(acc.matchPct)})</span><b>${fmt0(c.employerAmt)}</b></div>
+          <div class="breakdown-row"><span>Total this year</span><b>${fmt0(c.totalAmt)}/yr</b></div>
+        </div>
+        ${warnLines.map(w => `<div class="limit-warn">${w}</div>`).join('')}
+        ${projHtml}
+      </div>`;
+  }).join('');
+}
+
+function drawProjectionChart(accounts, ageStart, ageEnd){
+  const wrap = $('projChartWrap');
+  const noteEl = $('projChartNote');
+
+  if (ageEnd <= ageStart){
+    wrap.innerHTML = '<div class="no-gap-note">Set a retirement age after your current age to see a growth chart.</div>';
+    if (noteEl) noteEl.textContent = '';
+    return;
+  }
+  const hasData = accounts.some(acc => acc.series && acc.series.some(p => p.balance > 0));
+  if (!hasData){
+    wrap.innerHTML = '<div class="no-gap-note">Enter a contribution %, employer match %, or current balance above to see your projected growth.</div>';
+    if (noteEl) noteEl.textContent = '';
+    return;
+  }
+
+  wrap.innerHTML = '<svg id="projChart" viewBox="0 0 900 320" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Line chart of projected 401k, HSA, and IRA balances by age"></svg>';
+  const svg = $('projChart');
+  const W = 900, H = 320, padL = 74, padR = 20, padT = 20, padB = 36;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+
+  const ages = accounts[0].series.map(p => p.age);
+  const maxVal = Math.max(...accounts.flatMap(acc => acc.series.map(p => p.balance))) * 1.1 || 1;
+  const x = (i) => padL + (ages.length > 1 ? (i / (ages.length - 1)) * plotW : plotW / 2);
+  const y = (v) => padT + plotH - (Math.max(v, 0) / maxVal) * plotH;
+
+  const gridCount = 4;
+  for (let i = 0; i <= gridCount; i++){
+    const val = (maxVal / gridCount) * i;
+    const yy = y(val);
+    svg.appendChild(svgEl('line', { x1: padL, x2: W - padR, y1: yy, y2: yy, class: 'grid-line' }));
+    const lbl = svgEl('text', { x: padL - 10, y: yy + 4, class: 'axis-label', 'text-anchor': 'end' });
+    lbl.textContent = '$' + Math.round(val / 1000) + 'K';
+    svg.appendChild(lbl);
+  }
+  const labelEvery = Math.max(1, Math.ceil(ages.length / 10));
+  ages.forEach((a, i) => {
+    if (i % labelEvery !== 0 && i !== ages.length - 1) return;
+    const xx = x(i);
+    const lbl = svgEl('text', { x: xx, y: H - padB + 18, class: 'axis-label', 'text-anchor': 'middle' });
+    lbl.textContent = a;
+    svg.appendChild(lbl);
+  });
+
+  accounts.forEach(acc => {
+    let d = '';
+    acc.series.forEach((p, i) => { d += `${i === 0 ? 'M' : 'L'}${x(i).toFixed(2)},${y(p.balance).toFixed(2)} `; });
+    svg.appendChild(svgEl('path', { d, class: acc.cls }));
+    const dotEvery = Math.max(1, Math.ceil(acc.series.length / 12));
+    acc.series.forEach((p, i) => {
+      if (i % dotEvery !== 0 && i !== acc.series.length - 1) return;
+      svg.appendChild(svgEl('circle', { cx: x(i), cy: y(p.balance), r: 4, fill: acc.dot, class: 'chart-dot' }));
+    });
+  });
+
+  if (noteEl) noteEl.textContent = 'Age ' + ageStart + '–' + ageEnd;
+}
+
+// ---------- insight notes: free employer money, tax savings, priority order ----------
+
+// Sums the employer-contribution dollars already computed per account by
+// computeAccountContribution() — currently shown on three separate cards,
+// never added up into one headline figure.
+function renderFreeMoneyNote(accounts){
+  const el = $('freeMoneyNote');
+  const total = accounts.reduce((s, a) => s + a.contribution.employerAmt, 0);
+  if (total <= 0.5){ el.hidden = true; return; }
+  el.hidden = false;
+  el.className = 'insight-card accent-green';
+  el.innerHTML = `<span class="lbl">Free money from your employer</span>Across your 401(k), HSA, and IRA, your employer is putting in an estimated <b>${fmt0(total)}/yr</b> — money that's yours on top of what you contribute yourself.`;
+}
+
+// Only the employee's own contribution reduces their taxable income —
+// employer money was never counted as the employee's income to begin with,
+// so it's excluded here. HSA is always pretax; 401(k)/IRA are assumed
+// traditional, which is disclosed since this page can't tell traditional
+// from Roth contributions apart (they share one IRS limit either way).
+function renderTaxSavingsNote(accounts, taxRatePct){
+  const el = $('taxSavingsNote');
+  if (taxRatePct <= 0.5){ el.hidden = true; return; }
+  const pretaxTotal = accounts.reduce((s, a) => s + a.contribution.employeeAmt, 0);
+  if (pretaxTotal <= 0.5){ el.hidden = true; return; }
+  el.hidden = false;
+  el.className = 'insight-card';
+  const savings = pretaxTotal * (taxRatePct / 100);
+  el.innerHTML = `<span class="lbl">Estimated tax savings</span>Your own contributions this year total <b>${fmt0(pretaxTotal)}</b>. Assuming these are pretax (traditional 401(k)/IRA, and HSA — always pretax), that's about <b>${fmt0(savings)}</b> saved at your ${fmtPct1(taxRatePct)} marginal rate. Roth contributions don't reduce taxable income, so your actual savings would be lower if some of this is Roth.`;
+}
+
+// The classic ordering — HSA (best tax treatment), then IRA (more
+// investment choice), then extra 401(k) — checked against whichever
+// accounts you've actually entered YTD contributions for, same gating as
+// the "Where you stand" section above.
+function renderPriorityNote(yearData, age){
+  const el = $('priorityNote');
+  const accounts = [
+    { id: 'hsa', label: 'HSA', have: parseNum($('haveHsa').value), total: getHsa(yearData, age, $('hsaCoverage').value).total,
+      why: 'the best tax treatment of the three — pretax in, tax-free growth, and tax-free withdrawals for medical expenses' },
+    { id: 'ira', label: 'IRA', have: parseNum($('haveIra').value), total: getIra(yearData, age).total,
+      why: 'more investment choice than most 401(k) plans offer' },
+    { id: 'k401', label: '401(k)', have: parseNum($('have401k').value), total: get401k(yearData, age).total,
+      why: 'the largest limit of the three, worth maxing once the others are full' }
+  ];
+  const anyEntered = accounts.some(a => a.have > 0);
+  if (!anyEntered){ el.hidden = true; return; }
+  el.hidden = false;
+  const next = accounts.find(a => a.have < a.total - 0.5);
+  if (!next){
+    el.className = 'insight-card accent-green';
+    el.innerHTML = `<span class="lbl">Where extra money should go next</span>You've maxed out your HSA, IRA, and 401(k) this year — there's no more tax-advantaged room left to prioritize.`;
+  } else {
+    el.className = 'insight-card';
+    const remaining = next.total - next.have;
+    el.innerHTML = `<span class="lbl">Where extra money should go next</span>Following the classic order — HSA, then IRA, then extra 401(k) — your next dollar should go to your <b>${next.label}</b>: <b>${fmt0(remaining)}</b> of room left, thanks to ${next.why}.`;
+  }
+}
+
+const PAY_LABELS = { '52': 'weekly', '26': 'biweekly', '24': 'semimonthly', '12': 'monthly' };
+
+function render(){
+  const yearData = findYearData(yearSelect.value);
+  const age = parseNum($('age').value);
+  const income = parseNum($('income').value);
+  const payPeriods = parseNum($('payFreq').value) || 26;
+  const payFreqLabel = PAY_LABELS[$('payFreq').value] || 'per paycheck';
+  const retireAge = parseNum($('retireAge').value);
+  const returnPct = parseNum($('returnPct').value);
+
+  renderLimitsGrid(yearData, age, income, payFreqLabel, payPeriods);
+  renderGapSection(yearData, age, payPeriods);
+
+  const projAccounts = buildProjectionAccounts(yearData, age, income);
+  const yearsToRetirement = retireAge - age;
+  projAccounts.forEach(acc => {
+    acc.series = yearsToRetirement > 0 ? projectBalanceSeries(acc.balance, acc.contribution.totalAmt, age, retireAge, returnPct) : null;
+  });
+  renderProjectionSection(projAccounts, age, retireAge);
+  drawProjectionChart(projAccounts, age, retireAge);
+
+  renderFreeMoneyNote(projAccounts);
+  renderTaxSavingsNote(projAccounts, parseNum($('taxRatePct').value));
+  renderPriorityNote(yearData, age);
+
+  updateSummary();
+}
+
+// Persisting on every keystroke means an interrupted edit — select-all a
+// field to retype it, then get pulled away before finishing — saves
+// whatever partial digits were typed so far as the permanent value.
+// render() still runs on every keystroke for instant visual feedback; only
+// the localStorage write is debounced, so a normal typing pause settles on
+// the finished number instead of a mid-edit fragment. blur still saves
+// immediately (the field is done being edited at that point).
+let saveDebounceTimer = null;
+function scheduleSave(){
+  if (saveDebounceTimer) clearTimeout(saveDebounceTimer);
+  saveDebounceTimer = setTimeout(saveInputs, 500);
+}
+
+[...currencyIds].forEach(id => {
+  const el = $(id);
+  el.addEventListener('input', () => { render(); scheduleSave(); });
+  el.addEventListener('focus', () => { rawCurrencyField(el); el.select(); });
+  el.addEventListener('blur', () => {
+    if (saveDebounceTimer) { clearTimeout(saveDebounceTimer); saveDebounceTimer = null; }
+    formatCurrencyField(el); saveInputs();
+  });
+});
+['year', 'age', 'payFreq', 'hsaCoverage', ...projectionInputIds].forEach(id => {
+  $(id).addEventListener('input', () => { render(); scheduleSave(); });
+  $(id).addEventListener('change', () => { render(); scheduleSave(); });
+});
+
+$('resetBtn').addEventListener('click', () => {
+  Object.keys(DEFAULTS).forEach(id => { if ($(id)) $(id).value = DEFAULTS[id]; });
+  yearSelect.value = LIMITS[0].year;
+  if (window.FNProfileAutofill) window.FNProfileAutofill.apply(true);
+  currencyIds.forEach(id => formatCurrencyField($(id)));
+  CONTRIB_ACCOUNT_PREFIXES.forEach(setContribDisplay);
+  saveInputs();
+  render();
+});
+
+yearSelect.value = LIMITS[0] ? LIMITS[0].year : '';
+loadInputs();
+if (!yearSelect.value) yearSelect.value = LIMITS[0] ? LIMITS[0].year : '';
+currencyIds.forEach(id => formatCurrencyField($(id)));
+CONTRIB_ACCOUNT_PREFIXES.forEach(setContribDisplay);
+try { setBlInputsCollapsed(localStorage.getItem(COLLAPSE_KEY) === '1'); } catch(e) { setBlInputsCollapsed(false); }
+GROUP_IDS.forEach(id => setGroupCollapsed(id, !!groupCollapseState[id]));
+drawHistoryChart();
+render();
+</script>
+</body>
+</html>

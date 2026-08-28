@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script src="../assets/js/theme-init.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FireNate - Roth Conversion Ladder &amp; Early Access Simulator</title>
+<meta name="description" content="Model annual Traditional-to-Roth conversions, track the 5-year seasoning clock on each rung, and see a year-by-year map of which account covers your spending in early retirement.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Antonio:wght@400;500;600;700&family=Michroma&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/site.css">
+<link rel="stylesheet" href="../assets/css/timeToFI.css">
+<link rel="stylesheet" href="../assets/css/toolbar.css">
+<script src="../assets/js/theme.js" defer></script>
+<script src="../assets/js/user-profile.js" defer></script>
+<script src="../assets/js/nav.js" defer></script>
+<script src="../assets/js/profile-autofill.js" defer></script>
+<script src="../assets/js/field-help.js" defer></script>
+<script>
+window.FN_BASE = "../"; window.FN_PAGE = "roth-ladder";
+window.FN_FIELD_HELP = {
+  "title": "About this Tool",
+  "intro": "A Roth conversion ladder lets early retirees access traditional 401(k)/IRA money penalty-free before 59½, by converting it to Roth and waiting out a 5-year seasoning period on each conversion.",
+  "sections": [
+    {
+      "heading": "You today",
+      "items": [
+        {
+          "label": "Current Age",
+          "text": "Your age right now."
+        },
+        {
+          "label": "Retirement Age",
+          "text": "The age you plan to retire and start living off the ladder."
+        }
+      ]
+    },
+    {
+      "heading": "Balances at retirement",
+      "items": [
+        {
+          "label": "Traditional 401k/IRA at Retirement",
+          "text": "Your projected traditional account balance when you retire — the source of the conversions."
+        },
+        {
+          "label": "Taxable / Brokerage at Retirement",
+          "text": "Your projected taxable brokerage balance — used to cover living expenses during the first 5 years, before any converted money is accessible."
+        },
+        {
+          "label": "Roth Contribution Basis",
+          "text": "Roth contributions you've already made — these can be withdrawn any time, tax- and penalty-free, since you already paid tax on them."
+        }
+      ]
+    },
+    {
+      "heading": "The ladder",
+      "items": [
+        {
+          "label": "Annual Living Expenses",
+          "text": "What you expect to spend per year in early retirement."
+        },
+        {
+          "label": "Annual Roth Conversion",
+          "text": "How much traditional money you convert to Roth each year — this amount becomes accessible penalty-free 5 years later."
+        },
+        {
+          "label": "Annual Return Rate",
+          "text": "The average annual investment growth rate you expect across accounts."
+        },
+        {
+          "label": "Effective Tax on Conversions",
+          "text": "The tax rate paid on each year's conversion amount, since a Roth conversion counts as taxable income the year it happens."
+        },
+        {
+          "label": "Years to Simulate",
+          "text": "How many years out to run the ladder projection."
+        }
+      ]
+    }
+  ]
+};
+window.FN_PROFILE_FIELDS = {
+  currentAge: "#currentAge",
+  retireAge: "#retireAge",
+  expectedReturn: "#returnPct"
+};
+window.FN_PROFILE_LEGACY_KEY = "rothLadderInputs";
+</script>
+<style>
+  /* ---------- toolbar overrides (shared: assets/css/toolbar.css) ---------- */
+  :root{ --toolbar-content-max-height:640px; }
+
+  /* ---------- EXPLAINER ---------- */
+  .rl-explainer{
+    background:var(--surface); border:1px solid var(--line); border-top:4px solid var(--target);
+    border-radius:var(--radius); padding:22px 24px; margin-top:4px;
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:20px;
+  }
+  .rl-explainer-step .tag{
+    font-family:var(--mono); font-size:10.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+    margin-bottom:6px; display:block;
+  }
+  .rl-explainer-step.s1 .tag{ color:var(--gold); }
+  .rl-explainer-step.s2 .tag{ color:var(--target); }
+  .rl-explainer-step.s3 .tag{ color:var(--jade); }
+  .rl-explainer-step p{ margin:0; font-size:13.5px; color:var(--ink-dim); line-height:1.6; }
+  .rl-explainer-step strong{ color:var(--ink); }
+  .rl-explainer-note{
+    grid-column:1/-1; margin-top:2px; padding-top:14px; border-top:1px dashed var(--line-soft);
+    font-size:12px; color:var(--ink-faint); line-height:1.6;
+  }
+
+  /* ---------- SHORTFALL BADGE ---------- */
+  .rl-badge{
+    display:inline-flex; align-items:center; gap:6px;
+    font-family:var(--mono); font-size:11px; font-weight:700; letter-spacing:.03em;
+    padding:4px 10px; border-radius:999px;
+  }
+  .rl-badge.ok{ color:var(--jade); background:rgba(31,146,84,0.12); }
+  .rl-badge.bad{ color:var(--danger); background:rgba(219,59,35,0.1); }
+
+  /* ---------- TABLE ---------- */
+  tbody tr.rl-shortfall td{ background:rgba(219,59,35,0.1); }
+  tbody tr.rl-shortfall td:first-child{ color:var(--danger); font-weight:600; }
+  td.rl-zero{ color:var(--ink-faint); }
+
+  /* ---------- inline SVG stacked-bar chart (no external chart library) ---------- */
+  #rlChart{ width:100%; height:auto; display:block; overflow:visible; }
+  .rl-bar-taxable{ fill:var(--target); transition:opacity .15s ease; cursor:pointer; }
+  .rl-bar-basis{ fill:var(--plum); transition:opacity .15s ease; cursor:pointer; }
+  .rl-bar-matured{ fill:var(--jade); transition:opacity .15s ease; cursor:pointer; }
+  .rl-bar-shortfall{ fill:var(--danger); transition:opacity .15s ease; cursor:pointer; }
+  .rl-bar-group:hover rect{ opacity:0.75; }
+  .rl-bar-group:focus{ outline:none; }
+  .rl-bar-group:focus-visible rect{ opacity:0.75; }
+  .rl-bar-group:focus-visible{ outline:2px solid var(--gold); outline-offset:2px; }
+  .rl-hit-rect:focus{ outline:none; }
+  .rl-hit-rect:focus-visible{ outline:2px solid var(--gold); outline-offset:-2px; }
+  .rl-grid-line{ stroke:var(--line); stroke-width:1; }
+  .rl-grid-label, .rl-axis-label{ font-family:var(--mono); font-size:10px; fill:var(--ink-faint); }
+  #rlTooltip{
+    position:fixed; pointer-events:none; background:var(--surface); border:1px solid var(--line);
+    border-radius:10px; padding:9px 13px; font-family:var(--mono); font-size:12px; color:var(--ink);
+    opacity:0; transform:translate(-50%,-115%); transition:opacity .12s; z-index:50;
+    white-space:nowrap; box-shadow:0 8px 24px -10px rgba(0,0,0,0.45);
+  }
+  #rlTooltip .yr{ color:var(--ink-faint); margin-bottom:3px; }
+  [data-theme="neon"] #rlTooltip .yr{ color:var(--ink-dim); }
+  #rlTooltip .row{ display:flex; justify-content:space-between; gap:14px; }
+  .legend-dot.target{ background:var(--target); }
+  .legend-dot.plum{ background:var(--plum); }
+  .legend-dot.danger{ background:var(--danger); }
+
+  /* ---------- insight note cards ---------- */
+  .rl-notes{
+    display:grid; grid-template-columns:repeat(auto-fit, minmax(230px, 1fr)); gap:14px; margin-top:16px;
+  }
+  .rl-note-card{
+    background:var(--surface); border:1px solid var(--line); border-top:3px solid var(--target);
+    border-radius:var(--radius); padding:16px 18px; color:var(--ink-faint); font-size:13px; line-height:1.55;
+  }
+  .rl-note-card[hidden]{ display:none; }
+  .rl-note-card.jade{ border-top-color:var(--jade); }
+  .rl-note-card.danger{ border-top-color:var(--danger); }
+  .rl-note-card-label{
+    display:block; color:var(--ink); font-weight:700; font-size:10.5px; letter-spacing:0.08em; text-transform:uppercase; margin-bottom:6px;
+  }
+  .rl-note-card strong{ color:var(--ink); }
+</style>
+</head>
+<body>
+<div id="fn-site-nav"></div>
+
+<div class="rl-inputs" id="rlInputs">
+  <div class="wrap rl-summary-row" style="position:relative">
+    <div class="rl-summary" id="rlSummary">&mdash;</div>
+    <button type="button" class="fn-help-btn" style="position:absolute; right:20px; top:50%; transform:translateY(-50%)" aria-label="What do these inputs mean?">?</button>
+  </div>
+  <div class="rl-content" id="rlContent">
+    <div class="wrap rl-inner">
+      <div class="rl-fields">
+        <div class="rl-field">
+          <label for="currentAge">Current Age</label>
+          <div class="rl-input-row"><input class="rl-narrow" type="number" id="currentAge" value="40" min="0" max="100" step="0.5"></div>
+        </div>
+        <div class="rl-field">
+          <label for="retireAge">Retirement Age</label>
+          <div class="rl-input-row"><input class="rl-narrow" type="number" id="retireAge" value="45" min="0" max="120" step="0.5"></div>
+        </div>
+        <div class="rl-field">
+          <label for="traditionalBalance">Traditional 401k/IRA at Retirement</label>
+          <div class="rl-input-row"><span class="rl-prefix">$</span><input type="text" inputmode="decimal" pattern="[0-9,.]*" id="traditionalBalance" value="800,000.00"></div>
+        </div>
+        <div class="rl-field">
+          <label for="taxableBalance">Taxable / Brokerage at Retirement</label>
+          <div class="rl-input-row"><span class="rl-prefix">$</span><input type="text" inputmode="decimal" pattern="[0-9,.]*" id="taxableBalance" value="150,000.00"></div>
+        </div>
+        <div class="rl-field">
+          <label for="rothBasis">Roth Contribution Basis</label>
+          <div class="rl-input-row"><span class="rl-prefix">$</span><input type="text" inputmode="decimal" pattern="[0-9,.]*" id="rothBasis" value="40,000.00"></div>
+        </div>
+        <div class="rl-field">
+          <label for="annualExpenses">Annual Living Expenses</label>
+          <div class="rl-input-row"><span class="rl-prefix">$</span><input type="text" inputmode="decimal" pattern="[0-9,.]*" id="annualExpenses" value="50,000.00"></div>
+        </div>
+        <div class="rl-field">
+          <label for="annualConversion">Annual Roth Conversion</label>
+          <div class="rl-input-row"><span class="rl-prefix">$</span><input type="text" inputmode="decimal" pattern="[0-9,.]*" id="annualConversion" value="50,000.00"></div>
+        </div>
+        <div class="rl-field">
+          <label for="returnPct">Annual Return Rate</label>
+          <div class="rl-input-row"><input class="rl-narrow" type="number" id="returnPct" value="6" min="-20" max="30" step="0.1"><span class="rl-suffix">%</span></div>
+        </div>
+        <div class="rl-field">
+          <label for="taxRatePct">Effective Tax on Conversions</label>
+          <div class="rl-input-row"><input class="rl-narrow" type="number" id="taxRatePct" value="12" min="0" max="50" step="0.5"><span class="rl-suffix">%</span></div>
+        </div>
+        <div class="rl-field">
+          <label for="simYears">Years to Simulate</label>
+          <div class="rl-input-row"><input class="rl-narrow" type="number" id="simYears" value="20" min="5" max="40" step="1"><span class="rl-suffix">yrs</span></div>
+        </div>
+      </div>
+      <div class="rl-save">
+        <span class="save-status" id="rlSaveStatus">Not saved yet</span>
+        <button type="button" id="resetBtn" class="reset-btn">Reset to defaults</button>
+      </div>
+    </div>
+  </div>
+  <div class="wrap rl-toggle-row">
+    <button id="rlToggle" type="button" class="rl-toggle" aria-expanded="true" aria-controls="rlContent">
+      <svg class="rl-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+      <span id="rlToggleLabel">Hide inputs</span>
+    </button>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">FIRE Nate - Roth Conversion Ladder</p>
+    <h1 id="pageTitleHeader">Get your money out <em>before</em> 59&frac12; &mdash; without the penalty.</h1>
+    <p class="lede">Retire early and most of your wealth is probably locked in a Traditional 401(k) or IRA, where withdrawals before 59&frac12; trigger a 10% penalty. A Roth conversion ladder is the standard workaround — this simulates it year by year, and shows exactly which account pays your bills each year.</p>
+  </header>
+
+  <div class="rl-explainer">
+    <div class="rl-explainer-step s1">
+      <span class="tag">Step 1 &middot; Convert</span>
+      <p>Each year, move money from your Traditional account into a Roth IRA. <strong>You pay ordinary income tax on the conversion now</strong> — but no 10% penalty, since a conversion isn't a withdrawal.</p>
+    </div>
+    <div class="rl-explainer-step s2">
+      <span class="tag">Step 2 &middot; Season 5 years</span>
+      <p>Each converted amount has its <strong>own 5-year clock</strong>. Once it matures, that principal — not the growth on top of it — can be withdrawn completely tax- and penalty-free.</p>
+    </div>
+    <div class="rl-explainer-step s3">
+      <span class="tag">Step 3 &middot; Bridge the gap</span>
+      <p>Your very first conversion won't mature for 5 years, so something else — <strong>taxable savings, or money you directly contributed to a Roth</strong> — has to cover spending until the ladder catches up.</p>
+    </div>
+    <div class="rl-explainer-note">
+      This models the conversion-ladder path specifically. A 72(t)/SEPP plan (a series of substantially-equal periodic payments taken directly from the Traditional account) is another common way to access funds early — it isn't modeled here, since it locks in a fixed payment schedule with its own strict IRS rules. "Available to withdraw" tracks converted principal dollar-for-dollar as a conservative simplification — real accounts may hold more, since growth on seasoned funds left in place keeps compounding.
+    </div>
+  </div>
+
+  <h2 class="ledger-title" style="margin-top: 40px; margin-bottom: 4px;">Summary</h2>
+  <div class="status" id="statusStrip"></div>
+  <div class="rl-notes" id="rlNotes">
+    <p class="rl-note-card" id="rlNoteMinConversion" hidden></p>
+    <p class="rl-note-card" id="rlNoteBridgeCushion" hidden></p>
+    <p class="rl-note-card" id="rlNoteDryYear" hidden></p>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h2>Funding sources by year</h2>
+      <span class="sub">STACKED BY WHICH ACCOUNT PAID THAT YEAR'S SPENDING + CONVERSION TAX</span>
+    </div>
+    <div class="chart-card">
+      <div class="chart-mode-toggle" role="group" aria-label="Chart style">
+        <button type="button" class="chart-mode-btn active" data-mode="bars">Bars</button>
+        <button type="button" class="chart-mode-btn" data-mode="line">Area</button>
+      </div>
+      <svg id="rlChart" viewBox="0 0 1120 340"></svg>
+      <div id="rlTooltip"></div>
+      <div class="legend-row">
+        <span class="legend-dot target"></span> From taxable
+        <span class="legend-dot plum"></span> From Roth basis
+        <span class="legend-dot jade"></span> From matured ladder rungs
+        <span class="legend-dot danger"></span> Shortfall
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h2>Year-by-year cashflow</h2>
+      <span class="sub" id="tableSub">WHICH ACCOUNT COVERS YOUR SPENDING, YEAR BY YEAR</span>
+    </div>
+    <div class="table-card">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th style="text-align:left;">Year</th>
+              <th style="text-align:left;">Age</th>
+              <th>Converted</th>
+              <th>Conversion Tax</th>
+              <th>From Taxable</th>
+              <th>From Roth Basis</th>
+              <th>From Matured Roth</th>
+              <th>Shortfall</th>
+              <th>Traditional Bal.</th>
+              <th>Roth Bal.</th>
+              <th>Taxable Bal.</th>
+            </tr>
+          </thead>
+          <tbody id="ladderTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+<footer id="site-footer"></footer>
+
+</div>
+
+<script src="../assets/js/calc-utils.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const fmtUSD = n => n.toLocaleString('en-US', {style:'currency', currency:'USD', maximumFractionDigits:0});
+const fmtNum = n => n.toLocaleString('en-US', {maximumFractionDigits:1});
+const formatCurrencyField = id => {
+  const raw = parseCurrency(id);
+  $(id).value = raw.toLocaleString('en-US', {maximumFractionDigits:2});
+};
+function sanitizeCurrencyInput(id){
+  const el = $(id);
+  const before = el.value;
+  const cursorFromEnd = before.length - (el.selectionStart ?? before.length);
+  let cleaned = before.replace(/[^0-9.,]/g, '');
+  const parts = cleaned.split('.');
+  if (parts.length > 2){
+    cleaned = parts[0] + '.' + parts.slice(1).join('');
+  }
+  if (cleaned !== before){
+    el.value = cleaned;
+    const newPos = Math.max(0, cleaned.length - cursorFromEnd);
+    el.setSelectionRange(newPos, newPos);
+  }
+}
+
+// ---------- sticky, collapsible input toolbar ----------
+const COLLAPSE_KEY = 'roth-ladder-inputs-collapsed';
+const rlInputsEl = $('rlInputs');
+const rlToggle = $('rlToggle');
+const rlToggleLabel = $('rlToggleLabel');
+const rlSummary = $('rlSummary');
+const rlSaveStatus = $('rlSaveStatus');
+
+let inputsCollapsed = false;
+function setInputsCollapsed(collapsed){
+  inputsCollapsed = collapsed;
+  if (rlInputsEl) rlInputsEl.classList.toggle('collapsed', collapsed);
+  if (rlToggle) rlToggle.setAttribute('aria-expanded', String(!collapsed));
+  if (rlToggleLabel) rlToggleLabel.textContent = collapsed ? 'Show inputs' : 'Hide inputs';
+  try { localStorage.setItem(COLLAPSE_KEY, collapsed ? '1' : '0'); } catch(e) {}
+}
+if (rlToggle){
+  rlToggle.addEventListener('click', () => setInputsCollapsed(!inputsCollapsed));
+}
+
+function pad2(n){ return String(n).padStart(2, '0'); }
+function updateSaveStatus(){
+  if (!rlSaveStatus) return;
+  const d = new Date();
+  rlSaveStatus.textContent = `Last saved: ${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
+}
+function updateRlSummary(m){
+  if (!rlSummary) return;
+  rlSummary.textContent = `Converting ${fmtUSD(m.annualConversion)}/yr  |  Bridge (yrs 1-5): ${m.bridgeOk ? 'holds' : 'shortfall'}  |  Shortfall years: ${m.shortfallYears}`;
+}
+
+// ---------- ladder simulation ----------
+// Pulled out of compute() so the min-conversion scan below can re-run the
+// exact same year-by-year mechanics at other candidate conversion amounts,
+// without duplicating the loop.
+function simulateLadder(p){
+  let traditionalBal = p.traditionalStart;
+  let taxableBal = p.taxableStart;
+  let rothBasisRemaining = p.rothBasisStart;
+  let rothBal = p.rothBasisStart; // starting Roth account value assumed roughly equal to existing contribution basis
+  let maturedAvailable = 0;
+  const pendingRungs = []; // { maturesInYear, amount }
+
+  const rows = [];
+
+  for (let y = 0; y < p.simYears; y++){
+    const age = p.retireAge + y;
+
+    // move any rungs that have finished seasoning into the available pool
+    for (let i = pendingRungs.length - 1; i >= 0; i--){
+      if (pendingRungs[i].maturesInYear <= y){
+        maturedAvailable += pendingRungs[i].amount;
+        pendingRungs.splice(i, 1);
+      }
+    }
+
+    // this year's conversion, capped by whatever's left in the Traditional account
+    const converted = Math.min(p.annualConversion, Math.max(0, traditionalBal));
+    traditionalBal -= converted;
+    rothBal += converted;
+    if (converted > 0.005) pendingRungs.push({ maturesInYear: y + 5, amount: converted });
+    const conversionTax = converted * p.taxRate;
+
+    // this year's total cash need = living expenses + the tax bill on this year's conversion,
+    // drawn in order: taxable brokerage, then Roth contribution basis, then matured (seasoned) rungs
+    let need = p.annualExpenses + conversionTax;
+
+    const fromTaxable = Math.min(need, Math.max(0, taxableBal));
+    taxableBal -= fromTaxable; need -= fromTaxable;
+
+    const fromBasis = Math.min(need, Math.max(0, rothBasisRemaining));
+    rothBasisRemaining -= fromBasis; need -= fromBasis;
+
+    const fromMatured = Math.min(need, Math.max(0, maturedAvailable));
+    maturedAvailable -= fromMatured; rothBal -= fromMatured; need -= fromMatured;
+
+    const shortfall = Math.max(0, need);
+
+    // year-end growth on standing account balances
+    traditionalBal = Math.max(0, traditionalBal) * (1 + p.r);
+    rothBal = Math.max(0, rothBal) * (1 + p.r);
+    taxableBal = Math.max(0, taxableBal) * (1 + p.r);
+
+    rows.push({
+      year: y, age, converted, conversionTax, fromTaxable, fromBasis, fromMatured, shortfall,
+      traditionalEnd: traditionalBal, rothEnd: rothBal, taxableEnd: taxableBal, rothBasisEnd: rothBasisRemaining
+    });
+  }
+
+  return rows;
+}
+
+function compute(){
+  const currentAge = parseFloat($('currentAge').value) || 0;
+  const retireAge = parseFloat($('retireAge').value) || 0;
+  const traditionalStart = parseCurrency('traditionalBalance');
+  const taxableStart = parseCurrency('taxableBalance');
+  const rothBasisStart = parseCurrency('rothBasis');
+  const annualExpenses = parseCurrency('annualExpenses');
+  const annualConversion = parseCurrency('annualConversion');
+  const returnPct = parseFloat($('returnPct').value) || 0;
+  const taxRatePct = parseFloat($('taxRatePct').value) || 0;
+  const simYears = Math.max(1, parseInt($('simYears').value, 10) || 1);
+
+  const r = returnPct / 100;
+  const taxRate = taxRatePct / 100;
+
+  const rows = simulateLadder({ traditionalStart, taxableStart, rothBasisStart, annualExpenses, annualConversion, r, taxRate, simYears, retireAge });
+
+  const bridgeShortfallYears = rows.filter(row => row.year < 5 && row.shortfall > 0.5).length;
+  const bridgeOk = bridgeShortfallYears === 0;
+  const shortfallYears = rows.filter(row => row.shortfall > 0.5).length;
+  const totalShortfall = rows.reduce((s, row) => s + row.shortfall, 0);
+  const firstFullyCoveredRow = rows.find(row => row.shortfall <= 0.5 && row.fromTaxable <= 0.5 && row.fromBasis <= 0.5 && row.fromMatured > 0.5);
+
+  return {
+    currentAge, retireAge, traditionalStart, taxableStart, rothBasisStart,
+    annualExpenses, annualConversion, r, taxRate, simYears,
+    rows, bridgeOk, bridgeShortfallYears, shortfallYears, totalShortfall,
+    firstFullyCoveredAge: firstFullyCoveredRow ? firstFullyCoveredRow.age : null,
+    endingTraditional: rows.length ? rows[rows.length - 1].traditionalEnd : traditionalStart,
+    endingRoth: rows.length ? rows[rows.length - 1].rothEnd : rothBasisStart,
+    endingTaxable: rows.length ? rows[rows.length - 1].taxableEnd : taxableStart
+  };
+}
+
+// ---------- insight notes: minimum conversion, bridge cushion, ladder-dry year ----------
+
+// Smallest annual conversion (scanned in $250 steps) that eliminates every
+// shortfall across the whole horizon, re-running the real simulation at
+// each candidate rather than assuming a closed-form relationship — raising
+// the conversion helps long-run sustainability but also raises the tax bill
+// drawn from the bridge accounts, so the relationship isn't guaranteed
+// monotonic and a plain formula could be wrong.
+function findMinConversion(m){
+  const step = 250;
+  const maxScan = Math.max(m.annualExpenses * 6, m.annualConversion * 4, 200000);
+  for (let c = 0; c <= maxScan; c += step){
+    const rows = simulateLadder({
+      traditionalStart: m.traditionalStart, taxableStart: m.taxableStart, rothBasisStart: m.rothBasisStart,
+      annualExpenses: m.annualExpenses, annualConversion: c, r: m.r, taxRate: m.taxRate,
+      simYears: m.simYears, retireAge: m.retireAge
+    });
+    const totalShortfall = rows.reduce((s, row) => s + row.shortfall, 0);
+    if (totalShortfall <= 0.5) return c;
+  }
+  return null;
+}
+
+// How much taxable + Roth-basis cushion is left right when the first rung
+// matures (end of year 5) — or, if the bridge came up short, how large that
+// shortfall was. Read straight off the already-simulated rows, not a
+// separate approximation.
+function computeBridgeCushion(m){
+  if (m.simYears < 5) return null;
+  const bridgeRows = m.rows.slice(0, 5);
+  const bridgeShortfallTotal = bridgeRows.reduce((s, row) => s + row.shortfall, 0);
+  if (bridgeShortfallTotal > 0.5) return { ok: false, amount: bridgeShortfallTotal };
+  const lastBridgeRow = bridgeRows[4];
+  return { ok: true, amount: lastBridgeRow.taxableEnd + lastBridgeRow.rothBasisEnd };
+}
+
+// The first year the Traditional account can't fully fund that year's
+// intended conversion — after that point new rungs shrink or stop forming,
+// which can reopen shortfalls later even if the bridge itself held.
+function findLadderDryRow(m){
+  if (m.annualConversion <= 0.5) return null;
+  return m.rows.find(row => row.converted < m.annualConversion - 0.5) || null;
+}
+
+function renderNotes(m){
+  // 1) Minimum conversion that eliminates every shortfall.
+  const minEl = $('rlNoteMinConversion');
+  const minC = findMinConversion(m);
+  minEl.hidden = false;
+  minEl.className = 'rl-note-card ' + (m.totalShortfall <= 0.5 ? 'jade' : 'danger');
+  if (minC === null){
+    minEl.innerHTML = `<span class="rl-note-card-label">Minimum conversion to avoid a shortfall</span>` +
+      `Even scaling the conversion up well past your current amount doesn't fully avoid a shortfall in this scenario — more taxable savings or Roth basis going into retirement would help more than a bigger conversion.`;
+  } else if (m.totalShortfall <= 0.5){
+    minEl.innerHTML = `<span class="rl-note-card-label">Minimum conversion to avoid a shortfall</span>` +
+      `Your current ${fmtUSD(m.annualConversion)}/yr already keeps every year fully funded. Based on this scenario, you could convert as little as <strong>${fmtUSD(minC)}</strong>/yr and still avoid any shortfall.`;
+  } else {
+    minEl.innerHTML = `<span class="rl-note-card-label">Minimum conversion to avoid a shortfall</span>` +
+      `Your current ${fmtUSD(m.annualConversion)}/yr leaves ${m.shortfallYears} year${m.shortfallYears === 1 ? '' : 's'} short. Based on this scenario, <strong>${fmtUSD(minC)}</strong>/yr is the smallest conversion that fully avoids one.`;
+  }
+
+  // 2) Bridge cushion.
+  const cushionEl = $('rlNoteBridgeCushion');
+  const cushion = computeBridgeCushion(m);
+  if (cushion === null){
+    cushionEl.hidden = true;
+  } else {
+    cushionEl.hidden = false;
+    cushionEl.className = 'rl-note-card ' + (cushion.ok ? 'jade' : 'danger');
+    cushionEl.innerHTML = cushion.ok
+      ? `<span class="rl-note-card-label">Bridge cushion</span>After bridging the first 5 years, you'd have <strong>${fmtUSD(cushion.amount)}</strong> of taxable + Roth-basis funds left over before your first rung matures.`
+      : `<span class="rl-note-card-label">Bridge cushion</span>Your taxable + Roth-basis funds fall <strong>${fmtUSD(cushion.amount)}</strong> short of covering the first 5 years before your first rung matures.`;
+  }
+
+  // 3) When the ladder runs dry.
+  const dryEl = $('rlNoteDryYear');
+  const dryRow = findLadderDryRow(m);
+  if (m.annualConversion <= 0.5){
+    dryEl.hidden = true;
+  } else if (dryRow){
+    dryEl.hidden = false;
+    dryEl.className = 'rl-note-card danger';
+    dryEl.innerHTML = `<span class="rl-note-card-label">When the ladder runs dry</span>` +
+      `Your Traditional balance can't fully fund the intended ${fmtUSD(m.annualConversion)}/yr conversion starting year ${dryRow.year + 1} (age ${fmtNum(dryRow.age)}) — conversions shrink to ${fmtUSD(dryRow.converted)} that year, which can reopen shortfalls later in the horizon.`;
+  } else {
+    dryEl.hidden = false;
+    dryEl.className = 'rl-note-card jade';
+    dryEl.innerHTML = `<span class="rl-note-card-label">When the ladder runs dry</span>` +
+      `Your Traditional balance covers the full ${fmtUSD(m.annualConversion)}/yr conversion for all ${fmtNum(m.simYears)} years simulated — the ladder never runs dry within this horizon.`;
+  }
+}
+
+// ---------- render ----------
+function render(){
+  const m = compute();
+
+  // status strip
+  const strip = $('statusStrip');
+  strip.innerHTML = '';
+  const add = (k, v, cls) => {
+    const div = document.createElement('div');
+    div.className = 'stat';
+    div.innerHTML = `<div class="k">${k}</div><div class="v ${cls||''}">${v}</div>`;
+    strip.appendChild(div);
+  };
+  add('Bridge (years 1&ndash;5)', m.bridgeOk ? 'Holds' : `Shortfall (${m.bridgeShortfallYears} yr)`, m.bridgeOk ? 'jade' : 'target');
+  add('First year fully covered', m.firstFullyCoveredAge !== null ? `Age ${fmtNum(m.firstFullyCoveredAge)}` : 'Not within horizon');
+  add('Shortfall years', fmtNum(m.shortfallYears), m.shortfallYears === 0 ? 'jade' : 'target');
+  add('Total shortfall', fmtUSD(m.totalShortfall), m.totalShortfall === 0 ? 'jade' : 'target');
+  add('Ending Roth balance', fmtUSD(m.endingRoth), 'jade');
+  add('Ending Traditional balance', fmtUSD(m.endingTraditional));
+
+  // table
+  const tbody = $('ladderTableBody');
+  tbody.innerHTML = '';
+  const dash = (n) => n <= 0.5 ? '<span class="rl-zero">&mdash;</span>' : fmtUSD(n);
+  m.rows.forEach(row => {
+    const tr = document.createElement('tr');
+    if (row.shortfall > 0.5) tr.classList.add('rl-shortfall');
+    tr.innerHTML = `
+      <td style="text-align:left;">${row.year + 1}</td>
+      <td style="text-align:left;">${fmtNum(row.age)}</td>
+      <td>${dash(row.converted)}</td>
+      <td>${dash(row.conversionTax)}</td>
+      <td>${dash(row.fromTaxable)}</td>
+      <td>${dash(row.fromBasis)}</td>
+      <td>${dash(row.fromMatured)}</td>
+      <td>${row.shortfall > 0.5 ? fmtUSD(row.shortfall) : '<span class="rl-zero">&mdash;</span>'}</td>
+      <td>${fmtUSD(row.traditionalEnd)}</td>
+      <td>${fmtUSD(row.rothEnd)}</td>
+      <td>${fmtUSD(row.taxableEnd)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  updateRlSummary(m);
+  renderNotes(m);
+  renderChart(m.rows);
+}
+
+// ---------- inline SVG stacked-bar chart (no external chart library) ----------
+const rlSvgNS = 'http://www.w3.org/2000/svg';
+const rlChartSvg = $('rlChart');
+const rlTooltip = $('rlTooltip');
+
+function rlNiceCeil(v){
+  if (v <= 0) return 1;
+  const mag = Math.pow(10, Math.floor(Math.log10(v)));
+  const norm = v / mag;
+  let step;
+  if (norm <= 1) step = 1; else if (norm <= 2) step = 2; else if (norm <= 5) step = 5; else step = 10;
+  return step * mag;
+}
+
+let chartMode = 'bars';
+let lastChartRows = null;
+
+function renderChart(rows){
+  lastChartRows = rows;
+  const W = 1120, H = 340;
+  const padL = 60, padR = 10, padT = 16, padB = 34;
+  const plotW = W - padL - padR;
+  const plotH = H - padT - padB;
+
+  const totals = rows.map(r => r.fromTaxable + r.fromBasis + r.fromMatured + r.shortfall);
+  const niceMax = rlNiceCeil(Math.max(...totals, 1));
+
+  rlChartSvg.innerHTML = '';
+
+  // gridlines + y-axis labels
+  const steps = 5;
+  for (let i = 0; i <= steps; i++){
+    const val = niceMax * i / steps;
+    const y = padT + plotH - (val / niceMax) * plotH;
+    const line = document.createElementNS(rlSvgNS, 'line');
+    line.setAttribute('x1', padL); line.setAttribute('x2', W - padR);
+    line.setAttribute('y1', y); line.setAttribute('y2', y);
+    line.setAttribute('class', 'rl-grid-line');
+    rlChartSvg.appendChild(line);
+
+    const label = document.createElementNS(rlSvgNS, 'text');
+    label.setAttribute('x', padL - 8);
+    label.setAttribute('y', y + 4);
+    label.setAttribute('text-anchor', 'end');
+    label.setAttribute('class', 'rl-grid-label');
+    label.textContent = fmtUSD(val);
+    rlChartSvg.appendChild(label);
+  }
+
+  const n = rows.length;
+  const barGap = n > 25 ? 3 : n > 15 ? 6 : 10;
+  const barW = Math.max((plotW / n) - barGap, 1);
+  const baseY = padT + plotH;
+  const maxLabels = 20;
+  const labelStep = Math.max(1, Math.ceil(n / maxLabels));
+
+  const segments = [
+    { key: 'fromTaxable', cls: 'rl-bar-taxable', name: 'From taxable', color: 'var(--target)' },
+    { key: 'fromBasis', cls: 'rl-bar-basis', name: 'From Roth basis', color: 'var(--plum)' },
+    { key: 'fromMatured', cls: 'rl-bar-matured', name: 'From matured rungs', color: 'var(--jade)' },
+    { key: 'shortfall', cls: 'rl-bar-shortfall', name: 'Shortfall', color: 'var(--danger)' }
+  ];
+  const xLeft = (i) => padL + i * (barW + barGap);
+
+  // x-axis labels — shared between both modes
+  rows.forEach((row, i) => {
+    if (i % labelStep === 0 || i === n - 1){
+      const label = document.createElementNS(rlSvgNS, 'text');
+      label.setAttribute('x', xLeft(i) + barW / 2);
+      label.setAttribute('y', baseY + 16);
+      label.setAttribute('text-anchor', 'middle');
+      label.setAttribute('class', 'rl-axis-label');
+      label.textContent = 'Yr ' + (row.year + 1);
+      rlChartSvg.appendChild(label);
+    }
+  });
+
+  const tooltipHTML = (row) => `<div class="yr">Year ${row.year + 1} &middot; Age ${fmtNum(row.age)}</div>` +
+    `<div class="row">From taxable <b>${fmtUSD(row.fromTaxable)}</b></div>` +
+    `<div class="row">From Roth basis <b>${fmtUSD(row.fromBasis)}</b></div>` +
+    `<div class="row">From matured rungs <b>${fmtUSD(row.fromMatured)}</b></div>` +
+    (row.shortfall > 0.5 ? `<div class="row">Shortfall <b>${fmtUSD(row.shortfall)}</b></div>` : '');
+  const tooltipLabel = (row) => `Year ${row.year + 1}, age ${fmtNum(row.age)}: from taxable ${fmtUSD(row.fromTaxable)}, ` +
+    `from Roth basis ${fmtUSD(row.fromBasis)}, from matured rungs ${fmtUSD(row.fromMatured)}` +
+    (row.shortfall > 0.5 ? `, shortfall ${fmtUSD(row.shortfall)}` : '');
+
+  // Shared by every hit-target's keyboard-focus handler below — positions
+  // the tooltip centered above the element's own rendered position
+  // (keyboard focus has no cursor coordinates to anchor to, unlike
+  // mousemove).
+  function showRlTooltip(el, html){
+    const r = el.getBoundingClientRect();
+    rlTooltip.style.opacity = 1;
+    rlTooltip.style.left = (r.left + r.width / 2) + 'px';
+    rlTooltip.style.top = r.top + 'px';
+    rlTooltip.innerHTML = html;
+  }
+
+  if (chartMode === 'line'){
+    // stacked area — same 4 series as the bars, cumulative boundaries per year
+    const boundaries = rows.map(row => {
+      let c = 0;
+      const b = [0];
+      segments.forEach(seg => { c += Math.max(row[seg.key], 0); b.push(c); });
+      return b;
+    });
+    const yFor = (v) => baseY - Math.max((v / niceMax) * plotH, 0);
+    const xCenter = (i) => xLeft(i) + barW / 2;
+
+    segments.forEach((seg, segIdx) => {
+      const topPts = rows.map((row, i) => [xCenter(i), yFor(boundaries[i][segIdx + 1])]);
+      const botPts = rows.map((row, i) => [xCenter(i), yFor(boundaries[i][segIdx])]);
+      let d = topPts.map((p, i) => (i === 0 ? 'M' : 'L') + p[0].toFixed(2) + ',' + p[1].toFixed(2)).join(' ');
+      d += ' ' + botPts.slice().reverse().map(p => 'L' + p[0].toFixed(2) + ',' + p[1].toFixed(2)).join(' ') + ' Z';
+      const path = document.createElementNS(rlSvgNS, 'path');
+      path.setAttribute('d', d);
+      path.style.fill = seg.color;
+      path.style.opacity = '0.8';
+      rlChartSvg.appendChild(path);
+    });
+
+    rows.forEach((row, i) => {
+      const hit = document.createElementNS(rlSvgNS, 'rect');
+      hit.setAttribute('x', xLeft(i));
+      hit.setAttribute('y', padT);
+      hit.setAttribute('width', barW + barGap);
+      hit.setAttribute('height', plotH);
+      hit.setAttribute('fill', 'transparent');
+      hit.setAttribute('class', 'rl-hit-rect');
+      hit.setAttribute('tabindex', '0');
+      hit.setAttribute('role', 'img');
+      hit.setAttribute('aria-label', tooltipLabel(row));
+      hit.addEventListener('mousemove', (e) => {
+        rlTooltip.style.opacity = 1;
+        rlTooltip.style.left = e.clientX + 'px';
+        rlTooltip.style.top = e.clientY + 'px';
+        rlTooltip.innerHTML = tooltipHTML(row);
+      });
+      hit.addEventListener('mouseleave', () => { rlTooltip.style.opacity = 0; });
+      hit.addEventListener('focus', () => { showRlTooltip(hit, tooltipHTML(row)); });
+      hit.addEventListener('blur', () => { rlTooltip.style.opacity = 0; });
+      rlChartSvg.appendChild(hit);
+    });
+    return;
+  }
+
+  rows.forEach((row, i) => {
+    const x = xLeft(i);
+    const group = document.createElementNS(rlSvgNS, 'g');
+    group.setAttribute('class', 'rl-bar-group');
+    group.setAttribute('tabindex', '0');
+    group.setAttribute('role', 'img');
+    group.setAttribute('aria-label', tooltipLabel(row));
+
+    let stackY = baseY;
+    segments.forEach(seg => {
+      const val = row[seg.key];
+      if (val <= 0.5) return;
+      const h = Math.max((val / niceMax) * plotH, 1);
+      const rect = document.createElementNS(rlSvgNS, 'rect');
+      rect.setAttribute('class', seg.cls);
+      rect.setAttribute('x', x);
+      rect.setAttribute('y', stackY - h);
+      rect.setAttribute('width', barW);
+      rect.setAttribute('height', h);
+      group.appendChild(rect);
+      stackY -= h;
+    });
+
+    group.addEventListener('mousemove', (e) => {
+      rlTooltip.style.opacity = 1;
+      rlTooltip.style.left = e.clientX + 'px';
+      rlTooltip.style.top = e.clientY + 'px';
+      rlTooltip.innerHTML = tooltipHTML(row);
+    });
+    group.addEventListener('mouseleave', () => { rlTooltip.style.opacity = 0; });
+    group.addEventListener('focus', () => { showRlTooltip(group, tooltipHTML(row)); });
+    group.addEventListener('blur', () => { rlTooltip.style.opacity = 0; });
+
+    rlChartSvg.appendChild(group);
+  });
+}
+
+document.querySelectorAll('.chart-mode-toggle .chart-mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (btn.classList.contains('active')) return;
+    chartMode = btn.dataset.mode;
+    btn.parentElement.querySelectorAll('.chart-mode-btn').forEach(b => b.classList.toggle('active', b === btn));
+    if (lastChartRows) renderChart(lastChartRows);
+  });
+});
+
+// ---------- persistence ----------
+const STORAGE_KEY = 'rothLadderInputs';
+const DEFAULTS = {
+  currentAge: '40', retireAge: '45', traditionalBalance: '800000', taxableBalance: '150000',
+  rothBasis: '40000', annualExpenses: '50000', annualConversion: '50000',
+  returnPct: '6', taxRatePct: '12', simYears: '20'
+};
+const CURRENCY_FIELDS = ['traditionalBalance', 'taxableBalance', 'rothBasis', 'annualExpenses', 'annualConversion'];
+const ALL_FIELDS = ['currentAge', 'retireAge', 'traditionalBalance', 'taxableBalance', 'rothBasis', 'annualExpenses', 'annualConversion', 'returnPct', 'taxRatePct', 'simYears'];
+
+function saveInputs(){
+  const vals = {};
+  ALL_FIELDS.forEach(id => { vals[id] = $(id).value; });
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(vals)); } catch(e) { /* storage unavailable, ignore */ }
+  updateSaveStatus();
+}
+function loadInputs(){
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const vals = JSON.parse(raw);
+    Object.keys(vals).forEach(id => { if ($(id)) $(id).value = vals[id]; });
+  } catch(e) { /* storage unavailable or corrupt, ignore */ }
+}
+
+// Persisting on every keystroke means an interrupted edit — select-all a
+// field to retype it, then get pulled away before finishing — saves
+// whatever partial digits were typed so far as the permanent value.
+// render() still runs on every keystroke for instant visual feedback; only
+// the localStorage write is debounced, so a normal typing pause settles on
+// the finished number instead of a mid-edit fragment. blur still saves
+// immediately (the field is done being edited at that point).
+let saveDebounceTimer = null;
+function scheduleSave(){
+  if (saveDebounceTimer) clearTimeout(saveDebounceTimer);
+  saveDebounceTimer = setTimeout(saveInputs, 500);
+}
+
+ALL_FIELDS.forEach(id => {
+  if (CURRENCY_FIELDS.includes(id)) return; // wired separately below with sanitization
+  $(id).addEventListener('input', () => { scheduleSave(); render(); });
+});
+CURRENCY_FIELDS.forEach(id => {
+  $(id).addEventListener('input', () => { sanitizeCurrencyInput(id); scheduleSave(); render(); });
+  $(id).addEventListener('blur', () => { if (saveDebounceTimer) { clearTimeout(saveDebounceTimer); saveDebounceTimer = null; } formatCurrencyField(id); saveInputs(); });
+});
+
+$('resetBtn').addEventListener('click', () => {
+  Object.keys(DEFAULTS).forEach(id => { $(id).value = DEFAULTS[id]; });
+  if (window.FNProfileAutofill) window.FNProfileAutofill.apply(true);
+  CURRENCY_FIELDS.forEach(formatCurrencyField);
+  saveInputs();
+  render();
+});
+
+loadInputs();
+CURRENCY_FIELDS.forEach(formatCurrencyField);
+try { setInputsCollapsed(localStorage.getItem(COLLAPSE_KEY) === '1'); } catch(e) { setInputsCollapsed(false); }
+render();
+</script>
+</body>
+</html>

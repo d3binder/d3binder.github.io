@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script src="assets/js/theme-init.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FireNate — Financial Independence Calculators</title>
+<meta name="description" content="A small toolset for financial-independence planning: time to FI, loan and amortization math, buy-vs-invest trade-offs, and the long arc of compounding.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Antonio:wght@400;500;600;700&family=Michroma&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/site.css">
+<link rel="stylesheet" href="assets/css/index.css">
+<script src="assets/js/theme.js" defer></script>
+<script src="assets/js/user-profile.js" defer></script>
+<script src="assets/js/nav.js" defer></script>
+<script src="assets/js/profile-autofill.js" defer></script>
+<script>window.FN_BASE = ""; window.FN_PAGE = "home";</script>
+<style>
+  @media (prefers-reduced-motion: no-preference){
+    html{ scroll-behavior:smooth; }
+  }
+  .hp-section{ scroll-margin-top:130px; }
+
+  /* ---------- STICKY "JUMP TO SECTION" BAR ---------- */
+  .hp-quicklinks{
+    position:sticky; top:60px; z-index:38;
+    padding:14px 0 0;
+  }
+  .hp-quicklinks-inner{
+    display:flex; flex-wrap:nowrap; gap:6px; overflow-x:auto;
+    padding:9px; border-radius:999px;
+    background:var(--hp-panel);
+    border:1px solid transparent;
+    background-image:
+      linear-gradient(var(--hp-panel), var(--hp-panel)),
+      linear-gradient(90deg, var(--hp-gold), var(--hp-rust));
+    background-origin:border-box; background-clip:padding-box, border-box;
+    box-shadow:0 14px 32px -14px rgba(0,0,0,0.45);
+    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+    scrollbar-width:none;
+  }
+  .hp-quicklinks-inner::-webkit-scrollbar{ display:none; }
+  .hp-quicklinks a{
+    flex:none;
+    font-family:var(--fn-sans); font-size:13px; font-weight:700;
+    color:var(--hp-text-dim); text-decoration:none;
+    padding:9px 18px; border-radius:999px; white-space:nowrap;
+    transition:background-color .15s ease, color .15s ease, transform .15s ease;
+  }
+  .hp-quicklinks a:hover{ background:var(--hp-gold-soft); color:var(--hp-gold); transform:translateY(-1px); }
+  .hp-quicklinks a.active{
+    background:linear-gradient(90deg, var(--hp-gold), var(--hp-rust));
+    color:#201205;
+    box-shadow:0 6px 16px -6px rgba(217,132,15,0.55);
+  }
+  /* below this width, the pill row no longer fits every section on one
+     line — wrap onto multiple rows instead of relying on horizontal
+     scroll, so every option stays visible instead of getting clipped
+     behind the pill's own rounded edge with no hint more is scrollable */
+  @media (max-width:700px){
+    .hp-quicklinks-inner{
+      flex-wrap:wrap;
+      overflow-x:visible;
+      border-radius:16px;
+      justify-content:center;
+    }
+  }
+
+  /* ---------- SEARCH / FILTER CALCULATORS ---------- */
+  .hp-quicklinks-row{ display:flex; align-items:center; gap:8px; }
+  .hp-quicklinks-row .hp-quicklinks-inner{ flex:1; min-width:0; }
+
+  .hp-quicklinks-search-btn{
+    flex:none; width:40px; height:40px;
+    display:inline-flex; align-items:center; justify-content:center;
+    border-radius:999px; cursor:pointer;
+    background:var(--hp-panel);
+    border:1px solid transparent;
+    background-image:
+      linear-gradient(var(--hp-panel), var(--hp-panel)),
+      linear-gradient(90deg, var(--hp-gold), var(--hp-rust));
+    background-origin:border-box; background-clip:padding-box, border-box;
+    color:var(--hp-text-dim);
+    box-shadow:0 14px 32px -14px rgba(0,0,0,0.45);
+    transition:color .15s ease, transform .15s ease;
+  }
+  .hp-quicklinks-search-btn:hover{ color:var(--hp-gold); transform:translateY(-1px); }
+  .hp-quicklinks-search-btn.active{
+    background:linear-gradient(90deg, var(--hp-gold), var(--hp-rust));
+    color:#201205;
+    box-shadow:0 6px 16px -6px rgba(217,132,15,0.55);
+  }
+
+  .hp-search-panel{ margin-top:8px; }
+  .hp-search-panel[hidden]{ display:none; }
+  .hp-search-panel-inner{
+    display:flex; align-items:center; gap:10px;
+    padding:11px 16px;
+    border-radius:14px;
+    background:var(--hp-panel);
+    border:1px solid transparent;
+    background-image:
+      linear-gradient(var(--hp-panel), var(--hp-panel)),
+      linear-gradient(90deg, var(--hp-gold), var(--hp-rust));
+    background-origin:border-box; background-clip:padding-box, border-box;
+    box-shadow:0 14px 32px -14px rgba(0,0,0,0.45);
+    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+  }
+  .hp-search-panel-inner svg{ flex:none; color:var(--hp-text-faint); }
+  #hpSearchInput{
+    flex:1; min-width:0; background:none; border:none; outline:none;
+    font-family:var(--fn-sans); font-size:14px; color:var(--hp-text);
+  }
+  #hpSearchInput::placeholder{ color:var(--hp-text-faint); }
+  /* suppress the browser's own built-in clear (x) for type="search" so it
+     doesn't stack with the custom .hp-search-clear button right next to it */
+  #hpSearchInput::-webkit-search-cancel-button{ -webkit-appearance:none; appearance:none; }
+  .hp-search-clear{
+    flex:none; width:22px; height:22px; border-radius:999px; border:none;
+    background:var(--hp-gold-soft); color:var(--hp-text-dim); cursor:pointer;
+    display:inline-flex; align-items:center; justify-content:center;
+    font-size:15px; line-height:1;
+  }
+  .hp-search-clear:hover{ color:var(--hp-gold); }
+  .hp-search-clear[hidden]{ display:none; }
+  .hp-search-status{
+    margin:8px 4px 0; font-family:var(--fn-mono); font-size:11.5px;
+    letter-spacing:.04em; color:var(--hp-text-faint);
+  }
+  .hp-search-status.no-results{ color:var(--hp-rust); }
+  .hp-search-status[hidden]{ display:none; }
+
+  /* .hp-card's own explicit display:flex would otherwise beat the browser's
+     default [hidden]{display:none} (author styles always win over the UA
+     stylesheet regardless of specificity) — needed so the search filter
+     actually hides non-matching cards, not just marks them hidden */
+  .hp-card[hidden]{ display:none; }
+
+  /* ---------- FIRST-VISIT WELCOME MODAL ---------- */
+  /* Built/injected via JS only for a first-time visitor (see the script at
+     the bottom of this file) — reuses the same --fn-* "always-dark chrome"
+     tokens and overlay/modal shape as the per-page field-help modal
+     (assets/js/field-help.js + site.css's .fn-help-*), so it needs the same
+     light per-theme glass touches below rather than a whole new palette. */
+  body.hp-welcome-lock{ overflow:hidden; }
+  .hp-welcome-overlay{
+    position:fixed; inset:0; z-index:10000;
+    display:flex; align-items:center; justify-content:center;
+    padding:24px;
+    background:rgba(5,4,8,0.6);
+    animation:hp-welcome-fade .15s ease;
+  }
+  @keyframes hp-welcome-fade{ from{ opacity:0; } to{ opacity:1; } }
+  .hp-welcome-modal{
+    position:relative;
+    width:min(560px, 100%);
+    max-height:min(640px, 88vh);
+    overflow-y:auto;
+    background:var(--fn-panel);
+    border:1px solid var(--fn-line);
+    border-radius:16px;
+    box-shadow:0 24px 60px rgba(0,0,0,0.5);
+    font-family:var(--fn-sans);
+    padding:26px 28px 28px;
+    animation:hp-welcome-pop .18s ease;
+  }
+  @keyframes hp-welcome-pop{
+    from{ opacity:0; transform:scale(0.96) translateY(6px); }
+    to{ opacity:1; transform:scale(1) translateY(0); }
+  }
+  .hp-welcome-close{
+    position:absolute; top:14px; right:14px; z-index:6;
+    width:28px; height:28px;
+    display:inline-flex; align-items:center; justify-content:center;
+    border-radius:50%;
+    border:1px solid var(--fn-line);
+    background:var(--fn-panel-2);
+    color:var(--fn-text-dim);
+    font-size:18px; line-height:1; cursor:pointer;
+    box-shadow:0 4px 14px rgba(0,0,0,0.35);
+  }
+  .hp-welcome-close:hover, .hp-welcome-close:focus-visible{ border-color:var(--fn-rust); color:var(--fn-rust); outline:none; }
+  .hp-welcome-eyebrow{
+    font-family:var(--fn-mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--fn-gold); margin:0 0 8px;
+  }
+  .hp-welcome-modal h2{
+    font-family:var(--fn-serif); font-size:22px; font-weight:600; line-height:1.25;
+    color:var(--fn-text); margin:0 0 10px; padding-right:26px;
+  }
+  .hp-welcome-lede{
+    font-size:13.5px; line-height:1.55; color:var(--fn-text-dim);
+    margin:0 0 20px;
+  }
+  .hp-welcome-options{ display:flex; flex-direction:column; gap:10px; }
+  .hp-welcome-option{
+    display:block; text-align:left; width:100%;
+    padding:14px 16px; border-radius:12px;
+    border:1px solid var(--fn-line);
+    background:var(--fn-panel-2);
+    text-decoration:none; cursor:pointer;
+    font-family:inherit;
+    transition:border-color .15s ease, transform .15s ease, background .15s ease;
+  }
+  .hp-welcome-option:hover{ border-color:var(--fn-gold); transform:translateY(-2px); background:var(--fn-panel); }
+  .hp-welcome-opt-name{
+    display:flex; align-items:center; gap:9px;
+    font-size:14.5px; font-weight:600; color:var(--fn-text);
+    margin-bottom:4px;
+  }
+  .hp-welcome-opt-name svg{ flex-shrink:0; color:var(--fn-gold); }
+  .hp-welcome-opt-desc{ font-size:12.5px; line-height:1.5; color:var(--fn-text-dim); }
+  .hp-welcome-option-skip .hp-welcome-opt-name svg{ color:var(--fn-text-faint); }
+
+  /* brief highlight on the Getting Started section after "No thanks" (or
+     any other dismissal) so it's clear those guides didn't go anywhere. */
+  @keyframes hp-welcome-glow{
+    0%, 100% { box-shadow:0 0 0 0 rgba(217,132,15,0); }
+    50% { box-shadow:0 0 0 8px rgba(217,132,15,0.28); }
+  }
+  .hp-welcome-highlight{
+    background:var(--hp-bg);
+    animation:hp-welcome-glow 1.3s ease-in-out 2;
+    border-radius:18px;
+  }
+
+  html[data-theme="neon"] .hp-welcome-overlay{ background:rgba(4,7,20,0.42); }
+  html[data-theme="neon"] .hp-welcome-modal{
+    background:
+      linear-gradient(135deg, rgba(255,255,255,0.09), rgba(255,255,255,0) 45%),
+      rgba(15,23,42,0.62);
+    backdrop-filter:blur(22px) saturate(160%);
+    -webkit-backdrop-filter:blur(22px) saturate(160%);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.1),
+      0 16px 40px rgba(0,0,0,0.55),
+      0 0 30px rgba(168,85,247,0.28);
+  }
+  html[data-theme="neon"] .hp-welcome-option:hover{ box-shadow:0 0 14px rgba(168,85,247,0.35); }
+
+  html[data-theme="sunshine"] .hp-welcome-overlay{ background:rgba(31,53,64,0.28); }
+  html[data-theme="sunshine"] .hp-welcome-modal{
+    background:
+      linear-gradient(135deg, rgba(255,255,255,0.5), rgba(255,255,255,0) 45%),
+      rgba(255,255,255,0.58);
+    backdrop-filter:blur(22px) saturate(160%);
+    -webkit-backdrop-filter:blur(22px) saturate(160%);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.6),
+      0 16px 40px rgba(31,92,110,0.22),
+      0 0 30px rgba(245,166,35,0.22);
+  }
+
+  html[data-theme="lcars"] .hp-welcome-modal{ border-radius:22px 0 0 0; }
+  html[data-theme="lcars"] .hp-welcome-modal h2,
+  html[data-theme="lcars"] .hp-welcome-eyebrow{ font-family:var(--fn-display); letter-spacing:.02em; }
+  html[data-theme="lcars"] .hp-welcome-close{
+    border-radius:999px; background:var(--fn-rust); border-color:transparent; color:#1a0f00;
+  }
+  html[data-theme="lcars"] .hp-welcome-close:hover{ background:#FF9494; }
+</style>
+</head>
+<body>
+<div id="fn-site-nav"></div>
+
+
+<div class="wrap">
+
+  <header class="hp-hero">
+    <p class="hp-eyebrow">FireNate — Financial Independence &amp; Retire Early (F.I.R.E.) Calculators</p>
+    <h1>Your journey to <em>financial independence</em>.</h1>
+    <p class="lede">Small, focused calculators for the questions that actually decide your timeline: how fast you can get there, what a loan really costs, and whether the next dollar should pay down debt or go into the market.</p>
+
+    <!-- <div class="hp-hero-stats"> -->
+      <!-- <div class="stat"><div class="k">Calculators</div><div class="v gold">6</div></div> -->
+   <!--   <div class="stat"><div class="k">Cost</div><div class="v jade">Free, no signup</div></div> -->
+     <!-- <div class="stat"><div class="k">Your data</div><div class="v">Stays on your device</div></div> -->
+  <!--  </div> -->
+  </header>
+  <nav class="hp-quicklinks" id="hpQuicklinks" aria-label="Jump to section">
+    <div class="hp-quicklinks-row">
+      <div class="hp-quicklinks-inner">
+        <a href="#getting-started">Getting Started</a>
+        <a href="#first-steps">Basics</a>
+        <a href="#your-path">Independence</a>
+        <a href="#retirement-strategy">Retirement</a>
+        <a href="#money-decisions">Daily Decisions</a>
+        <a href="#resources">Resources</a>
+      </div>
+      <button type="button" class="hp-quicklinks-search-btn" id="hpSearchToggle" aria-expanded="false" aria-controls="hpSearchPanel" aria-label="Search calculators">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+      </button>
+    </div>
+    <div class="hp-search-panel" id="hpSearchPanel" hidden>
+      <div class="hp-search-panel-inner">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="search" id="hpSearchInput" placeholder="Search calculators by name, description, or keyword&hellip;" aria-label="Search calculators">
+        <button type="button" class="hp-search-clear" id="hpSearchClear" aria-label="Clear search" hidden>&times;</button>
+      </div>
+      <p class="hp-search-status" id="hpSearchStatus" hidden></p>
+    </div>
+  </nav>
+
+  <section class="hp-section" id="getting-started">
+    <div class="hp-section-head">
+      <div class="num">New here?</div>
+      <h2>Getting Started</h2>
+      <p>Brand new to FIRE or financial calculators in general? Start with these two — one shows you around the site, the other asks a few quick questions and points you at exactly the right tools.</p>
+    </div>
+
+    <div class="hp-grid">
+
+      <a class="hp-card hp-card-important" href="GettingStarted/index.html">
+        <span class="hp-card-tag azure">Start here</span>
+        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>Using This Site</h3>
+        <p>New here? A quick walkthrough of setting up your profile, picking a calculator, and saving your progress.</p>
+        <span class="hp-card-cta">Open guide &rarr;</span>
+      </a>
+
+      <a class="hp-card" href="GettingStartedCalculators/index.html">
+        <span class="hp-card-tag azure">Not sure where to start?</span>
+        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>Calculator Picker</h3>
+        <p>New to personal finance? Answer a few quick questions about your situation and we'll point you to the two or three calculators that'll actually help.</p>
+        <span class="hp-card-cta">Take the quiz &rarr;</span>
+      </a>
+
+    </div>
+  </section>
+
+  <section class="hp-section" id="first-steps">
+    <div class="hp-section-head">
+      <div class="num">Start here</div>
+      <h2>The Basics</h2>
+      <p>New to FIRE? Start here — get oriented, see where you stand today, and build the safety net before anything else.</p>
+    </div>
+
+    <div class="hp-grid">
+
+      <a class="hp-card hp-card-star" href="FISnapshot/index.html">
+        <span class="hp-card-tag gold">Dashboard</span>
+        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>FI Snapshot</h3>
+        <p>Your financial-independence status at a glance, pulled from your saved profile — plus saved what-if scenarios to compare.</p>
+        <span class="hp-card-cta">Open calculator &rarr;</span>
+      </a>
+
+      <a class="hp-card hp-card-star" href="NetWorth/index.html">
+        <span class="hp-card-tag jade">Net Worth</span>
+        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>The sum of all finances</h3>
+        <p>Input assets and liabilities to see a simplistic view of your financial net worth.</p>
+        <span class="hp-card-cta">Open calculator &rarr;</span>
+      </a>
+
+      <a class="hp-card hp-card-star" href="BudgetCalculator/index.html">
+        <span class="hp-card-tag gold">50/30/20</span>
+        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg>Budget Calculator</h3>
+        <p>Sort your monthly income into needs, wants, and savings, and see how it stacks up against the 50/30/20 guideline.</p>
+        <span class="hp-card-cta">Open calculator &rarr;</span>
+      </a>
+
+      <a class="hp-card" href="EmergencyFund/index.html">
+        <span class="hp-card-tag jade">Rainy Day</span>
+        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>Emergency Fund</h3>
+        <p>How much cash to keep on hand for job loss or a broken transmission, and how close you already are to having it.</p>
+        <span class="hp-card-cta">Open calculator &rarr;</span>
+      </a>
+
+      <a class="hp-card" href="DebtSnowball/index.html">
+        <span class="hp-card-tag rust">Snowball or avalanche</span>
+        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>Debt Payoff Planner</h3>
+        <p>List your debts and watch the snowball play out — every payoff date, every milestone, month by month.</p>
+        <span class="hp-card-cta">Open calculator &rarr;</span>
+      </a>
+
+      <a class="hp-card hp-card-new" href="ContributionLimits/index.html">
+        <span class="hp-card-tag plum">Retirement account limits</span>
+        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="8" y1="16" x2="16" y2="8"></line><circle cx="8.5" cy="8.5" r="1.5"></circle><circle cx="15.5" cy="15.5" r="1.5"></circle></svg>Contribution Limits</h3>
+        <p>This year's IRS 401(k), HSA, and IRA limits — broken into monthly and per-paycheck amounts, plus how close you are to maxing out.</p>
+        <span class="hp-card-cta">Open calculator &rarr;</span>
+      </a>
+
+    </div>
+  </section>
+
+  <section class="hp-section" id="your-path">
+    <div class="hp-section-head">
+      <div class="num">Plan</div>
+      <h2>Financial Independence</h2>
+      <p>The core calculators for charting your timeline to financial independence — and the milestones along the way.</p>
+    </div>
+
+    <div class="hp-grid">
+
+      <a class="hp-card hp-card-star" href="TimeToFI/index.html">
+        <span class="hp-card-tag gold">Savings rate</span>
+        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>Time to get FIRE'd</h3>
+        <p>Enter your income, savings, and goal — see how many years (and what age) every savings rate from 0% to 100% actually buys you.</p>
+        <span class="hp-card-cta">Open calculator &rarr;</span>
+      </a>
+
+      <a class="hp-card" href="ReverseTimeToFI/index.html">
+        <span class="hp-card-tag jade">Freedom Reverse-Engineered</span>
+        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>Reverse Time to being FIRE'd</h3>
+        <p>Start from the freedom date you want. Work backward to exactly what you need to save this week, this month, and this year to get there.</p>
+        <span class="hp-card-cta">Open calculator &rarr;</span>
+      </a>
+
+      <a class="hp-card" href="FireMilestones/index.html">
+        <span class="hp-card-tag plum">Lean · Barista · Coast · Fat</span>
+        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>FIRE Milestones</h3>
+        <p>Full FI is a long road — see five milestone timelines at once, so you can spot the intermediate wins before you get to 100%.</p>
+        <span class="hp-card-cta">Open calculator &rarr;</span>
+      </a>
+
+      <a class="hp-card" href="CoastFire/index.html">
+        <span class="hp-card-tag rust">No more contributions needed?</span>
+        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="3" x2="12" y2="15"></line><polygon points="12 4 12 13 19 13"></polygon><polyline points="4 17 20 17 17 20 7 20"></polyline></svg>Coast &amp; Barista FIRE</h3>
+        <p>Find out if you've already saved enough to coast to your goal on growth alone — and model downshifting to lighter, lower-income work along the way.</p>
+        <span class="hp-card-cta">Open calculator &rarr;</span>
+      </a>
+
+      <a class="hp-card" href="CrossoverPoint/index.html">
+        <span class="hp-card-tag azure">Crossover Point</span>
+        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>Riding the wave</h3>
+        <p>The amount you need saved at each age where compounding alone — no more contributions — carries you the rest of the way to your goal.</p>
+        <span class="hp-card-cta">Open calculator &rarr;</span>
+      </a>
+
+      <a class="hp-card" href="CompoundInterest-WealthMultiplier/index.html">
+        <span class="hp-card-tag gold">Compounding</span>
+        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="5" x2="5" y2="19"></line><circle cx="6.5" cy="6.5" r="2.5"></circle><circle cx="17.5" cy="17.5" r="2.5"></circle></svg>Compound Interest <br/> &amp; Wealth Multiplier</h3>
+        <p>Visualize what a single deposit — or a recurring one — becomes over decades, and what today's dollar could multiply into by any target age.</p>
+        <span class="hp-card-cta">Open calculator &rarr;</span>
+      </a>
+
+    </div>
+  </section>
+
+  <section class="hp-section" id="retirement-strategy">
+    <div class="hp-section-head">
+      <div class="num">Retire</div>
+      <h2>Retirement &amp; Withdrawal Strategy</h2>
+      <p>Once you're closer to FI, these help you plan how you'll actually draw down your accounts — including access before traditional retirement age.</p>
+    </div>
+
+    <div class="hp-grid">
+
+      <a class="hp-card" href="SafeWithdrawalRate/index.html">
+        <span class="hp-card-tag rust">Safe Withdrawal Rate</span>
+        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><polyline points="9 12 12 15 16 10"></polyline></svg>Would it have survived?</h3>
+        <p>Stress-test your withdrawal rate against every real historical market cycle since 1928, inflation-adjusted.</p>
+        <span class="hp-card-cta">Open calculator &rarr;</span>
+      </a>
+
+      <a class="hp-card" href="MonteCarlo/index.html">
+        <span class="hp-card-tag gold">Probability of success</span>
+        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"></rect><circle cx="8" cy="8" r="1.2"></circle><circle cx="16" cy="8" r="1.2"></circle><circle cx="12" cy="12" r="1.2"></circle><circle cx="8" cy="16" r="1.2"></circle><circle cx="16" cy="16" r="1.2"></circle></svg>Monte Carlo Simulator</h3>
+        <p>Reshuffles decades of real market returns into thousands of alternate sequences to stress-test sequence-of-returns risk beyond what fixed historical cycles alone can show.</p>
+        <span class="hp-card-cta">Open calculator &rarr;</span>
+      </a>
+
+      <a class="hp-card" href="VariableWithdrawalRate/index.html">
+        <span class="hp-card-tag plum">Guardrails &amp; cash buffer</span>
+        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>Variable Withdrawal Rate</h3>
+        <p>Guyton-Klinger guardrails, bear-market spending cuts, and a 1&ndash;3 year cash buffer — stress-tested against every real market cycle since 1928.</p>
+        <span class="hp-card-cta">Open calculator &rarr;</span>
+      </a>
+
+      <a class="hp-card" href="SocialSecurityBridge/index.html">
+        <span class="hp-card-tag azure">Retirement bridge</span>
+        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5" r="3"></circle><line x1="12" y1="22" x2="12" y2="8"></line><path d="M5 12H2a10 10 0 0 0 20 0h-3"></path></svg>SS &amp; Pension Bridge</h3>
+        <p>Your true FIRE number once Social Security kicks in — split into the years you self-fund and the years you're supplemented.</p>
+        <span class="hp-card-cta">Open calculator &rarr;</span>
+      </a>
+
+      <a class="hp-card" href="RothLadder/index.html">
+        <span class="hp-card-tag gold">Early access</span>
+        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>Roth Conversion Ladder</h3>
+        <p>Retiring before 59&frac12;? Simulate the conversion ladder — track the 5-year seasoning clock and see exactly which account funds each year.</p>
+        <span class="hp-card-cta">Open calculator &rarr;</span>
+      </a>
+
+      <a class="hp-card" href="RMD/index.html">
+        <span class="hp-card-tag jade">Forced withdrawals</span>
+        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="4 8 12 3 20 8"></polygon><line x1="3" y1="20" x2="21" y2="20"></line><line x1="6" y1="9" x2="6" y2="19"></line><line x1="10" y1="9" x2="10" y2="19"></line><line x1="14" y1="9" x2="14" y2="19"></line><line x1="18" y1="9" x2="18" y2="19"></line></svg>Required Minimum Distributions</h3>
+        <p>Starting at 73, the IRS forces withdrawals from traditional accounts. Project yours year by year using the Uniform Lifetime Table, plus the tax bill.</p>
+        <span class="hp-card-cta">Open calculator &rarr;</span>
+      </a>
+
+      <a class="hp-card" href="HealthcareBridge/index.html">
+        <span class="hp-card-tag rust">ACA subsidy cliff</span>
+        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>Healthcare &amp; ACA Bridge</h3>
+        <p>Retiring before Medicare at 65? See how your MAGI drives your marketplace premium — and what managing it down could save you.</p>
+        <span class="hp-card-cta">Open calculator &rarr;</span>
+      </a>
+
+    </div>
+  </section>
+
+  <section class="hp-section" id="money-decisions">
+    <div class="hp-section-head">
+      <div class="num">Decide</div>
+      <h2>Everyday Money Decisions</h2>
+      <p>Calculators for the big and small financial decisions along the way — debt, loans, and major purchases.</p>
+    </div>
+
+    <div class="hp-grid">
+
+      <a class="hp-card" href="Payoff-or-Invest/index.html">
+        <span class="hp-card-tag gold">Debt vs. portfolio</span>
+        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="6" y1="3" x2="6" y2="15"></line><circle cx="18" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><path d="M18 9a9 9 0 0 1-9 9"></path></svg>Payoff or Invest</h3>
+        <p>A low-rate loan and a rising market pull your extra dollars in opposite directions. See which side of the scale wins with your numbers.</p>
+        <span class="hp-card-cta">Open calculator &rarr;</span>
+      </a>
+
+      <a class="hp-card" href="CashOutOrHold/index.html">
+        <span class="hp-card-tag azure">Liquidate vs. hold</span>
+        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="20" height="12" rx="2"></rect><circle cx="12" cy="12" r="3"></circle><path d="M6 12h.01M18 12h.01"></path></svg>Cash Out or Hold</h3>
+        <p>Selling investments to wipe out debt feels simple — until taxes take a bite. See what actually reaches the lender after capital gains, and whether it beats staying invested.</p>
+        <span class="hp-card-cta">Open calculator &rarr;</span>
+      </a>
+
+
+      <a class="hp-card" href="LoanCalculator/index.html">
+        <span class="hp-card-tag jade">Amortization</span>
+        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>Loan Calculator</h3>
+        <p>The full amortization schedule for any loan: monthly payment, the principal/interest burn-down chart, and total cost over the term.</p>
+        <span class="hp-card-cta">Open calculator &rarr;</span>
+      </a>
+
+      <a class="hp-card" href="CarBuying/index.html">
+        <span class="hp-card-tag rust">True cost</span>
+        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15 L5 9 L8 6 L16 6 L19 9 L20 15"></path><rect x="2" y="14" width="20" height="5" rx="1"></rect><circle cx="7" cy="19" r="2.2"></circle><circle cx="17" cy="19" r="2.2"></circle></svg>Car Buying</h3>
+        <p>What a car really costs once you fold in the loan, taxes and fees, insurance, fuel, and maintenance — plus tips for working with a dealership.</p>
+        <span class="hp-card-cta">Open calculator &rarr;</span>
+      </a>
+
+      <a class="hp-card" href="RentVsBuy/index.html">
+        <span class="hp-card-tag plum">Rent vs. Buy</span>
+        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="7" cy="15" r="4"></circle><line x1="10.5" y1="11.5" x2="21" y2="1"></line><line x1="15" y1="7" x2="18" y2="10"></line><line x1="18" y1="4" x2="21" y2="7"></line></svg>Rent vs. Buy</h3>
+        <p>Buying builds equity but ties up cash; renting frees it to invest. Compare both paths side by side and see which one actually leaves you wealthier.</p>
+        <span class="hp-card-cta">Open calculator &rarr;</span>
+      </a>
+
+      <a class="hp-card" href="RealEstateVsStocks/index.html">
+        <span class="hp-card-tag jade">Buy vs. invest</span>
+        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>Homes vs. Stocks</h3>
+        <p>Put the same monthly dollars toward a mortgage or toward the market, and watch home equity race against a stock portfolio over 30 years.</p>
+        <span class="hp-card-cta">Open calculator &rarr;</span>
+      </a>
+
+    </div>
+  </section>
+
+  <section class="hp-section" id="resources">
+    <div class="hp-section-head">
+      <div class="num">More</div>
+      <h2>Resources</h2>
+      <p>Files, reference info, and planning tools that aren't FIRE calculators.</p>
+    </div>
+
+    <div class="hp-grid">
+
+      <a class="hp-card" href="Downloads/index.html">
+        <span class="hp-card-tag gold">Nate's Files</span>
+        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>Downloads &amp; Files</h3>
+        <p>See the stuff that got Nate FIRED'd</p>
+        <span class="hp-card-cta">Open Files &rarr;</span>
+      </a>
+
+      <a class="hp-card" href="GenInfo/index.html">
+        <span class="hp-card-tag jade">General Info</span>
+        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>Retirement Information</h3>
+        <p>401k, HSA, IRA, SS information</p>
+        <span class="hp-card-cta">Open Page &rarr;</span>
+      </a>
+
+      <a class="hp-card" href="Glossary/index.html">
+        <span class="hp-card-tag azure">Definitions</span>
+        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>Glossary</h3>
+        <p>Lean, Barista, Coast, and Fat FIRE, the 4% rule, MAGI, the ACA subsidy cliff, and more — every term used across this site, in one place.</p>
+        <span class="hp-card-cta">Open glossary &rarr;</span>
+      </a>
+
+      <a class="hp-card" href="FAQ/index.html">
+        <span class="hp-card-tag plum">Q&amp;A</span>
+        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>F.A.Q.</h3>
+        <p>Common questions about using the site, budgeting, FIRE, and getting started with investing — searchable and sorted by topic.</p>
+        <span class="hp-card-cta">Open F.A.Q. &rarr;</span>
+      </a>
+
+      <div class="hp-card hp-card-sponsor">
+        <span class="hp-card-tag azure">D3 Planning</span>
+        <h3>Don't be caught <del style="color:var(--hp-text-faint)">dead</del> without it.</h3>
+        <p>Ready when you aren't</p>
+        <p>The D3 (<b>D</b>ead, <b>D</b>ying or <b>D</b>isabled) planner helps guide you through the process of being ready for when you are not.</p>
+        <span class="hp-card-cta"><a target="_blank" href="http://iBeDead.com">Open Old Site &rarr;</a></span>
+        <span class="hp-card-cta"><a target="_blank" href="https://d3.flagship.is/">Open New Site &rarr;</a></span>
+        <span style="font-size: x-small; color: var(--hp-text-faint);">*This external site has its own privacy rules such as use of cookies.</span>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- <section class="hp-section" style="padding-top:0;">
+    <div class="hp-about">
+      <div>
+        <h3>Not financial advice — a set of ledgers</h3>
+        <p>Every tool here is a simple model built to make trade-offs visible, not to predict the future. Real markets, rates, and life don't move in a straight line — use these to build intuition and revisit your plan regularly, then talk to a licensed financial advisor about decisions that matter.</p>
+      </div>
+      <ul>
+        <li>All calculations run locally in your browser</li>
+        <li>Inputs save automatically on your device only</li>
+        <li>No accounts, no tracking, no data leaves your machine</li>
+      </ul>
+    </div>
+  </section> -->
+
+  
+</div>
+
+<footer id="site-footer"></footer>
+
+<script>
+// highlights whichever section is currently in view in the sticky
+// "jump to section" bar, so it doubles as a lightweight scroll indicator
+(function(){
+  var links = Array.from(document.querySelectorAll('.hp-quicklinks a'));
+  var sections = links
+    .map(function(a){ return document.getElementById(a.getAttribute('href').slice(1)); })
+    .filter(Boolean);
+  if (!sections.length || !('IntersectionObserver' in window)) return;
+
+  function setActive(id){
+    links.forEach(function(a){
+      a.classList.toggle('active', a.getAttribute('href') === '#' + id);
+    });
+  }
+
+  // a section only "counts" once it's cleared the stacked sticky headers
+  // (site nav + this quicklinks bar), and only while it's near the top of
+  // the viewport — so exactly one link is active at a time, not several
+  var observer = new IntersectionObserver(function(entries){
+    entries.forEach(function(entry){
+      if (entry.isIntersecting) setActive(entry.target.id);
+    });
+  }, { rootMargin: '-140px 0px -70% 0px', threshold: 0 });
+
+  sections.forEach(function(sec){ observer.observe(sec); });
+})();
+
+// search/filter the calculator cards by title, description, and the
+// colored tag pill on each card (doubling as a lightweight keyword field)
+(function(){
+  var toggle = document.getElementById('hpSearchToggle');
+  var panel = document.getElementById('hpSearchPanel');
+  var input = document.getElementById('hpSearchInput');
+  var clearBtn = document.getElementById('hpSearchClear');
+  var status = document.getElementById('hpSearchStatus');
+  if (!toggle || !panel || !input) return;
+
+  var cards = Array.from(document.querySelectorAll('.hp-card'));
+  var sections = Array.from(document.querySelectorAll('.hp-section'));
+
+  // precompute each card's searchable text once up front rather than on
+  // every keystroke — title + tag + every paragraph of description
+  cards.forEach(function(card){
+    var title = card.querySelector('h3');
+    var tag = card.querySelector('.hp-card-tag');
+    var paras = Array.from(card.querySelectorAll('p')).map(function(p){ return p.textContent; });
+    var text = [title ? title.textContent : '', tag ? tag.textContent : ''].concat(paras).join(' ');
+    card.dataset.searchText = text.toLowerCase();
+  });
+
+  function filter(query){
+    var q = query.trim().toLowerCase();
+    var visibleCount = 0;
+
+    sections.forEach(function(section){
+      var sectionCards = Array.from(section.querySelectorAll('.hp-card'));
+      if (!sectionCards.length) return; // leave non-calculator sections alone
+      var sectionHasMatch = false;
+      sectionCards.forEach(function(card){
+        var match = !q || card.dataset.searchText.indexOf(q) > -1;
+        card.hidden = !match;
+        if (match){ sectionHasMatch = true; visibleCount++; }
+      });
+      section.hidden = q ? !sectionHasMatch : false;
+    });
+
+    if (clearBtn) clearBtn.hidden = !q;
+    if (status){
+      if (!q){
+        status.hidden = true;
+        status.classList.remove('no-results');
+      } else if (visibleCount === 0){
+        status.hidden = false;
+        status.classList.add('no-results');
+        status.textContent = 'No calculators match "' + query.trim() + '".';
+      } else {
+        status.hidden = false;
+        status.classList.remove('no-results');
+        status.textContent = 'Showing ' + visibleCount + ' of ' + cards.length + ' calculators.';
+      }
+    }
+  }
+
+  function openPanel(){
+    panel.hidden = false;
+    toggle.classList.add('active');
+    toggle.setAttribute('aria-expanded', 'true');
+    input.focus();
+  }
+  function closePanel(){
+    panel.hidden = true;
+    toggle.classList.remove('active');
+    toggle.setAttribute('aria-expanded', 'false');
+    input.value = '';
+    filter('');
+  }
+
+  toggle.addEventListener('click', function(){
+    if (panel.hidden) openPanel(); else closePanel();
+  });
+  input.addEventListener('input', function(){ filter(input.value); });
+  input.addEventListener('keydown', function(e){
+    if (e.key === 'Escape') closePanel();
+  });
+  if (clearBtn){
+    clearBtn.addEventListener('click', function(){
+      input.value = '';
+      filter('');
+      input.focus();
+    });
+  }
+})();
+
+// first-visit welcome modal — only for someone who has never dismissed it
+// before (own localStorage flag, independent of FNProfile/calculator data,
+// so it fires purely on "have they seen this modal", not "have they used
+// the site"). Mirrors field-help.js's modal pattern: built on demand,
+// closes on backdrop click / Escape / any option, focus-managed.
+(function(){
+  var WELCOME_KEY = 'fn-welcome-dismissed';
+  if (localStorage.getItem(WELCOME_KEY)) return;
+
+  var lastFocused = document.activeElement;
+  var overlay = document.createElement('div');
+  overlay.className = 'hp-welcome-overlay';
+  overlay.innerHTML =
+    '<div class="hp-welcome-modal" role="dialog" aria-modal="true" aria-labelledby="hpWelcomeTitle" tabindex="-1">' +
+      '<button type="button" class="hp-welcome-close" aria-label="Close">&times;</button>' +
+      '<p class="hp-welcome-eyebrow">Welcome to FireNate</p>' +
+      '<h2 id="hpWelcomeTitle">New here? Let\'s get you pointed the right way.</h2>' +
+      '<p class="hp-welcome-lede">A set of small, focused calculators for financial-independence planning &mdash; no signup, nothing leaves your device. How would you like to get started?</p>' +
+      '<div class="hp-welcome-options">' +
+        '<a class="hp-welcome-option" href="GettingStarted/index.html">' +
+          '<div class="hp-welcome-opt-name"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>Learn how the site works</div>' +
+          '<div class="hp-welcome-opt-desc">A quick walkthrough &mdash; setting up your profile, picking a calculator, and saving your progress.</div>' +
+        '</a>' +
+        '<a class="hp-welcome-option" href="GettingStartedCalculators/index.html">' +
+          '<div class="hp-welcome-opt-name"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>Help me pick a calculator</div>' +
+          '<div class="hp-welcome-opt-desc">Answer a few quick questions and we\'ll point you to the two or three calculators that\'ll actually help.</div>' +
+        '</a>' +
+        '<button type="button" class="hp-welcome-option hp-welcome-option-skip">' +
+          '<div class="hp-welcome-opt-name"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>No thanks, I\'ll look around myself</div>' +
+          '<div class="hp-welcome-opt-desc">No problem &mdash; the Getting Started guides up top are always there if you change your mind.</div>' +
+        '</button>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(overlay);
+  document.body.classList.add('hp-welcome-lock');
+
+  function highlightGettingStarted(){
+    var section = document.getElementById('getting-started');
+    if (!section) return;
+    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    section.classList.add('hp-welcome-highlight');
+    setTimeout(function(){
+      section.classList.remove('hp-welcome-highlight');
+    }, 2700);
+  }
+
+  function onKeydown(e){ if (e.key === 'Escape') dismiss(true); }
+
+  function dismiss(highlight){
+    localStorage.setItem(WELCOME_KEY, '1');
+    if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+    document.body.classList.remove('hp-welcome-lock');
+    document.removeEventListener('keydown', onKeydown);
+    if (lastFocused && lastFocused.focus) lastFocused.focus();
+    // iOS Safari can leave the page unscrollable if a new programmatic
+    // scroll (scrollIntoView, below) starts in the very same tick that
+    // body's overflow:hidden lock is lifted — a double rAF guarantees at
+    // least one full render has actually completed with scrolling restored
+    // before that scroll kicks off
+    if (highlight) requestAnimationFrame(function(){ requestAnimationFrame(highlightGettingStarted); });
+  }
+
+  // nav.js separately shows a "New here? Add your info" hint near the
+  // profile icon, which dismisses itself for good on the very next click
+  // anywhere on the page — without this, picking ANY of the three options
+  // below (a brand-new visitor's first-ever click) would silently kill
+  // that hint too, even though nothing about choosing a getting-started
+  // path means they've actually filled in their profile yet
+  overlay.addEventListener('click', function(e){ e.stopPropagation(); });
+  overlay.addEventListener('click', function(e){ if (e.target === overlay) dismiss(true); });
+  overlay.querySelector('.hp-welcome-close').addEventListener('click', function(){ dismiss(true); });
+  overlay.querySelector('.hp-welcome-option-skip').addEventListener('click', function(){ dismiss(true); });
+  overlay.querySelectorAll('a.hp-welcome-option').forEach(function(a){
+    a.addEventListener('click', function(){ localStorage.setItem(WELCOME_KEY, '1'); });
+  });
+  document.addEventListener('keydown', onKeydown);
+
+  var modal = overlay.querySelector('.hp-welcome-modal');
+  if (modal) modal.focus();
+})();
+</script>
+</body>
+</html>

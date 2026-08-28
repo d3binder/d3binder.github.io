@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script src="../assets/js/theme-init.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FireNate - Getting Started: Using This Site</title>
+<meta name="description" content="New here? A quick walkthrough of how to set up your profile, pick a calculator, and save your progress on FireNate.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Antonio:wght@400;500;600;700&family=Michroma&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/site.css">
+<link rel="stylesheet" href="../assets/css/timeToFI.css">
+<script src="../assets/js/theme.js" defer></script>
+<script src="../assets/js/user-profile.js" defer></script>
+<script src="../assets/js/nav.js" defer></script>
+<script src="../assets/data/glossary-data.js"></script>
+<script src="../assets/js/glossary-tooltip.js" defer></script>
+<script src="../assets/js/field-help.js" defer></script>
+<script>
+window.FN_BASE = "../"; window.FN_PAGE = "getting-started";
+window.FN_FIELD_HELP = {
+  "title": "About this Tool",
+  "intro": "This is exactly what you'll see if you tap the same icon on any calculator page — except there, every item below is swapped out for that page's own inputs.",
+  "sections": [
+    { "heading": "How it works", "items": [
+      { "label": "What each field means", "text": "A plain-English explanation of every input on the page, grouped the same way the toolbar groups them." },
+      { "label": "Scroll hints", "text": "On a page with a lot of fields, arrows fade in at the top and bottom of this window — hover one to auto-scroll, just like the hamburger menu." },
+      { "label": "Works everywhere", "text": "Light, Dark, Neon, and Sunshine all get their own look, and the close button stays put even if you've scrolled down." }
+    ]}
+  ]
+};
+</script>
+<style>
+  .gs-steps{
+    display:flex; flex-direction:column; gap:16px;
+    margin-top:8px;
+  }
+  .gs-step{
+    background:var(--surface); border:1px solid var(--line);
+    border-top:4px solid var(--gold);
+    border-radius:var(--radius); padding:24px 26px;
+  }
+  .gs-step.jade{ border-top-color:var(--jade); }
+  .gs-step.plum{ border-top-color:var(--plum); }
+  .gs-step.target{ border-top-color:var(--target); }
+
+  .gs-step-head{ display:flex; align-items:flex-start; gap:16px; margin-bottom:12px; }
+  .gs-step-num{
+    flex:none; width:34px; height:34px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--mono); font-size:13px; font-weight:700;
+    background:var(--surface-2); border:1px solid var(--line); color:var(--ink-dim);
+  }
+  [data-theme="lcars"] .gs-step h2{ font-family:var(--display); letter-spacing:.02em; }
+  .gs-step h2{ font-family:var(--serif); font-size:20px; font-weight:500; margin:4px 0 0; color:var(--ink); }
+  .gs-step-body{ color:var(--ink-dim); font-size:14.5px; line-height:1.65; margin:0 0 4px; }
+  .gs-step-body strong{ color:var(--ink); }
+
+  .gs-btn{
+    display:inline-flex; align-items:center; gap:8px; margin-top:14px;
+    background:linear-gradient(135deg, var(--gold), var(--gold-dim));
+    color:#201205; font-weight:700; font-size:13.5px;
+    padding:10px 20px; border-radius:999px; border:none; cursor:pointer;
+    font-family:var(--sans); text-decoration:none;
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .gs-btn:hover{ transform:translateY(-1px); box-shadow:0 8px 20px -6px rgba(217,132,15,0.45); }
+  .gs-btn.gs-btn-ghost{
+    background:none; border:1px solid var(--line); color:var(--ink-dim); font-weight:600;
+  }
+  .gs-btn.gs-btn-ghost:hover{ border-color:var(--gold-dim); color:var(--gold); box-shadow:none; }
+
+  .gs-picks{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px;
+    margin-top:16px;
+  }
+  .gs-pick{
+    display:block; background:var(--surface-2); border:1px solid var(--line);
+    border-radius:8px; padding:14px 16px; text-decoration:none;
+    transition:border-color .15s ease, transform .15s ease;
+  }
+  .gs-pick:hover{ border-color:var(--gold-dim); transform:translateY(-1px); }
+  .gs-pick .name{ display:flex; align-items:center; gap:7px; font-weight:700; color:var(--ink); font-size:14px; margin-bottom:4px; }
+  .gs-pick .name svg{ flex-shrink:0; color:var(--gold-dim); }
+  .gs-pick .desc{ font-size:12.5px; color:var(--ink-faint); line-height:1.5; }
+
+  .gs-step ul.gs-theme-list{ margin:0 0 4px; padding-left:20px; color:var(--ink-dim); font-size:14.5px; line-height:1.7; }
+  .gs-step ul.gs-theme-list li strong{ color:var(--ink); }
+
+  .gs-tips{
+    background:var(--surface); border:1px solid var(--line); border-top:4px solid var(--jade);
+    border-radius:var(--radius); padding:24px 26px; margin-top:16px;
+  }
+  [data-theme="lcars"] .gs-tips h2{ font-family:var(--display); letter-spacing:.02em; }
+  .gs-tips h2{ font-family:var(--serif); font-size:20px; font-weight:500; margin:0 0 14px; color:var(--ink); }
+  .gs-tips ul{ margin:0; padding-left:20px; color:var(--ink-dim); font-size:14.5px; line-height:1.75; }
+  .gs-tips li strong{ color:var(--ink); }
+
+  .gs-final{
+    text-align:center; margin:40px 0 8px;
+  }
+  .gs-final p{ color:var(--ink-dim); font-size:14.5px; margin:0 0 16px; }
+
+  .gs-glossary-note{
+    display:flex; align-items:flex-start; gap:14px;
+    background:var(--surface-2); border:1px solid var(--line); border-radius:var(--radius);
+    padding:16px 20px; margin-top:20px;
+  }
+  .gs-glossary-note svg{ flex:none; color:var(--target); margin-top:2px; }
+  .gs-glossary-note p{ margin:0 0 12px; font-size:13.5px; line-height:1.6; color:var(--ink-dim); }
+  .gs-glossary-note p:last-of-type{ margin-bottom:0; }
+  /* :not(.gs-btn) so this plain-link styling (teal text) doesn't win, on
+     specificity, over .gs-btn's own gold-background/dark-text styling for
+     the "Open the Glossary" button below, which is an <a> too */
+  .gs-glossary-note a:not(.gs-btn){ color:var(--target); font-weight:600; text-decoration:none; }
+  .gs-glossary-note a:not(.gs-btn):hover{ color:var(--gold); }
+  .gs-glossary-note .gs-btn{ margin-top:2px; }
+  /* the general ".gs-glossary-note svg" rule above (teal) would otherwise
+     win on specificity over the button's own inherited text color — make
+     the icon match the button's own text/hover color instead */
+  .gs-glossary-note .gs-btn svg{ color:inherit; }
+  @media (max-width:520px){ .gs-glossary-note{ flex-direction:column; } }
+</style>
+</head>
+<body>
+<div id="fn-site-nav"></div>
+
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">FireNate — Getting Started: Using This Site</p>
+    <h1>New here? <em>Let's get you set up.</em></h1>
+    <p class="lede">A few minutes now saves you from re-typing the same numbers on every calculator later. Here's the fastest path to getting real value out of this site.</p>
+  </header>
+
+  <div class="gs-glossary-note">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+    </svg>
+    <div>
+      <p>New to FIRE? Terms like <strong>Coast FIRE</strong>, <strong>MAGI</strong>, and <strong>the 4% rule</strong> come up throughout this site. The <a href="../Glossary/index.html">Glossary</a> has plain-English definitions for all of them — worth a quick look before diving in below.</p>
+      <p>It's also always one tap away — find it under <strong>Resources</strong> in the hamburger menu, top-right of every page.</p>
+      <div style="display:flex; flex-wrap:wrap; gap:10px;">
+        <a class="gs-btn gs-btn-ghost" href="../Glossary/index.html">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+          Open the Glossary &rarr;
+        </a>
+        <button type="button" class="gs-btn gs-btn-ghost" id="gsShowGlossaryBtn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+          Show me in the menu
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="gs-steps">
+
+    <div class="gs-step gold">
+      <div class="gs-step-head">
+        <div class="gs-step-num">01</div>
+        <h2>Set up your profile</h2>
+      </div>
+      <p class="gs-step-body">
+        <strong>Your info</strong> — the icon in the top-right of every page — holds the handful of numbers that power the whole site: your age, annual income, current savings, savings goal, target retirement age, and expected return rate. Fill it in once and every calculator auto-fills from it, so you're never re-entering the same numbers twice.
+      </p>
+      <button type="button" class="gs-btn" id="gsOpenProfileBtn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+        Open Your info
+      </button>
+    </div>
+
+    <div class="gs-step jade">
+      <div class="gs-step-head">
+        <div class="gs-step-num">02</div>
+        <h2>Pick a calculator to start with</h2>
+      </div>
+      <p class="gs-step-body">
+        Not sure where to begin? These three cover the most common questions — start with whichever matches what you're trying to figure out.
+      </p>
+      <div class="gs-picks">
+        <a class="gs-pick" href="../FISnapshot/index.html">
+          <div class="name">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+            FI Snapshot
+          </div>
+          <div class="desc">Your financial-independence status at a glance — age, savings, goal progress, and whether you've hit <span class="fn-term" data-term="coast-fire">Coast-FI</span>.</div>
+        </a>
+        <a class="gs-pick" href="../TimeToFI/index.html">
+          <div class="name">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            Time to FI
+          </div>
+          <div class="desc">"How many years until I'm financially independent?" — see every savings rate from 0% to 100%.</div>
+        </a>
+        <a class="gs-pick" href="../ReverseTimeToFI/index.html">
+          <div class="name">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+            Reverse Time to FI
+          </div>
+          <div class="desc">Start from the freedom date you want, and work backward to what you need to save each week.</div>
+        </a>
+      </div>
+      <p class="gs-step-body">
+        Still not sure, or want something more guided? <strong>Calculator Picker</strong> walks you through a few quick questions — or lets you browse every calculator laid out as a subway-style map — and points you at the two or three tools that actually fit your situation.
+      </p>
+      <a class="gs-btn gs-btn-ghost" href="../GettingStartedCalculators/index.html">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>
+        Try the guided picker &rarr;
+      </a>
+    </div>
+
+    <div class="gs-step plum">
+      <div class="gs-step-head">
+        <div class="gs-step-num">03</div>
+        <h2>Check the compass icon for your Journey Progress</h2>
+      </div>
+      <p class="gs-step-body">
+        Once you've put real numbers into a calculator or two, the <strong>compass icon</strong> in the top nav pulls it all together into one dashboard — a progress ring and Rank built from your Net Worth, Time to FI, Emergency Fund, Debt Snowball, Spending-Based FI, and Contribution Limits data, whichever of those you've actually used. Nothing extra to set up — it just reads what you've already saved.
+      </p>
+      <p class="gs-step-body">
+        It also surfaces <strong>Insights</strong> computed from your own numbers (like what maxing out a benefit or paying off a debt early would actually take), suggested <strong>Next Steps</strong>, and <strong>Achievements</strong> as you hit milestones like a fully-funded emergency fund or going debt-free.
+      </p>
+      <div style="display:flex; flex-wrap:wrap; gap:10px;">
+        <button type="button" class="gs-btn" id="gsOpenJourneyBtn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>
+          Open Journey Progress
+        </button>
+        <button type="button" class="gs-btn gs-btn-ghost" id="gsShowJourneyBtn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>
+          Show me the icon
+        </button>
+      </div>
+    </div>
+
+    <div class="gs-step target">
+      <div class="gs-step-head">
+        <div class="gs-step-num">04</div>
+        <h2>Confused by a field? Tap the &#63; icon</h2>
+      </div>
+      <p class="gs-step-body">
+        Every calculator has a small <button type="button" class="fn-help-btn" id="gsHelpIconDemo" aria-label="What do these inputs mean?" style="vertical-align:middle; margin:0 2px;">?</button> icon next to its inputs — click it any time for a plain-English explanation of what each field means and how it factors into the math. It works the same way on every page, in every theme.
+      </p>
+      <button type="button" class="gs-btn gs-btn-ghost" id="gsShowHelpIconBtn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+        Show me the icon
+      </button>
+    </div>
+
+    <div class="gs-step plum">
+      <div class="gs-step-head">
+        <div class="gs-step-num">05</div>
+        <h2>Save a snapshot before you experiment</h2>
+      </div>
+      <p class="gs-step-body">
+        About to try a different return rate, retirement age, or goal? Click the <strong>camera icon</strong> next to "Your info" first — it saves a dated snapshot of your current numbers, including whatever you've entered on every calculator page, not just your profile. That way "what if" never means losing your real plan.
+      </p>
+      <p class="gs-step-body">
+        Made a mistake and cleared your info by accident? The <strong>trash icon</strong> automatically backs up your profile right before it clears it, so you can load it right back.
+      </p>
+      <div style="display:flex; flex-wrap:wrap; gap:10px;">
+        <button type="button" class="gs-btn gs-btn-ghost" id="gsShowCameraBtn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+          Show me the camera icon
+        </button>
+        <button type="button" class="gs-btn gs-btn-ghost" id="gsShowTrashBtn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>
+          Show me the trash icon
+        </button>
+      </div>
+    </div>
+
+    <div class="gs-step target">
+      <div class="gs-step-head">
+        <div class="gs-step-num">06</div>
+        <h2>Compare plans in Profile Manager</h2>
+      </div>
+      <p class="gs-step-body">
+        <strong>Profile Manager</strong> is where every saved snapshot lives — name them, load any one back into your live profile, delete the ones you don't need, and see each one's stats side by side. You can also export all your saved profiles to a file, and import them back in later or on another device.
+      </p>
+      <p class="gs-step-body">
+        Want to load a saved snapshot without leaving the page you're on? The <strong>"Load saved profile" icon</strong> — the people icon next to the camera — opens a quick list of every snapshot you've saved, right there in "Your info."
+      </p>
+      <p class="gs-step-body">
+        Just want to send one specific scenario to someone, without a whole file? Each page's "Your info" panel also has a <strong>share-link icon</strong> — it copies a link that encodes your current numbers, ready to paste anywhere.
+      </p>
+      <div style="display:flex; flex-wrap:wrap; gap:10px;">
+        <a class="gs-btn gs-btn-ghost" href="../ProfileManager/index.html">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+          Open Profile Manager &rarr;
+        </a>
+        <button type="button" class="gs-btn gs-btn-ghost" id="gsShowQuickloadBtn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+          Show me the "Load saved profile" icon
+        </button>
+        <button type="button" class="gs-btn gs-btn-ghost" id="gsShowShareBtn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+          Show me the share-link icon
+        </button>
+        <button type="button" class="gs-btn gs-btn-ghost" id="gsShowExportImportBtn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+          Show me export/import
+        </button>
+      </div>
+    </div>
+
+    <div class="gs-step gold">
+      <div class="gs-step-head">
+        <div class="gs-step-num">07</div>
+        <h2>Your data stays on your device</h2>
+      </div>
+      <p class="gs-step-body">
+        Nothing you enter is sent anywhere — everything is saved locally in your browser. Use the <strong>gear icon</strong> to switch between light and dark mode, or to wipe everything and start over with "Clear all local data" if you're ever handing off this device or just want a clean slate.
+      </p>
+      <button type="button" class="gs-btn gs-btn-ghost" id="gsShowResetBtn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="6" r="4"></circle><circle cx="7" cy="8.5" r="3"></circle><circle cx="17" cy="8.5" r="3"></circle><path d="M9 11 8 20 16 20 15 11"></path><line x1="5" y1="21" x2="19" y2="21"></line></svg>
+        Show me the "Clear all local data" button
+      </button>
+    </div>
+
+    <div class="gs-step jade">
+      <div class="gs-step-head">
+        <div class="gs-step-num">08</div>
+        <h2>Pick a look that fits you</h2>
+      </div>
+      <p class="gs-step-body">
+        The same <strong>gear icon</strong> also holds a theme picker — six ways to view the site:
+      </p>
+      <ul class="gs-theme-list">
+        <li><strong>System</strong> &mdash; matches your device automatically: a light device gets Sunshine, a dark device gets Neon. This is the default for new visitors.</li>
+        <li><strong>Light</strong> &mdash; the original, clean daytime look.</li>
+        <li><strong>Sunshine</strong> &mdash; a brighter, warmer alternative to Light.</li>
+        <li><strong>Dark</strong> &mdash; easy on the eyes at night.</li>
+        <li><strong>Neon</strong> &mdash; a vivid dark theme with glowing purple-and-pink accents.</li>
+        <li><strong>LCARS</strong> &mdash; a flat, Star-Trek-console-inspired look with bold, solid accent-color panels.</li>
+      </ul>
+      <button type="button" class="gs-btn gs-btn-ghost" id="gsShowThemeBtn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        Show me where to switch themes
+      </button>
+    </div>
+
+  </div>
+
+  <div class="gs-tips">
+    <h2>A few habits that pay off</h2>
+    <ul>
+      <li><strong>Snapshot before you tinker.</strong> A quick camera-icon click means you can always get back to your real numbers.</li>
+      <li><strong>Name your snapshots something you'll recognize later</strong> — "Conservative 6% return" beats "Snapshot Aug 14."</li>
+      <li><strong>Export a backup every so often.</strong> It's a plain JSON file you can keep anywhere, and it restores everything — profile, snapshots, and every calculator's own inputs.</li>
+      <li><strong>Revisit your profile as things change.</strong> A raise, a new goal, or a birthday all shift the math — keeping it current keeps every calculator honest.</li>
+    </ul>
+  </div>
+
+  <div class="gs-final">
+    <p>Ready to get real numbers? Start with your profile, then jump into a calculator.</p>
+    <button type="button" class="gs-btn" id="gsOpenProfileBtnFinal">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+      Open Your info
+    </button>
+    <a class="gs-btn gs-btn-ghost" href="../FISnapshot/index.html">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+      Go to FI Snapshot &rarr;
+    </a>
+  </div>
+
+</div>
+
+<footer id="site-footer"></footer>
+
+<script>
+// same "pop + glow" trick ProfileManager uses to open the nav's profile
+// panel from a button that lives outside #fn-site-nav — stopPropagation
+// keeps the document-level "click outside the nav closes everything"
+// listener from immediately closing the panel this click just opened
+function pulseAttention(el){
+  if (!el) return;
+  el.classList.remove('fn-attn');
+  void el.offsetWidth;
+  el.classList.add('fn-attn');
+  var cleared = false;
+  var clear = function(){
+    if (cleared) return;
+    cleared = true;
+    el.classList.remove('fn-attn');
+  };
+  el.addEventListener('animationend', clear, { once: true });
+  setTimeout(clear, 1400);
+}
+// extraSelector lets a button open the panel AND draw attention to one
+// specific button inside it (the camera/share icons), not just the panel
+// itself — reuses the exact same pulse the panel/toggle already get
+function openProfilePanelWithAttention(e, extraSelector){
+  if (e) e.stopPropagation();
+  var toggle = document.querySelector('.fn-profile-toggle');
+  var navHost = document.getElementById('fn-site-nav');
+  var alreadyOpen = navHost && navHost.classList.contains('fn-profile-open');
+  if (toggle && !alreadyOpen) toggle.click();
+  pulseAttention(document.querySelector('.fn-profile-toggle'));
+  pulseAttention(document.querySelector('.fn-profile-panel'));
+  if (extraSelector) pulseAttention(document.querySelector(extraSelector));
+}
+document.getElementById('gsOpenProfileBtn').addEventListener('click', function(e){ openProfilePanelWithAttention(e); });
+document.getElementById('gsOpenProfileBtnFinal').addEventListener('click', function(e){ openProfilePanelWithAttention(e); });
+document.getElementById('gsShowCameraBtn').addEventListener('click', function(e){ openProfilePanelWithAttention(e, '.fn-profile-snapshot'); });
+document.getElementById('gsShowTrashBtn').addEventListener('click', function(e){ openProfilePanelWithAttention(e, '.fn-profile-clear'); });
+document.getElementById('gsShowQuickloadBtn').addEventListener('click', function(e){ openProfilePanelWithAttention(e, '.fn-quickload-toggle'); });
+document.getElementById('gsShowShareBtn').addEventListener('click', function(e){ openProfilePanelWithAttention(e, '.fn-profile-share'); });
+document.getElementById('gsShowExportImportBtn').addEventListener('click', function(){
+  window.location.href = '../ProfileManager/index.html?highlight=io';
+});
+
+// same idea as openProfilePanelWithAttention, but for the gear icon's
+// settings panel ("Clear all local data" lives there, not in "Your info")
+function openSettingsPanelWithAttention(e, extraSelector){
+  if (e) e.stopPropagation();
+  var toggle = document.querySelector('.fn-settings-toggle');
+  var navHost = document.getElementById('fn-site-nav');
+  var alreadyOpen = navHost && navHost.classList.contains('fn-settings-open');
+  if (toggle && !alreadyOpen) toggle.click();
+  pulseAttention(document.querySelector('.fn-settings-toggle'));
+  pulseAttention(document.querySelector('.fn-settings-panel'));
+  if (extraSelector) pulseAttention(document.querySelector(extraSelector));
+}
+document.getElementById('gsShowResetBtn').addEventListener('click', function(e){ openSettingsPanelWithAttention(e, '.fn-reset-all'); });
+document.getElementById('gsShowThemeBtn').addEventListener('click', function(e){ openSettingsPanelWithAttention(e, '.fn-theme-select'); });
+
+// opens the hamburger menu, force-expands whichever group the target link
+// lives in (a user may have collapsed "Resources" earlier), scrolls to it,
+// and pulses it — reuses the group-toggle button's own click handler
+// (rather than touching its classList directly) so its collapsed/expanded
+// state stays correctly persisted to localStorage exactly like a real click
+function openHamburgerMenuAndShow(e, pageId){
+  if (e) e.stopPropagation();
+  var toggle = document.querySelector('.fn-nav-toggle');
+  var navHost = document.getElementById('fn-site-nav');
+  var alreadyOpen = navHost && navHost.classList.contains('fn-open');
+  if (toggle && !alreadyOpen) toggle.click();
+  pulseAttention(document.querySelector('.fn-nav-toggle'));
+
+  var link = document.querySelector('.fn-links a[data-page-id="' + pageId + '"]');
+  if (!link) return;
+  var group = link.closest('.fn-links-group');
+  if (group && group.classList.contains('is-collapsed')) {
+    var groupLabel = group.querySelector('.fn-links-group-label');
+    if (groupLabel) groupLabel.click();
+  }
+  link.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  pulseAttention(link);
+}
+document.getElementById('gsShowGlossaryBtn').addEventListener('click', function(e){ openHamburgerMenuAndShow(e, 'glossary'); });
+
+// the ? icon demoed in step 04 is a real, working fn-help-btn right on this
+// page (see FN_FIELD_HELP above) — "Show me" just scrolls to it and pulses
+// it in place, unlike the other buttons above which have to open a panel
+// first since their target lives inside one.
+document.getElementById('gsShowHelpIconBtn').addEventListener('click', function(e){
+  var icon = document.getElementById('gsHelpIconDemo');
+  if (!icon) return;
+  icon.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  pulseAttention(icon);
+});
+
+// Journey Progress' compass icon is a standalone top-level nav button (not
+// nested inside a collapsed panel like "Your info" or the hamburger menu),
+// so "Open" just clicks it for real, and "Show me" pulses it in place
+// without opening the modal — same in-place-pulse idea as the ? icon above.
+document.getElementById('gsOpenJourneyBtn').addEventListener('click', function(){
+  var toggle = document.querySelector('.fn-journey-toggle');
+  if (toggle) toggle.click();
+});
+document.getElementById('gsShowJourneyBtn').addEventListener('click', function(){
+  // No scrollIntoView here — the compass icon lives in the fixed top nav,
+  // already visible at any scroll position, unlike gsHelpIconDemo above
+  // which is an in-page element the viewport might not be showing yet.
+  pulseAttention(document.querySelector('.fn-journey-toggle'));
+});
+</script>
+
+</body>
+</html>

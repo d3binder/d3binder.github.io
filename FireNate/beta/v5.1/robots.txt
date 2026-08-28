@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /tests/
+Disallow: /*bkup*
+Disallow: /*backup*
+Disallow: /*/old/

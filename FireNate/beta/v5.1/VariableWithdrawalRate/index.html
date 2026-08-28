@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script src="../assets/js/theme-init.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FireNate - Variable Withdrawal Rate &amp; Cash Buffer Simulator</title>
+<meta name="description" content="Guyton-Klinger guardrails, bear-market spending cuts, and a 1-3 year cash buffer — stress-tested against every real historical market cycle since 1928.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Antonio:wght@400;500;600;700&family=Michroma&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/site.css">
+<link rel="stylesheet" href="../assets/css/timeToFI.css">
+<link rel="stylesheet" href="../assets/css/toolbar.css">
+<script src="../assets/js/theme.js" defer></script>
+<script src="../assets/js/user-profile.js" defer></script>
+<script src="../assets/js/nav.js" defer></script>
+<script src="../assets/js/profile-autofill.js" defer></script>
+<script src="../assets/js/field-help.js" defer></script>
+<script>
+window.FN_BASE = "../"; window.FN_PAGE = "variable-withdrawal";
+window.FN_FIELD_HELP = {
+  "title": "About this Tool",
+  "intro": "Unlike a fixed withdrawal rate, this models spending strategies that adapt to market performance — which historically let retirees safely start with a higher withdrawal rate.",
+  "sections": [
+    {
+      "heading": "Portfolio",
+      "items": [
+        {
+          "label": "Starting Portfolio",
+          "text": "Your portfolio balance on day one of retirement."
+        },
+        {
+          "label": "Initial Withdrawal Rate",
+          "text": "The percent of your starting portfolio withdrawn in year one, before any strategy adjustments kick in."
+        },
+        {
+          "label": "Retirement Length",
+          "text": "How many years the portfolio needs to last."
+        },
+        {
+          "label": "Annual Fees",
+          "text": "Fund expense ratios and advisory fees, as a percent of the portfolio per year."
+        }
+      ]
+    },
+    {
+      "heading": "Spending strategy",
+      "items": [
+        {
+          "label": "Spending Strategy",
+          "text": "“Fixed” keeps spending constant in real dollars regardless of markets. “Guyton-Klinger guardrails” adjusts spending up or down when the withdrawal rate drifts too far from its starting point. “Cut spending on drawdown” applies a one-time cut after a steep portfolio decline."
+        },
+        {
+          "label": "Bear-Market Cut",
+          "text": "How much to cut annual spending by (as a percent) when the drawdown trigger below is hit."
+        },
+        {
+          "label": "Drawdown Trigger",
+          "text": "The percent decline from the portfolio's peak value that triggers a spending cut."
+        },
+        {
+          "label": "Cash Buffer",
+          "text": "Years of expenses held in cash/cash-equivalents instead of the market, to draw from during downturns instead of selling at a loss."
+        },
+        {
+          "label": "Cash Buffer Return",
+          "text": "The return earned on the cash buffer portion, typically much lower than market returns."
+        }
+      ]
+    }
+  ]
+};
+window.FN_PROFILE_FIELDS = {
+  currentSavings: "#startPortfolio"
+};
+window.FN_PROFILE_LEGACY_KEY = "variableWithdrawalInputs";
+</script>
+<style>
+  /* ---------- toolbar overrides (shared: assets/css/toolbar.css) ---------- */
+  :root{ --toolbar-content-max-height:640px; }
+  .vw-field select{
+      background:rgba(0,0,0,0.22); border:1px solid transparent; border-radius:7px; color:var(--toolbar-text);
+    font-family:var(--mono); font-size:14.5px; font-weight:500; padding:8px 10px; outline:none;
+    transition:border-color .15s, box-shadow .15s; box-shadow:0 1px 2px rgba(0,0,0,0.2);
+    width:auto; min-width:190px; cursor:pointer;
+  }
+  .vw-field select:focus{ border-color:var(--gold-bright); box-shadow:0 0 0 3px rgba(243,178,58,0.28); }
+
+  /* ---------- EXPLAINER ---------- */
+  .vw-explainer{
+    background:var(--surface); border:1px solid var(--line); border-top:4px solid var(--target);
+    border-radius:var(--radius); padding:22px 24px; margin-top:4px;
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:20px;
+  }
+  .vw-explainer-step .tag{
+    font-family:var(--mono); font-size:10.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+    margin-bottom:6px; display:block;
+  }
+  .vw-explainer-step.s1 .tag{ color:var(--gold); }
+  .vw-explainer-step.s2 .tag{ color:var(--target); }
+  .vw-explainer-step.s3 .tag{ color:var(--jade); }
+  .vw-explainer-step p{ margin:0; font-size:13.5px; color:var(--ink-dim); line-height:1.6; }
+  .vw-explainer-step strong{ color:var(--ink); }
+  .vw-explainer-note{
+    grid-column:1/-1; margin-top:2px; padding-top:14px; border-top:1px dashed var(--line-soft);
+    font-size:12px; color:var(--ink-faint); line-height:1.6;
+  }
+
+  /* ---------- SUMMARY CARD ---------- */
+  .vw-summary-card{
+    margin-top:4px; position:relative; overflow:hidden;
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    padding:28px 28px 24px;
+  }
+  .vw-summary-card::before{
+    content:''; position:absolute; top:0; left:0; right:0; height:4px;
+    background:linear-gradient(90deg, var(--jade), var(--danger));
+  }
+  .vw-summary-card .vs-eyebrow{
+    font-family:var(--serif); font-size:clamp(18px,2.6vw,26px); font-weight:600;
+    color:var(--target); margin:0 0 6px;
+  }
+  .vw-summary-card .vs-amount-row{ display:flex; align-items:baseline; flex-wrap:wrap; gap:12px 14px; margin:0 0 8px; }
+  [data-theme="lcars"] .vw-summary-card .vs-eyebrow{ font-family:var(--display); letter-spacing:.02em; }
+  [data-theme="lcars"] .vw-summary-card .vs-amount{ font-family:var(--mono); font-variant-numeric:tabular-nums; }
+  .vw-summary-card .vs-amount{
+    font-family:var(--serif); font-size:clamp(32px,6vw,52px); font-weight:600;
+    margin:0; line-height:1;
+  }
+  .vw-summary-card .vs-amount.good{ color:var(--jade); }
+  .vw-summary-card .vs-amount.warn{ color:var(--gold); }
+  .vw-summary-card .vs-amount.bad{ color:var(--danger); }
+  .vw-summary-card .vs-sub{ color:var(--ink-dim); font-size:14.5px; line-height:1.55; max-width:74ch; margin:0; }
+  .vw-summary-card .vs-sub b{ color:var(--ink); }
+  .vw-summary-card .vs-note{ color:var(--ink-faint); font-size:12.5px; line-height:1.55; max-width:74ch; margin:12px 0 0; }
+  @media (max-width:640px){ .vw-summary-card{ padding:22px 18px 20px; } }
+
+  /* ---------- SPAGHETTI CHART ---------- */
+  #vwChart{ width:100%; height:auto; display:block; overflow:visible; }
+  .vw-line-ok{ fill:none; stroke:var(--jade); stroke-width:1.4; opacity:0.45; }
+  .vw-line-fail{ fill:none; stroke:var(--danger); stroke-width:1.6; opacity:0.65; }
+  .vw-grid-line{ stroke:var(--line); stroke-width:1; }
+  .vw-grid-label, .vw-axis-label{ font-family:var(--mono); font-size:10px; fill:var(--ink-faint); }
+
+  /* ---------- TABLE ---------- */
+  .vw-outcome-ok{ color:var(--jade); font-weight:600; }
+  .vw-outcome-fail{ color:var(--danger); font-weight:600; }
+
+  /* ---------- note cards: below the status strip, one topic per box ---------- */
+  .vw-notes{
+    display:grid; grid-template-columns:repeat(auto-fit, minmax(230px, 1fr));
+    gap:14px; margin-top:16px;
+  }
+  .vw-note{
+    background:var(--surface); border:1px solid var(--line); border-top:3px solid var(--target);
+    border-radius:var(--radius); padding:16px 18px;
+    color:var(--ink-faint); font-size:13px; line-height:1.55; margin:0;
+  }
+  .vw-note b{ color:var(--ink-dim); }
+  .vw-note[hidden]{ display:none; }
+  .vw-note#vwNoteMaxRate{ border-top-color:var(--jade); }
+  .vw-note#vwNoteWorst{ border-top-color:var(--danger); }
+  .vw-note#vwNoteVolatility{ border-top-color:var(--plum); }
+  .vw-note-label{
+    display:block; color:var(--ink); font-weight:700; font-size:10.5px;
+    letter-spacing:0.08em; text-transform:uppercase; margin-bottom:6px;
+  }
+</style>
+</head>
+<body>
+<div id="fn-site-nav"></div>
+
+<div class="vw-inputs" id="vwInputs">
+  <div class="wrap vw-summary-row" style="position:relative">
+    <div class="vw-summary" id="vwSummary">&mdash;</div>
+    <button type="button" class="fn-help-btn" style="position:absolute; right:20px; top:50%; transform:translateY(-50%)" aria-label="What do these inputs mean?">?</button>
+  </div>
+  <div class="vw-content" id="vwContent">
+    <div class="wrap vw-inner">
+      <div class="vw-fields">
+        <div class="vw-field">
+          <label for="startPortfolio">Starting Portfolio</label>
+          <div class="vw-input-row"><span class="vw-prefix">$</span><input type="text" inputmode="decimal" pattern="[0-9,.]*" id="startPortfolio" value="1,000,000.00"></div>
+        </div>
+        <div class="vw-field">
+          <label for="initialRate">Initial Withdrawal Rate</label>
+          <div class="vw-input-row"><input class="vw-narrow" type="number" step="0.1" inputmode="decimal" id="initialRate" value="5" min="1" max="10"><span class="vw-suffix">%</span></div>
+        </div>
+        <div class="vw-field">
+          <label for="retireLength">Retirement Length</label>
+          <div class="vw-input-row"><input class="vw-narrow" type="number" id="retireLength" value="30" min="5" max="60" step="1"><span class="vw-suffix">yrs</span></div>
+        </div>
+        <div class="vw-field">
+          <label for="feeRate">Annual Fees</label>
+          <div class="vw-input-row"><input class="vw-narrow" type="number" step="0.05" inputmode="decimal" id="feeRate" value="0.10" min="0" max="3"><span class="vw-suffix">%</span></div>
+        </div>
+        <div class="vw-field">
+          <label for="strategy">Spending Strategy</label>
+          <div class="vw-input-row">
+            <select id="strategy">
+              <option value="fixed">Fixed (constant real $)</option>
+              <option value="guardrails" selected>Guyton-Klinger guardrails</option>
+              <option value="cut">Cut spending on drawdown</option>
+            </select>
+          </div>
+        </div>
+        <div class="vw-field">
+          <label for="cutPct">Bear-Market Cut</label>
+          <div class="vw-input-row"><input class="vw-narrow" type="number" id="cutPct" value="10" min="0" max="50" step="1"><span class="vw-suffix">%</span></div>
+        </div>
+        <div class="vw-field">
+          <label for="drawdownTrigger">Drawdown Trigger</label>
+          <div class="vw-input-row"><input class="vw-narrow" type="number" id="drawdownTrigger" value="15" min="1" max="50" step="1"><span class="vw-suffix">%</span></div>
+        </div>
+        <div class="vw-field">
+          <label for="bufferYears">Cash Buffer</label>
+          <div class="vw-input-row"><input class="vw-narrow" type="number" id="bufferYears" value="2" min="0" max="3" step="1"><span class="vw-suffix">yrs</span></div>
+        </div>
+        <div class="vw-field">
+          <label for="cashReturn">Cash Buffer Return</label>
+          <div class="vw-input-row"><input class="vw-narrow" type="number" step="0.1" id="cashReturn" value="0.5" min="-5" max="10"><span class="vw-suffix">%</span></div>
+        </div>
+      </div>
+      <div class="vw-save">
+        <span class="save-status" id="vwSaveStatus">Not saved yet</span>
+        <button type="button" id="resetBtn" class="reset-btn">Reset to defaults</button>
+      </div>
+    </div>
+  </div>
+  <div class="wrap vw-toggle-row">
+    <button id="vwToggle" type="button" class="vw-toggle" aria-expanded="true" aria-controls="vwContent">
+      <svg class="vw-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+      <span id="vwToggleLabel">Hide inputs</span>
+    </button>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">FIRE Nate - Variable Withdrawal &amp; Cash Buffer</p>
+    <h1 id="pageTitleHeader">Real retirees don't <em>stay the course</em> in a crash.</h1>
+    <p class="lede">A rigid fixed withdrawal has to assume the worst historical sequence of returns. Guardrails, spending cuts, and a cash buffer are how real retirees actually manage sequence-of-returns risk — this stress-tests those strategies against every real market cycle since 1928, the same dataset the plain Safe Withdrawal Rate calculator uses.</p>
+  </header>
+
+  <div class="vw-explainer">
+    <div class="vw-explainer-step s1">
+      <span class="tag">Guardrails</span>
+      <p>Each year, if your withdrawal has drifted to <strong>20% above</strong> your starting rate (the portfolio shrank), spending gets cut 10%. Drift <strong>20% below</strong> it (the portfolio grew), and spending gets raised 10%.</p>
+    </div>
+    <div class="vw-explainer-step s2">
+      <span class="tag">Spending cuts</span>
+      <p>A simpler alternative: when your portfolio falls a set amount <strong>below its peak</strong>, cut spending by a fixed percentage until it recovers.</p>
+    </div>
+    <div class="vw-explainer-step s3">
+      <span class="tag">Cash buffer</span>
+      <p>Hold 1&ndash;3 years of spending in cash, set aside from the portfolio. In a <strong>down year</strong>, spend from cash instead of selling stocks at a loss; in an <strong>up year</strong>, refill the buffer from gains.</p>
+    </div>
+    <div class="vw-explainer-note">
+      Guardrail bands (&plusmn;20%) and adjustment size (10%) follow the commonly-cited Guyton-Klinger parameters and aren't separately adjustable here. "Bear-Market Cut" and "Drawdown Trigger" only apply when "Cut spending on drawdown" is selected. The cash buffer works alongside either strategy — set it to 0 years to turn it off.
+    </div>
+  </div>
+
+  <h2 class="ledger-title" style="margin-top: 40px; margin-bottom: 4px;">Summary</h2>
+  <div class="vw-summary-card">
+    <p class="vs-eyebrow" id="vsEyebrow">Historical success rate</p>
+    <div class="vs-amount-row">
+      <p class="vs-amount" id="vsAmount">&mdash;</p>
+    </div>
+    <p class="vs-sub" id="vsSub">&mdash;</p>
+    <p class="vs-note" id="vsNote">Based on 98 years of S&amp;P 500 total returns (1928&ndash;2025) deflated by annual U.S. CPI inflation. Only start years with a complete, fully-observed retirement window are counted. Fees are deducted annually from the invested portion; the cash buffer grows at its own assumed rate.</p>
+  </div>
+  <div class="status" id="statusStrip" style="margin-top:16px;"></div>
+  <div class="vw-notes" id="vwNotes">
+    <p class="vw-note" id="vwNoteMaxRate" hidden></p>
+    <p class="vw-note" id="vwNoteWorst" hidden></p>
+    <p class="vw-note" id="vwNoteVolatility" hidden></p>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h2>Every historical cycle, overlaid</h2>
+      <span class="sub">TOTAL BALANCE (PORTFOLIO + CASH BUFFER) BY YEAR INTO RETIREMENT</span>
+    </div>
+    <div class="chart-card">
+      <svg id="vwChart" viewBox="0 0 1120 360"></svg>
+      <div class="legend-row">
+        <span class="legend-dot" style="background:var(--jade);"></span> Survived the full period
+        <span class="legend-dot" style="background:var(--danger);"></span> Ran out of money
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h2>Every starting year, in detail</h2>
+      <span class="sub" id="vwTableSub">BY START YEAR</span>
+    </div>
+    <div class="table-card">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Started</th>
+              <th>Ended</th>
+              <th>Lowest Balance</th>
+              <th>Ending Balance</th>
+              <th>Outcome</th>
+            </tr>
+          </thead>
+          <tbody id="vwTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer id="site-footer"></footer>
+
+<script src="../assets/js/calc-utils.js"></script>
+<script>
+/* Real (inflation-adjusted) S&P 500 total annual returns, 1928-2025 — same
+   dataset as the Safe Withdrawal Rate calculator, for direct comparability.
+   Source: nominal returns from NYU Stern (Damodaran), CPI from usinflationcalculator.com. */
+const SP500_REAL_RETURNS = [
+  [1928,0.463],[1929,-0.083],[1930,-0.2336],[1931,-0.3829],[1932,0.014],[1933,0.5804],
+  [1934,-0.0416],[1935,0.4358],[1936,0.2999],[1937,-0.3759],[1938,0.3205],[1939,0.003],
+  [1940,-0.1129],[1941,-0.1692],[1942,0.0746],[1943,0.1787],[1944,0.1704],[1945,0.3277],
+  [1946,-0.1545],[1947,-0.0804],[1948,-0.0222],[1949,0.1974],[1950,0.2913],[1951,0.1462],
+  [1952,0.1595],[1953,-0.0199],[1954,0.515],[1955,0.3313],[1956,0.0585],[1957,-0.1332],
+  [1958,0.3981],[1959,0.1128],[1960,-0.0134],[1961,0.2539],[1962,-0.0971],[1963,0.2104],
+  [1964,0.1493],[1965,0.1063],[1966,-0.1251],[1967,0.2008],[1968,0.0634],[1969,-0.1302],
+  [1970,-0.0202],[1971,0.0941],[1972,0.1508],[1973,-0.1931],[1974,-0.3324],[1975,0.2557],
+  [1976,0.1704],[1977,-0.1266],[1978,-0.0101],[1979,0.0649],[1980,0.1607],[1981,-0.136],
+  [1982,0.1339],[1983,0.1855],[1984,0.0177],[1985,0.2668],[1986,0.1628],[1987,0.0213],
+  [1988,0.1195],[1989,0.2546],[1990,-0.0803],[1991,0.2498],[1992,0.0436],[1993,0.0677],
+  [1994,-0.0124],[1995,0.3346],[1996,0.1911],[1997,0.3011],[1998,0.2632],[1999,0.1829],
+  [2000,-0.1202],[2001,-0.1425],[2002,-0.232],[2003,0.2547],[2004,0.0783],[2005,0.0138],
+  [2006,0.1203],[2007,0.0261],[2008,-0.3887],[2009,0.2645],[2010,0.1301],[2011,-0.0107],
+  [2012,0.1351],[2013,0.302],[2014,0.1173],[2015,0.0128],[2016,0.1034],[2017,0.1911],
+  [2018,-0.0647],[2019,0.2889],[2020,0.1662],[2021,0.227],[2022,-0.2411],[2023,0.211],
+  [2024,0.2136],[2025,0.148]
+];
+// top-level `const` never attaches to `window` in a classic script (unlike
+// a `function` declaration), so this needs an explicit export for the
+// regression suite (tests/index.html) to reach it and inject synthetic
+// return sequences — no other code in this file is affected
+window.SP500_REAL_RETURNS = SP500_REAL_RETURNS;
+
+const $ = id => document.getElementById(id);
+const fmtUSD = n => n.toLocaleString('en-US', {style:'currency', currency:'USD', maximumFractionDigits:0});
+const fmtNum = n => n.toLocaleString('en-US', {maximumFractionDigits:1});
+const formatCurrencyField = id => {
+  const raw = parseCurrency(id);
+  $(id).value = raw.toLocaleString('en-US', {maximumFractionDigits:2});
+};
+function sanitizeCurrencyInput(id){
+  const el = $(id);
+  const before = el.value;
+  const cursorFromEnd = before.length - (el.selectionStart ?? before.length);
+  let cleaned = before.replace(/[^0-9.,]/g, '');
+  const parts = cleaned.split('.');
+  if (parts.length > 2){
+    cleaned = parts[0] + '.' + parts.slice(1).join('');
+  }
+  if (cleaned !== before){
+    el.value = cleaned;
+    const newPos = Math.max(0, cleaned.length - cursorFromEnd);
+    el.setSelectionRange(newPos, newPos);
+  }
+}
+function fmtUSDShort(n){
+  const sign = n < 0 ? '-' : '';
+  const abs = Math.abs(n);
+  if (abs >= 1e6) return sign + '$' + (abs / 1e6).toFixed(1) + 'M';
+  if (abs >= 1e3) return sign + '$' + Math.round(abs / 1e3) + 'K';
+  return sign + '$' + Math.round(abs);
+}
+
+// ---------- sticky, collapsible input toolbar ----------
+const COLLAPSE_KEY = 'variable-withdrawal-inputs-collapsed';
+const vwInputsEl = $('vwInputs');
+const vwToggle = $('vwToggle');
+const vwToggleLabel = $('vwToggleLabel');
+const vwSummary = $('vwSummary');
+const vwSaveStatus = $('vwSaveStatus');
+
+let inputsCollapsed = false;
+function setInputsCollapsed(collapsed){
+  inputsCollapsed = collapsed;
+  if (vwInputsEl) vwInputsEl.classList.toggle('collapsed', collapsed);
+  if (vwToggle) vwToggle.setAttribute('aria-expanded', String(!collapsed));
+  if (vwToggleLabel) vwToggleLabel.textContent = collapsed ? 'Show inputs' : 'Hide inputs';
+  try { localStorage.setItem(COLLAPSE_KEY, collapsed ? '1' : '0'); } catch(e) {}
+}
+if (vwToggle){
+  vwToggle.addEventListener('click', () => setInputsCollapsed(!inputsCollapsed));
+}
+
+function pad2(n){ return String(n).padStart(2, '0'); }
+function updateSaveStatus(){
+  if (!vwSaveStatus) return;
+  const d = new Date();
+  vwSaveStatus.textContent = `Last saved: ${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
+}
+const STRATEGY_LABELS = { fixed: 'Fixed', guardrails: 'Guardrails', cut: 'Cuts on drawdown' };
+const STRATEGY_PHRASES = { fixed: 'a fixed withdrawal', guardrails: 'guardrails', cut: 'drawdown-triggered cuts' };
+function updateVwSummary(state){
+  if (!vwSummary) return;
+  const portfolio = parseCurrency('startPortfolio');
+  const rate = parseFloat($('initialRate').value) || 0;
+  const buffer = parseFloat($('bufferYears').value) || 0;
+  vwSummary.textContent = `Portfolio: ${fmtUSD(portfolio)}  |  Rate: ${fmtNum(rate)}%  |  ${STRATEGY_LABELS[state.strategy]}  |  Buffer: ${fmtNum(buffer)} yr`;
+}
+
+// ---------- simulation ----------
+// One historical cycle, starting at SP500_REAL_RETURNS[startIdx]. Models an
+// invested portfolio plus an optional cash buffer, with a chosen dynamic
+// spending strategy layered on top of a plain, constant-real-dollar baseline.
+function simulateCycle(startIdx, years, startPortfolio, initialRatePct, feeRate, strategy, cutPct, drawdownTriggerPct, bufferYears, cashReturnPct){
+  const initialRate = initialRatePct / 100;
+  const baseWithdrawal = startPortfolio * initialRate;
+  let currentWithdrawal = baseWithdrawal; // tracked/adjusted by the guardrails strategy only
+
+  const bufferTarget0 = bufferYears * baseWithdrawal;
+  let cashBal = Math.min(bufferTarget0, startPortfolio);
+  let portfolioBal = startPortfolio - cashBal;
+
+  let peakTotal = portfolioBal + cashBal;
+  let minTotal = peakTotal;
+  const balances = [peakTotal];
+  let failYear = null;
+  // How often the strategy actually changes what you spend — the "cost" side
+  // of the safety benefit, since neither guardrails nor drawdown cuts are
+  // free once they trigger.
+  let cutCount = 0, raiseCount = 0;
+
+  for (let y = 0; y < years; y++){
+    const r = SP500_REAL_RETURNS[startIdx + y][1];
+    const totalStart = portfolioBal + cashBal;
+
+    // 1. this year's withdrawal target, per strategy — decided from the
+    // balance as observed at the START of the year (before this year's
+    // still-unknown return), same as how guardrails are actually run in
+    // practice: you look at what you have today, then set this year's spend
+    let withdrawal;
+    if (strategy === 'guardrails'){
+      if (y > 0){
+        const currentRate = totalStart > 0 ? currentWithdrawal / totalStart : 0;
+        if (currentRate > initialRate * 1.2){ currentWithdrawal *= 0.9; cutCount++; }
+        else if (currentRate < initialRate * 0.8){ currentWithdrawal *= 1.1; raiseCount++; }
+      }
+      withdrawal = currentWithdrawal;
+    } else if (strategy === 'cut'){
+      const drawdownPct = peakTotal > 0 ? (peakTotal - totalStart) / peakTotal : 0;
+      const isCutYear = drawdownPct >= (drawdownTriggerPct / 100);
+      if (isCutYear) cutCount++;
+      withdrawal = isCutYear ? baseWithdrawal * (1 - cutPct / 100) : baseWithdrawal;
+    } else {
+      withdrawal = baseWithdrawal;
+    }
+
+    // 2. year-end growth applies first — same "return, then withdraw"
+    // convention as the plain Safe Withdrawal Rate calculator, so a "fixed"
+    // strategy with no cash buffer reproduces that calculator's numbers
+    // exactly and the "vs. plain fixed rate" comparison is apples-to-apples
+    portfolioBal = portfolioBal * (1 + r - feeRate / 100);
+    cashBal = cashBal * (1 + cashReturnPct / 100);
+    if (portfolioBal < 0) portfolioBal = 0;
+    if (cashBal < 0) cashBal = 0;
+
+    withdrawal = Math.max(0, Math.min(withdrawal, portfolioBal + cashBal));
+
+    // 3. source the withdrawal — cash buffer first in a down year, so the
+    // portfolio isn't sold at a loss; otherwise straight from the portfolio
+    if (bufferYears > 0 && r < 0 && cashBal > 0){
+      const fromCash = Math.min(withdrawal, cashBal);
+      cashBal -= fromCash;
+      portfolioBal -= (withdrawal - fromCash);
+    } else {
+      portfolioBal -= withdrawal;
+    }
+    if (portfolioBal < 0) portfolioBal = 0;
+    if (cashBal < 0) cashBal = 0;
+
+    // 4. on an up year, top the cash buffer back up to its target size,
+    // funded from the portfolio's own gains
+    if (bufferYears > 0 && r > 0){
+      const referenceWithdrawal = strategy === 'guardrails' ? currentWithdrawal : baseWithdrawal;
+      const bufferTarget = bufferYears * referenceWithdrawal;
+      const need = Math.max(0, bufferTarget - cashBal);
+      const replenish = Math.min(need, portfolioBal);
+      cashBal += replenish;
+      portfolioBal -= replenish;
+    }
+
+    const total = portfolioBal + cashBal;
+    balances.push(total);
+    if (total > peakTotal) peakTotal = total;
+    if (total < minTotal) minTotal = total;
+    if (total <= 0 && failYear === null && y < years - 1) failYear = SP500_REAL_RETURNS[startIdx][0] + y + 1;
+  }
+
+  return {
+    startYear: SP500_REAL_RETURNS[startIdx][0],
+    endYear: SP500_REAL_RETURNS[startIdx][0] + years,
+    balances, minBalance: minTotal,
+    endingBalance: balances[balances.length - 1],
+    survived: balances[balances.length - 1] > 0,
+    failYear, cutCount, raiseCount
+  };
+}
+
+function runAllCycles(years, portfolio, initialRatePct, feeRate, strategy, cutPct, drawdownTriggerPct, bufferYears, cashReturnPct){
+  const maxStartIdx = SP500_REAL_RETURNS.length - years - 1;
+  const cycles = [];
+  for (let i = 0; i <= maxStartIdx; i++){
+    cycles.push(simulateCycle(i, years, portfolio, initialRatePct, feeRate, strategy, cutPct, drawdownTriggerPct, bufferYears, cashReturnPct));
+  }
+  const successCount = cycles.filter(c => c.survived).length;
+  const successRate = cycles.length > 0 ? (successCount / cycles.length) * 100 : null;
+  return { cycles, successCount, successRate };
+}
+
+// Survival only depends on the withdrawal RATE, not the dollar amount —
+// scaling the starting portfolio scales every balance and withdrawal (and
+// the cash buffer, which is itself sized off the withdrawal) in lockstep,
+// so a $1 portfolio simulates the exact same pass/fail outcome as any other
+// size. That's what lets this scan run cheaply without touching the user's
+// actual portfolio.
+function findMaxSafeRate(years, feeRate, strategy, cutPct, drawdownTriggerPct, bufferYears, cashReturnPct){
+  let maxSafe = null;
+  for (let rate = 10; rate >= 0.5; rate -= 0.1){
+    const result = runAllCycles(years, 1, rate, feeRate, strategy, cutPct, drawdownTriggerPct, bufferYears, cashReturnPct);
+    if (!result.cycles.length) continue;
+    if (result.successCount === result.cycles.length){
+      maxSafe = rate;
+      break;
+    }
+  }
+  return maxSafe;
+}
+
+// Same starting year for both, since dynamic and baseline always run the
+// same years/portfolio and so share identical cycle indices — this finds
+// the toughest cohort under the chosen strategy and shows how the same
+// cohort fared under a plain fixed withdrawal.
+function computeWorstCohortComparison(dynamic, baseline){
+  if (!dynamic.cycles.length) return null;
+  let worstIdx = 0;
+  dynamic.cycles.forEach((c, i) => { if (c.endingBalance < dynamic.cycles[worstIdx].endingBalance) worstIdx = i; });
+  return { dyn: dynamic.cycles[worstIdx], base: baseline.cycles[worstIdx] };
+}
+
+function computeSpendingVolatility(cycles, years, strategy){
+  if (strategy === 'fixed' || !cycles.length) return null;
+  let totalCutYears = 0, totalRaiseYears = 0;
+  cycles.forEach(c => { totalCutYears += c.cutCount; totalRaiseYears += c.raiseCount; });
+  const totalYears = cycles.length * years;
+  return {
+    cutPctOfYears: (totalCutYears / totalYears) * 100,
+    raisePctOfYears: (totalRaiseYears / totalYears) * 100
+  };
+}
+
+function compute(){
+  const portfolio = parseCurrency('startPortfolio');
+  const initialRatePct = parseFloat($('initialRate').value) || 0;
+  const years = Math.max(1, Math.min(90, parseFloat($('retireLength').value) || 30));
+  const feeRate = parseFloat($('feeRate').value) || 0;
+  const strategy = $('strategy').value;
+  const cutPct = parseFloat($('cutPct').value) || 0;
+  const drawdownTriggerPct = parseFloat($('drawdownTrigger').value) || 0;
+  const bufferYears = Math.max(0, Math.min(3, parseFloat($('bufferYears').value) || 0));
+  const cashReturnPct = parseFloat($('cashReturn').value) || 0;
+
+  const dynamic = runAllCycles(years, portfolio, initialRatePct, feeRate, strategy, cutPct, drawdownTriggerPct, bufferYears, cashReturnPct);
+  // baseline: the same portfolio/rate/length/fees with a plain fixed
+  // withdrawal and no cash buffer — the "rigid 4%-rule" comparison point
+  const baseline = runAllCycles(years, portfolio, initialRatePct, feeRate, 'fixed', 0, 0, 0, 0);
+
+  return { portfolio, initialRatePct, years, feeRate, strategy, cutPct, drawdownTriggerPct, bufferYears, cashReturnPct, dynamic, baseline };
+}
+
+function renderSummary(state){
+  const { initialRatePct, years, dynamic, baseline } = state;
+  $('vsEyebrow').textContent = `${fmtNum(initialRatePct)}% initial rate, ${fmtNum(years)}-year retirement`;
+  const amountEl = $('vsAmount');
+  amountEl.classList.remove('good', 'warn', 'bad');
+
+  if (dynamic.successRate === null){
+    amountEl.textContent = 'Not enough data';
+    amountEl.classList.add('bad');
+    $('vsSub').innerHTML = `A ${fmtNum(years)}-year retirement needs a full historical window that doesn't exist in the 1928&ndash;2025 dataset. Try a shorter retirement length.`;
+    return;
+  }
+
+  amountEl.textContent = fmtNum(dynamic.successRate) + '%';
+  amountEl.classList.add(dynamic.successRate >= 95 ? 'good' : dynamic.successRate >= 80 ? 'warn' : 'bad');
+
+  const delta = dynamic.successRate - baseline.successRate;
+  const deltaText = Math.abs(delta) < 0.5
+    ? `about the same as a plain fixed withdrawal at this rate (<b>${fmtNum(baseline.successRate)}%</b>)`
+    : delta > 0
+      ? `<b>${fmtNum(delta)} points better</b> than a plain fixed withdrawal at this rate (<b>${fmtNum(baseline.successRate)}%</b>)`
+      : `<b>${fmtNum(Math.abs(delta))} points worse</b> than a plain fixed withdrawal at this rate (<b>${fmtNum(baseline.successRate)}%</b>)`;
+
+  $('vsSub').innerHTML = `This plan survived <b>${dynamic.successCount} of ${dynamic.cycles.length}</b> complete historical ${fmtNum(years)}-year periods starting between <b>${dynamic.cycles[0].startYear}</b> and <b>${dynamic.cycles[dynamic.cycles.length - 1].startYear}</b> — ${deltaText}.`;
+}
+
+function renderStatusStrip(state){
+  const { dynamic, baseline } = state;
+  const strip = $('statusStrip');
+  strip.innerHTML = '';
+  const add = (k, v, cls) => {
+    const div = document.createElement('div');
+    div.className = 'stat';
+    div.innerHTML = `<div class="k">${k}</div><div class="v ${cls || ''}">${v}</div>`;
+    strip.appendChild(div);
+  };
+  if (!dynamic.cycles.length){
+    add('Cycles tested', '0');
+    return;
+  }
+  const endings = dynamic.cycles.map(c => c.endingBalance);
+  const worst = Math.min(...endings);
+  const best = Math.max(...endings);
+  add('Success rate', fmtNum(dynamic.successRate) + '%', dynamic.successRate >= 95 ? 'jade' : dynamic.successRate >= 80 ? 'gold' : '');
+  add('vs. plain fixed rate', fmtNum(baseline.successRate) + '%');
+  add('Cycles tested', dynamic.cycles.length, 'target');
+  add('Worst ending balance', fmtUSDShort(worst));
+  add('Best ending balance', fmtUSDShort(best), 'jade');
+}
+
+function renderTable(state){
+  const { dynamic, years } = state;
+  const { cycles } = dynamic;
+  $('vwTableSub').textContent = cycles.length ? `${cycles[0].startYear} — ${cycles[cycles.length - 1].startYear}` : '—';
+  const tbody = $('vwTableBody');
+  tbody.innerHTML = '';
+  cycles.forEach(c => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${c.startYear}</td>
+      <td>${c.endYear}</td>
+      <td>${fmtUSD(c.minBalance)}</td>
+      <td>${fmtUSD(c.endingBalance)}</td>
+      <td class="${c.survived ? 'vw-outcome-ok' : 'vw-outcome-fail'}">${c.survived ? 'Survived ✓' : 'Failed' + (c.failYear ? ' (' + c.failYear + ')' : '')}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+const svgNS = 'http://www.w3.org/2000/svg';
+const vwSvg = $('vwChart');
+
+function niceCeil(v){
+  if (v <= 0) return 1;
+  const mag = Math.pow(10, Math.floor(Math.log10(v)));
+  const norm = v / mag;
+  let step;
+  if (norm <= 1) step = 1; else if (norm <= 2) step = 2; else if (norm <= 5) step = 5; else step = 10;
+  return step * mag;
+}
+
+function renderChart(state){
+  const { dynamic, years, portfolio } = state;
+  const { cycles } = dynamic;
+  const W = 1120, H = 360;
+  const padL = 74, padR = 10, padT = 16, padB = 34;
+  const plotW = W - padL - padR;
+  const plotH = H - padT - padB;
+
+  vwSvg.innerHTML = '';
+  if (!cycles.length) return;
+
+  const cap = portfolio * 5;
+  const rawMax = Math.max(...cycles.map(c => Math.max(...c.balances)), portfolio);
+  const niceMax = niceCeil(Math.min(rawMax, cap) * 1.05);
+
+  const steps = 5;
+  for (let i = 0; i <= steps; i++){
+    const val = niceMax * i / steps;
+    const y = padT + plotH - (val / niceMax) * plotH;
+    const line = document.createElementNS(svgNS, 'line');
+    line.setAttribute('x1', padL); line.setAttribute('x2', W - padR);
+    line.setAttribute('y1', y); line.setAttribute('y2', y);
+    line.setAttribute('class', 'vw-grid-line');
+    vwSvg.appendChild(line);
+
+    const label = document.createElementNS(svgNS, 'text');
+    label.setAttribute('x', padL - 10);
+    label.setAttribute('y', y + 4);
+    label.setAttribute('text-anchor', 'end');
+    label.setAttribute('class', 'vw-grid-label');
+    label.textContent = fmtUSDShort(val);
+    vwSvg.appendChild(label);
+  }
+
+  const labelStep = years <= 15 ? 2 : years <= 30 ? 5 : 10;
+  for (let y = 0; y <= years; y += labelStep){
+    const x = padL + (y / years) * plotW;
+    const lbl = document.createElementNS(svgNS, 'text');
+    lbl.setAttribute('x', x);
+    lbl.setAttribute('y', H - padB + 16);
+    lbl.setAttribute('text-anchor', 'middle');
+    lbl.setAttribute('class', 'vw-axis-label');
+    lbl.textContent = 'Yr ' + y;
+    vwSvg.appendChild(lbl);
+  }
+
+  cycles.forEach(c => {
+    const pts = c.balances.map((bal, i) => {
+      const x = padL + (i / years) * plotW;
+      const clamped = Math.min(bal, niceMax);
+      const y = padT + plotH - (clamped / niceMax) * plotH;
+      return x + ',' + y;
+    });
+    const path = document.createElementNS(svgNS, 'path');
+    path.setAttribute('d', 'M' + pts.join(' L'));
+    path.setAttribute('class', c.survived ? 'vw-line-ok' : 'vw-line-fail');
+    const title = document.createElementNS(svgNS, 'title');
+    title.textContent = `${c.startYear}–${c.endYear}: ${c.survived ? 'survived' : 'failed'} (ended ${fmtUSD(c.endingBalance)})`;
+    path.appendChild(title);
+    vwSvg.appendChild(path);
+  });
+}
+
+function render(){
+  const state = compute();
+  renderSummary(state);
+  renderStatusStrip(state);
+  renderTable(state);
+  renderChart(state);
+  renderNotes(state);
+  updateVwSummary(state);
+}
+
+function renderNotes(state){
+  const { years, feeRate, strategy, cutPct, drawdownTriggerPct, bufferYears, cashReturnPct, dynamic, baseline } = state;
+
+  const maxRateEl = $('vwNoteMaxRate');
+  if (maxRateEl){
+    const dynMax = findMaxSafeRate(years, feeRate, strategy, cutPct, drawdownTriggerPct, bufferYears, cashReturnPct);
+    const baseMax = findMaxSafeRate(years, feeRate, 'fixed', 0, 0, 0, 0);
+    if (dynMax !== null && baseMax !== null){
+      maxRateEl.hidden = false;
+      const diff = dynMax - baseMax;
+      const cmp = Math.abs(diff) < 0.05
+        ? `about the same as a plain fixed rate.`
+        : diff > 0
+          ? `<b>${fmtNum(diff)} points higher</b> than the <b>${fmtNum(baseMax)}%</b> a plain fixed withdrawal allows.`
+          : `actually <b>${fmtNum(Math.abs(diff))} points lower</b> than the <b>${fmtNum(baseMax)}%</b> a plain fixed withdrawal allows.`;
+      maxRateEl.innerHTML = `<span class="vw-note-label">Max safe initial rate</span>With ${STRATEGY_PHRASES[strategy]}${bufferYears > 0 ? ` and a ${fmtNum(bufferYears)}-year cash buffer` : ''}, the highest initial rate with a perfect (100%) historical record for a ${fmtNum(years)}-year retirement is about <b>${fmtNum(dynMax)}%</b> &mdash; ${cmp}`;
+    } else {
+      maxRateEl.hidden = true;
+    }
+  }
+
+  const worstEl = $('vwNoteWorst');
+  if (worstEl){
+    const worst = computeWorstCohortComparison(dynamic, baseline);
+    if (worst){
+      worstEl.hidden = false;
+      const { dyn, base } = worst;
+      let body;
+      if (dyn.survived && !base.survived){
+        body = `retiring in <b>${dyn.startYear}</b>. A plain fixed withdrawal would have run out of money by <b>${base.failYear}</b> &mdash; your strategy kept the plan alive instead, ending at <b>${fmtUSD(dyn.endingBalance)}</b>.`;
+      } else if (dyn.survived){
+        body = `retiring in <b>${dyn.startYear}</b> — the portfolio would have ended at just <b>${fmtUSD(dyn.endingBalance)}</b> after ${fmtNum(years)} years, its closest call in the dataset.`;
+      } else {
+        body = `retiring in <b>${dyn.startYear}</b> — the portfolio would have run out of money by <b>${dyn.failYear}</b>, only ${dyn.failYear - dyn.startYear} years into a ${fmtNum(years)}-year retirement${!base.survived ? ' (a plain fixed rate would have failed here too)' : ''}.`;
+      }
+      worstEl.innerHTML = `<span class="vw-note-label">Toughest historical cohort</span>Your toughest test: ${body}`;
+    } else {
+      worstEl.hidden = true;
+    }
+  }
+
+  const volEl = $('vwNoteVolatility');
+  if (volEl){
+    const vol = computeSpendingVolatility(dynamic.cycles, years, strategy);
+    if (vol){
+      volEl.hidden = false;
+      if (strategy === 'guardrails'){
+        volEl.innerHTML = `<span class="vw-note-label">Cost of the strategy</span>Across every historical cycle, spending was cut (by 10%) in about <b>${fmtNum(vol.cutPctOfYears)}%</b> of retirement-years, and raised (by 10%) in about <b>${fmtNum(vol.raisePctOfYears)}%</b> &mdash; the tradeoff for the higher success rate above.`;
+      } else {
+        volEl.innerHTML = `<span class="vw-note-label">Cost of the strategy</span>Across every historical cycle, spending was running at the reduced (&minus;${fmtNum(cutPct)}%) level in about <b>${fmtNum(vol.cutPctOfYears)}%</b> of retirement-years &mdash; the tradeoff for the higher success rate above.`;
+      }
+    } else {
+      volEl.hidden = true;
+    }
+  }
+}
+
+const STORAGE_KEY = 'variableWithdrawalInputs';
+const DEFAULTS = {
+  startPortfolio: '1000000', initialRate: '5', retireLength: '30', feeRate: '0.10',
+  strategy: 'guardrails', cutPct: '10', drawdownTrigger: '15', bufferYears: '2', cashReturn: '0.5'
+};
+const CURRENCY_FIELDS = ['startPortfolio'];
+const ALL_FIELDS = ['startPortfolio', 'initialRate', 'retireLength', 'feeRate', 'strategy', 'cutPct', 'drawdownTrigger', 'bufferYears', 'cashReturn'];
+
+function saveInputs(){
+  const vals = {};
+  ALL_FIELDS.forEach(id => { vals[id] = $(id).value; });
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(vals)); } catch(e) { /* storage unavailable, ignore */ }
+  updateSaveStatus();
+}
+function loadInputs(){
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const vals = JSON.parse(raw);
+    Object.keys(vals).forEach(id => { if ($(id)) $(id).value = vals[id]; });
+  } catch(e) { /* storage unavailable or corrupt, ignore */ }
+}
+
+// Persisting on every keystroke means an interrupted edit — select-all a
+// field to retype it, then get pulled away before finishing — saves
+// whatever partial digits were typed so far as the permanent value.
+// render() still runs on every keystroke for instant visual feedback; only
+// the localStorage write is debounced, so a normal typing pause settles on
+// the finished number instead of a mid-edit fragment. blur still saves
+// immediately (the field is done being edited at that point).
+let saveDebounceTimer = null;
+function scheduleSave(){
+  if (saveDebounceTimer) clearTimeout(saveDebounceTimer);
+  saveDebounceTimer = setTimeout(saveInputs, 500);
+}
+
+ALL_FIELDS.forEach(id => {
+  if (CURRENCY_FIELDS.includes(id)) return; // wired separately below with sanitization
+  $(id).addEventListener('input', () => { scheduleSave(); render(); });
+});
+CURRENCY_FIELDS.forEach(id => {
+  $(id).addEventListener('input', () => { sanitizeCurrencyInput(id); scheduleSave(); render(); });
+  $(id).addEventListener('blur', () => { if (saveDebounceTimer) { clearTimeout(saveDebounceTimer); saveDebounceTimer = null; } formatCurrencyField(id); saveInputs(); });
+});
+
+$('resetBtn').addEventListener('click', () => {
+  Object.keys(DEFAULTS).forEach(id => { $(id).value = DEFAULTS[id]; });
+  if (window.FNProfileAutofill) window.FNProfileAutofill.apply(true);
+  CURRENCY_FIELDS.forEach(formatCurrencyField);
+  saveInputs();
+  render();
+});
+
+loadInputs();
+CURRENCY_FIELDS.forEach(formatCurrencyField);
+try { setInputsCollapsed(localStorage.getItem(COLLAPSE_KEY) === '1'); } catch(e) { setInputsCollapsed(false); }
+render();
+</script>
+</body>
+</html>

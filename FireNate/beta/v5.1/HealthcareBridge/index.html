@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script src="../assets/js/theme-init.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FireNate - Healthcare &amp; ACA Bridge</title>
+<meta name="description" content="Estimate ACA marketplace health insurance costs for the years between early retirement and Medicare eligibility at 65 — including the subsidy cliff early retirees need to plan around.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Antonio:wght@400;500;600;700&family=Michroma&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/site.css">
+<link rel="stylesheet" href="../assets/css/timeToFI.css">
+<link rel="stylesheet" href="../assets/css/toolbar.css">
+<script src="../assets/js/theme.js" defer></script>
+<script src="../assets/js/user-profile.js" defer></script>
+<script src="../assets/js/nav.js" defer></script>
+<script src="../assets/js/profile-autofill.js" defer></script>
+<script src="../assets/js/field-help.js" defer></script>
+<script src="../assets/data/glossary-data.js"></script>
+<script src="../assets/js/glossary-tooltip.js" defer></script>
+<script>
+window.FN_BASE = "../"; window.FN_PAGE = "healthcare-bridge";
+window.FN_FIELD_HELP = {
+  "title": "About this Tool",
+  "intro": "Estimates ACA marketplace health insurance costs for the years between early retirement and Medicare eligibility at 65, including premium subsidies.",
+  "sections": [
+    {
+      "heading": "You & your household",
+      "items": [
+        {
+          "label": "Current Age",
+          "text": "Your age right now."
+        },
+        {
+          "label": "Retirement Age",
+          "text": "The age you plan to retire and start needing marketplace coverage."
+        },
+        {
+          "label": "Household Size",
+          "text": "Number of people on the health plan — affects both the poverty-line calculation and subsidy eligibility."
+        },
+        {
+          "label": "Est. Annual MAGI in Retirement",
+          "text": "Your expected Modified Adjusted Gross Income once retired — often much lower than your working income, since it excludes principal withdrawals from savings. This is what subsidies are based on."
+        }
+      ]
+    },
+    {
+      "heading": "ACA subsidy assumptions",
+      "items": [
+        {
+          "label": "Benchmark Annual Premium",
+          "text": "The full-price annual cost of the benchmark (second-cheapest Silver) plan in your area before any subsidy is applied."
+        },
+        {
+          "label": "Subsidy Rules",
+          "text": "Which ACA subsidy structure to model: “Enhanced” removes the old income cap so subsidies phase out gradually above 400% of the poverty line; “Original” restores that cliff, cutting off subsidies entirely above it."
+        },
+        {
+          "label": "FPL — Household of 1",
+          "text": "The federal poverty line dollar amount for a single person — the base used to calculate your household's poverty-line percentage."
+        },
+        {
+          "label": "FPL — Each Additional Person",
+          "text": "How much the poverty line increases per additional household member."
+        }
+      ]
+    }
+  ]
+};
+window.FN_PROFILE_FIELDS = {
+  currentAge: "#currentAge",
+  retireAge: "#retireAge",
+  currentIncome: "#magi"
+};
+</script>
+<style>
+  /* ---------- toolbar overrides (shared: assets/css/toolbar.css) ---------- */
+  :root{ --toolbar-input-width:120px; --toolbar-content-max-height:640px; }
+  .hcb-field select{
+      background:rgba(0,0,0,0.22); border:1px solid transparent; border-radius:7px; color:var(--toolbar-text);
+    font-family:var(--mono); font-size:14.5px; font-weight:500; padding:8px 10px; outline:none;
+    transition:border-color .15s, box-shadow .15s; box-shadow:0 1px 2px rgba(0,0,0,0.2);
+    width:150px; cursor:pointer;
+  }
+  .hcb-field select:focus{ border-color:var(--gold-bright); box-shadow:0 0 0 3px rgba(243,178,58,0.28); }
+
+  /* ---------- EXPLAINER ---------- */
+  .hcb-explainer{
+    background:var(--surface); border:1px solid var(--line); border-top:4px solid var(--target);
+    border-radius:var(--radius); padding:22px 24px; margin-top:4px;
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:20px;
+  }
+  .hcb-explainer-phase .tag{
+    font-family:var(--mono); font-size:10.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+    margin-bottom:6px; display:block;
+  }
+  .hcb-explainer-phase.p1 .tag{ color:var(--gold); }
+  .hcb-explainer-phase.p2 .tag{ color:var(--jade); }
+  .hcb-explainer-phase p{ margin:0; font-size:13.5px; color:var(--ink-dim); line-height:1.6; }
+  .hcb-explainer-phase strong{ color:var(--ink); }
+
+  .hcb-warning{
+    margin-top:16px; padding:14px 18px; border-radius:8px; font-size:13.5px; line-height:1.55;
+    background:rgba(219,59,35,0.1); border:1px solid rgba(219,59,35,0.3); color:var(--danger);
+  }
+  .hcb-note{
+    margin-top:16px; padding:14px 18px; border-radius:8px; font-size:12.5px; line-height:1.55;
+    background:var(--surface-2); border:1px solid var(--line); color:var(--ink-faint);
+  }
+
+  /* ---------- REFERENCE-POINT CARDS ---------- */
+  .hcb-scenarios{ display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:14px; }
+  .hcb-scenario-card{
+    background:var(--surface); border:1px solid var(--line); border-top:4px solid var(--gold);
+    border-radius:var(--radius); padding:22px 22px 20px;
+  }
+  .hcb-scenario-card.jade{ border-top-color:var(--jade); }
+  .hcb-scenario-card.plum{ border-top-color:var(--plum); }
+  .hcb-scenario-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:10px; }
+  [data-theme="lcars"] .hcb-scenario-tag{ font-family:var(--display); letter-spacing:.02em; }
+  .hcb-scenario-tag{ font-family:var(--serif); font-size:17px; font-weight:600; color:var(--ink); }
+  .hcb-scenario-badge{
+    font-family:var(--mono); font-size:11px; font-weight:700;
+    padding:3px 9px; border-radius:999px; white-space:nowrap;
+  }
+  .hcb-scenario-badge.good{ color:var(--jade); background:rgba(31,146,84,0.12); }
+  .hcb-scenario-badge.bad{ color:var(--danger); background:rgba(219,59,35,0.1); }
+  [data-theme="lcars"] .hcb-scenario-amt{ font-family:var(--mono); font-variant-numeric:tabular-nums; }
+  .hcb-scenario-amt{ font-family:var(--serif); font-size:26px; font-weight:600; color:var(--ink); line-height:1.15; margin-bottom:8px; }
+  .hcb-scenario-split{ display:flex; gap:14px; font-size:12px; color:var(--ink-faint); margin-bottom:10px; font-family:var(--mono); }
+  .hcb-scenario-split b{ color:var(--ink-dim); font-weight:600; }
+  .hcb-scenario-desc{ font-size:12.5px; color:var(--ink-faint); line-height:1.5; }
+
+  /* ---------- insight note cards ---------- */
+  .hcb-notes{
+    display:grid; grid-template-columns:repeat(auto-fit, minmax(230px, 1fr)); gap:14px; margin-top:16px;
+  }
+  .hcb-note-card{
+    background:var(--surface); border:1px solid var(--line); border-top:3px solid var(--target);
+    border-radius:var(--radius); padding:16px 18px; color:var(--ink-faint); font-size:13px; line-height:1.55;
+  }
+  .hcb-note-card[hidden]{ display:none; }
+  .hcb-note-card.jade{ border-top-color:var(--jade); }
+  .hcb-note-card.danger{ border-top-color:var(--danger); }
+  .hcb-note-card-label{
+    display:block; color:var(--ink); font-weight:700; font-size:10.5px; letter-spacing:0.08em; text-transform:uppercase; margin-bottom:6px;
+  }
+  .hcb-note-card strong{ color:var(--ink); }
+
+  /* ---------- CHART ---------- */
+  .hcb-chart-card{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:20px; }
+  .hcb-chart-card svg{ width:100%; height:auto; display:block; }
+  .hcb-chart-line{ fill:none; stroke:var(--gold); stroke-width:2.5; }
+  .hcb-chart-cliff{ fill:var(--danger); opacity:0.08; }
+  .hcb-chart-grid{ stroke:var(--line); stroke-width:1; }
+  .hcb-chart-axis-label{ font-family:var(--mono); font-size:10.5px; fill:var(--ink-faint); }
+  .hcb-chart-dot{ fill:var(--target); stroke:var(--surface); stroke-width:2; }
+  .hcb-chart-guide{ stroke:var(--target); stroke-width:1.5; stroke-dasharray:4 3; }
+</style>
+</head>
+<body>
+<div id="fn-site-nav"></div>
+
+<div class="hcb-inputs" id="hcbInputs">
+  <div class="wrap hcb-summary-row" style="position:relative">
+    <div class="hcb-summary" id="hcbSummary">&mdash;</div>
+    <button type="button" class="fn-help-btn" style="position:absolute; right:20px; top:50%; transform:translateY(-50%)" aria-label="What do these inputs mean?">?</button>
+  </div>
+  <div class="hcb-content" id="hcbContent">
+    <div class="wrap hcb-inner">
+      <div class="hcb-fields">
+        <div class="hcb-field">
+          <label for="currentAge">Current Age</label>
+          <div class="hcb-input-row"><input class="hcb-narrow" type="number" id="currentAge" value="45" min="0" max="100" step="0.5"></div>
+        </div>
+        <div class="hcb-field">
+          <label for="retireAge">Retirement Age</label>
+          <div class="hcb-input-row"><input class="hcb-narrow" type="number" id="retireAge" value="55" min="0" max="120" step="0.5"></div>
+        </div>
+        <div class="hcb-field">
+          <label for="householdSize">Household Size</label>
+          <div class="hcb-input-row"><input class="hcb-narrow" type="number" id="householdSize" value="2" min="1" max="8" step="1"></div>
+        </div>
+        <div class="hcb-field">
+          <label for="magi">Est. Annual MAGI in Retirement</label>
+          <div class="hcb-input-row"><span class="hcb-prefix">$</span><input type="text" inputmode="decimal" pattern="[0-9,.]*" id="magi" value="60,000.00"></div>
+        </div>
+        <div class="hcb-field">
+          <label for="benchmarkPremium">Benchmark Annual Premium</label>
+          <div class="hcb-input-row"><span class="hcb-prefix">$</span><input type="text" inputmode="decimal" pattern="[0-9,.]*" id="benchmarkPremium" value="14,000.00"></div>
+        </div>
+        <div class="hcb-field">
+          <label for="subsidyRules">Subsidy Rules</label>
+          <div class="hcb-input-row">
+            <select id="subsidyRules">
+              <option value="enhanced" selected>Enhanced (no 400% cliff)</option>
+              <option value="original">Original ACA (400% cliff)</option>
+            </select>
+          </div>
+        </div>
+        <div class="hcb-field">
+          <label for="fplBase">FPL &mdash; Household of 1</label>
+          <div class="hcb-input-row"><span class="hcb-prefix">$</span><input type="text" inputmode="decimal" pattern="[0-9,.]*" id="fplBase" value="15,060.00"></div>
+        </div>
+        <div class="hcb-field">
+          <label for="fplPerPerson">FPL &mdash; Each Additional Person</label>
+          <div class="hcb-input-row"><span class="hcb-prefix">$</span><input type="text" inputmode="decimal" pattern="[0-9,.]*" id="fplPerPerson" value="5,380.00"></div>
+        </div>
+      </div>
+      <div class="hcb-save">
+        <span class="save-status" id="hcbSaveStatus">Not saved yet</span>
+        <button type="button" id="resetBtn" class="reset-btn">Reset to defaults</button>
+      </div>
+    </div>
+  </div>
+  <div class="wrap hcb-toggle-row">
+    <button id="hcbToggle" type="button" class="hcb-toggle" aria-expanded="true" aria-controls="hcbContent">
+      <svg class="hcb-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+      <span id="hcbToggleLabel">Hide inputs</span>
+    </button>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">FIRE Nate - Healthcare &amp; ACA Bridge</p>
+    <h1 id="pageTitleHeader">The gap nobody budgets for: <em>health insurance before 65</em>.</h1>
+    <p class="lede">Retire before Medicare eligibility and you're buying coverage on the ACA marketplace — where the subsidy you get depends entirely on your <span class="fn-term" data-term="magi">Modified Adjusted Gross Income (MAGI)</span>, not your net worth. That makes MAGI management (Roth conversion timing, capital gains harvesting, what you sell and when) a real lever on your healthcare bill.</p>
+  </header>
+
+  <div class="hcb-explainer">
+    <div class="hcb-explainer-phase p1">
+      <span class="tag">Bridge years &middot; Pre-Medicare</span>
+      <p>From retirement until age 65, <strong>you're buying ACA marketplace coverage</strong> — and your premium tax credit is based on MAGI as a percentage of the <span class="fn-term" data-term="fpl">Federal Poverty Level (FPL)</span>, recalculated every year.</p>
+    </div>
+    <div class="hcb-explainer-phase p2">
+      <span class="tag">Age 65+ &middot; Medicare</span>
+      <p>Medicare eligibility starts at 65, ending the bridge. This calculator doesn't model Medicare Part B/D premiums or IRMAA surcharges — only the marketplace years before it.</p>
+    </div>
+  </div>
+
+  <p class="hcb-note">Subsidy figures here are simplified and illustrative — the applicable-percentage brackets and FPL amounts are editable assumptions, not live IRS or HHS figures. Confirm current-year numbers at healthcare.gov before making decisions. Below roughly 100% of FPL, marketplace subsidies generally aren't available at all — eligibility instead depends on your state's Medicaid expansion status, which this calculator doesn't model.</p>
+
+  <div id="cliffWarning" class="hcb-warning" style="display:none;"></div>
+
+  <h2 class="ledger-title" style="margin-top: 40px; margin-bottom: 4px;">Summary</h2>
+  <div class="status" id="statusStrip"></div>
+  <div class="hcb-notes" id="hcbNotes">
+    <p class="hcb-note-card" id="hcbNoteHeadroom" hidden></p>
+    <p class="hcb-note-card" id="hcbNoteMarginal" hidden></p>
+    <p class="hcb-note-card" id="hcbNoteSaved" hidden></p>
+  </div>
+
+  <h2 class="ledger-title" style="margin-top:40px; margin-bottom:4px;">Net premium at three reference points</h2>
+  <p class="lede" style="margin-bottom:16px;">Where your MAGI lands relative to the Federal Poverty Level changes your premium a lot more than most people expect. These three fixed points show the shape of the curve regardless of your own numbers.</p>
+  <div class="hcb-scenarios" id="hcbScenarios"></div>
+
+  <div class="panel" style="margin-top:32px;">
+    <div class="panel-head">
+      <h2>Premium vs. MAGI</h2>
+      <span class="sub">NET ANNUAL PREMIUM ACROSS 50%&ndash;500% OF THE FEDERAL POVERTY LEVEL</span>
+    </div>
+    <div class="hcb-chart-card">
+      <svg id="premiumChart" viewBox="0 0 1120 360"></svg>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h2>Full breakdown</h2>
+      <span class="sub">NET PREMIUM BY MAGI, AS A % OF THE FEDERAL POVERTY LEVEL</span>
+    </div>
+    <div class="table-card">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th style="text-align:left;">% of FPL</th>
+              <th>MAGI</th>
+              <th>Contribution %</th>
+              <th>Annual Subsidy</th>
+              <th>Net Premium / Year</th>
+              <th>Net Premium / Month</th>
+            </tr>
+          </thead>
+          <tbody id="scenarioTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+<footer id="site-footer"></footer>
+
+</div>
+
+<script src="../assets/js/calc-utils.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const fmtUSD = n => n.toLocaleString('en-US', {style:'currency', currency:'USD', maximumFractionDigits:0});
+const fmtUSD2 = n => n.toLocaleString('en-US', {style:'currency', currency:'USD', maximumFractionDigits:2});
+const fmtNum = n => n.toLocaleString('en-US', {maximumFractionDigits:1});
+const formatCurrencyField = id => {
+  const raw = parseCurrency(id);
+  $(id).value = raw.toLocaleString('en-US', {maximumFractionDigits:2});
+};
+function sanitizeCurrencyInput(id){
+  const el = $(id);
+  const before = el.value;
+  const cursorFromEnd = before.length - (el.selectionStart ?? before.length);
+  let cleaned = before.replace(/[^0-9.,]/g, '');
+  const parts = cleaned.split('.');
+  if (parts.length > 2){
+    cleaned = parts[0] + '.' + parts.slice(1).join('');
+  }
+  if (cleaned !== before){
+    el.value = cleaned;
+    const newPos = Math.max(0, cleaned.length - cursorFromEnd);
+    el.setSelectionRange(newPos, newPos);
+  }
+}
+
+// ---------- sticky, collapsible input toolbar ----------
+const COLLAPSE_KEY = 'healthcare-bridge-inputs-collapsed';
+const hcbInputsEl = $('hcbInputs');
+const hcbToggle = $('hcbToggle');
+const hcbToggleLabel = $('hcbToggleLabel');
+const hcbSummary = $('hcbSummary');
+const hcbSaveStatus = $('hcbSaveStatus');
+
+let inputsCollapsed = false;
+function setInputsCollapsed(collapsed){
+  inputsCollapsed = collapsed;
+  if (hcbInputsEl) hcbInputsEl.classList.toggle('collapsed', collapsed);
+  if (hcbToggle) hcbToggle.setAttribute('aria-expanded', String(!collapsed));
+  if (hcbToggleLabel) hcbToggleLabel.textContent = collapsed ? 'Show inputs' : 'Hide inputs';
+  try { localStorage.setItem(COLLAPSE_KEY, collapsed ? '1' : '0'); } catch(e) {}
+}
+if (hcbToggle){
+  hcbToggle.addEventListener('click', () => setInputsCollapsed(!inputsCollapsed));
+}
+
+function pad2(n){ return String(n).padStart(2, '0'); }
+function updateSaveStatus(){
+  if (!hcbSaveStatus) return;
+  const d = new Date();
+  hcbSaveStatus.textContent = `Last saved: ${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
+}
+function updateHcbSummary(m){
+  if (!hcbSummary) return;
+  const cliffNote = m.current.noSubsidy ? '  |  Above the subsidy cliff' : '';
+  hcbSummary.textContent = `Bridge: ${fmtNum(m.bridgeYears)} yrs  |  MAGI ${fmtNum(m.current.fplPct)}% of FPL  |  Net premium ${fmtUSD2(m.current.netMonthly)}/mo${cliffNote}`;
+}
+
+// ---------- ACA subsidy math ----------
+// household FPL scales linearly with size — one base amount for a household
+// of 1, plus a fixed increment per additional person, same structure HHS
+// uses (both figures are editable inputs above, not hardcoded)
+function fplForHousehold(size, base, perPerson){
+  return base + perPerson * Math.max(0, size - 1);
+}
+
+// expected contribution as a % of income, by MAGI as a % of FPL — linear
+// interpolation between named breakpoints, the same mechanism the real IRS
+// applicable-percentage table uses. These two presets are simplified/
+// illustrative (see the on-page disclaimer) — "original" models the
+// pre-2021 hard cutoff above 400% FPL (the classic "subsidy cliff"),
+// "enhanced" models the ARPA-style version that caps at 8.5% with no cliff.
+const SUBSIDY_TABLES = {
+  enhanced: { cliff: false, points: [[0,0],[150,0],[200,2],[250,4],[300,6],[400,8.5],[600,8.5]] },
+  original: { cliff: true,  points: [[100,2.1],[133,3.3],[150,4.3],[200,6.5],[250,8.3],[300,9.5],[400,9.5]] }
+};
+
+function applicablePct(fplPct, tableKey){
+  const table = SUBSIDY_TABLES[tableKey];
+  if (table.cliff && fplPct > 400) return null; // null = no subsidy at all, full cost
+  const pts = table.points;
+  if (fplPct <= pts[0][0]) return pts[0][1];
+  for (let i = 0; i < pts.length - 1; i++){
+    const [x1, y1] = pts[i], [x2, y2] = pts[i + 1];
+    if (fplPct >= x1 && fplPct <= x2){
+      const t = (x2 === x1) ? 0 : (fplPct - x1) / (x2 - x1);
+      return y1 + t * (y2 - y1);
+    }
+  }
+  return pts[pts.length - 1][1];
+}
+
+function premiumOutcome(magi, fpl, benchmarkAnnual, tableKey){
+  const fplPct = fpl > 0 ? (magi / fpl) * 100 : 0;
+  const pct = applicablePct(fplPct, tableKey);
+  if (pct === null){
+    return { fplPct, pct: null, subsidy: 0, netAnnual: benchmarkAnnual, netMonthly: benchmarkAnnual / 12, noSubsidy: true };
+  }
+  const expectedContribution = magi * (pct / 100);
+  const subsidy = Math.max(0, Math.min(benchmarkAnnual, benchmarkAnnual - expectedContribution));
+  const netAnnual = Math.max(0, benchmarkAnnual - subsidy);
+  return { fplPct, pct, subsidy, netAnnual, netMonthly: netAnnual / 12, noSubsidy: false };
+}
+
+function compute(){
+  const currentAge = parseFloat($('currentAge').value) || 0;
+  const retireAge = parseFloat($('retireAge').value) || 0;
+  const householdSize = Math.max(1, parseFloat($('householdSize').value) || 1);
+  const magi = parseCurrency('magi');
+  const benchmarkAnnual = parseCurrency('benchmarkPremium');
+  const fplBase = parseCurrency('fplBase');
+  const fplPerPerson = parseCurrency('fplPerPerson');
+  const tableKey = $('subsidyRules').value;
+  const medicareAge = 65;
+
+  const fpl = fplForHousehold(householdSize, fplBase, fplPerPerson);
+  const bridgeYears = Math.max(0, medicareAge - retireAge);
+
+  const current = premiumOutcome(magi, fpl, benchmarkAnnual, tableKey);
+  const totalBridgeCost = current.netAnnual * bridgeYears;
+  const fullCostBridgeTotal = benchmarkAnnual * bridgeYears;
+  const totalSaved = fullCostBridgeTotal - totalBridgeCost;
+
+  const refLevels = [150, 300, 400];
+  const refPoints = refLevels.map(fplPct => {
+    const testMagi = fpl * (fplPct / 100);
+    return { fplPct, magi: testMagi, ...premiumOutcome(testMagi, fpl, benchmarkAnnual, tableKey) };
+  });
+
+  const tableLevels = [100, 138, 150, 200, 250, 300, 400, 500];
+  const scenarioRows = tableLevels.map(fplPct => {
+    const testMagi = fpl * (fplPct / 100);
+    return { fplPct, magi: testMagi, ...premiumOutcome(testMagi, fpl, benchmarkAnnual, tableKey) };
+  });
+
+  const curve = [];
+  for (let fplPct = 50; fplPct <= 500; fplPct += 10){
+    const testMagi = fpl * (fplPct / 100);
+    curve.push({ fplPct, ...premiumOutcome(testMagi, fpl, benchmarkAnnual, tableKey) });
+  }
+
+  return {
+    currentAge, retireAge, householdSize, magi, benchmarkAnnual, fpl, tableKey, medicareAge,
+    bridgeYears, current, totalBridgeCost, fullCostBridgeTotal, totalSaved, refPoints, scenarioRows, curve
+  };
+}
+
+// ---------- insight notes: cliff headroom, marginal MAGI cost, bridge subsidy value ----------
+
+// 400% of FPL is the one threshold that matters under both subsidy tables:
+// it's where "Original ACA" rules cut subsidy off entirely, and where
+// "Enhanced" rules cap the contribution rate at its max (8.5%) — so it's
+// worth surfacing regardless of which table is selected.
+function computeCliffHeadroom(m){
+  const threshold400 = m.fpl * 4;
+  return { threshold400, headroom: threshold400 - m.magi };
+}
+
+// How much the net premium actually moves for $1,000 more of MAGI at the
+// current level — reusing premiumOutcome() directly on the curve, so it
+// naturally captures flat segments (no marginal cost) and cliff crossings
+// (a $1,000 MAGI change wiping out the whole remaining subsidy at once).
+function computeMarginalCost(m){
+  const outcomePlus = premiumOutcome(m.magi + 1000, m.fpl, m.benchmarkAnnual, m.tableKey);
+  const delta = outcomePlus.netAnnual - m.current.netAnnual;
+  return { delta, ratePct: (delta / 1000) * 100 };
+}
+
+function renderNotes(m){
+  // 1) Headroom to the 400% FPL threshold.
+  const headroomEl = $('hcbNoteHeadroom');
+  const hr = computeCliffHeadroom(m);
+  const overThreshold = hr.headroom < 0;
+  headroomEl.hidden = false;
+  headroomEl.className = 'hcb-note-card ' + (overThreshold ? 'danger' : 'jade');
+  if (m.tableKey === 'original'){
+    headroomEl.innerHTML = `<span class="hcb-note-card-label">Headroom to the subsidy cliff</span>` +
+      (overThreshold
+        ? `Your MAGI is already <strong>${fmtUSD(Math.abs(hr.headroom))}</strong> past the 400% FPL cliff (${fmtUSD(hr.threshold400)}) — under "Original ACA" rules, that means no subsidy at all, full price.`
+        : `You have <strong>${fmtUSD(hr.headroom)}</strong> of MAGI room before you cross 400% of FPL (${fmtUSD(hr.threshold400)}) — the point where "Original ACA" rules cut your subsidy off entirely.`);
+  } else {
+    headroomEl.innerHTML = `<span class="hcb-note-card-label">Headroom before the max contribution rate</span>` +
+      (overThreshold
+        ? `Your MAGI is already <strong>${fmtUSD(Math.abs(hr.headroom))}</strong> past 400% of FPL (${fmtUSD(hr.threshold400)}) — your contribution rate is already capped at 8.5%, so more income won't cost you a higher rate, just a higher dollar amount.`
+        : `You have <strong>${fmtUSD(hr.headroom)}</strong> of MAGI room before you reach 400% of FPL (${fmtUSD(hr.threshold400)}), where your contribution rate maxes out at 8.5% under "Enhanced" rules.`);
+  }
+
+  // 2) Marginal cost of the next $1,000 of MAGI.
+  const marginalEl = $('hcbNoteMarginal');
+  const mc = computeMarginalCost(m);
+  marginalEl.hidden = false;
+  marginalEl.className = 'hcb-note-card' + (mc.ratePct > 15 ? ' danger' : '');
+  marginalEl.innerHTML = `<span class="hcb-note-card-label">Marginal cost of more MAGI</span>` +
+    (mc.delta > 0.5
+      ? `An extra $1,000 of MAGI at your level costs about <strong>${fmtUSD(mc.delta)}</strong> in lost subsidy — roughly a ${fmtNum(mc.ratePct)}% effective rate on top of any income tax.`
+      : `An extra $1,000 of MAGI at your level barely moves your premium — you're in a flat part of the subsidy curve right now.`);
+
+  // 3) Total subsidy value over the bridge — compute() already tracks this
+  // (totalSaved / fullCostBridgeTotal) but nothing displayed it before.
+  const savedEl = $('hcbNoteSaved');
+  if (m.bridgeYears > 0){
+    savedEl.hidden = false;
+    savedEl.className = 'hcb-note-card jade';
+    savedEl.innerHTML = `<span class="hcb-note-card-label">What the subsidy is worth</span>` +
+      `Over your ${fmtNum(m.bridgeYears)}-year bridge to Medicare, subsidies save you <strong>${fmtUSD(m.totalSaved)}</strong> compared to the ${fmtUSD(m.fullCostBridgeTotal)} you'd pay at full price — a total bridge healthcare cost of ${fmtUSD(m.totalBridgeCost)} instead.`;
+  } else {
+    savedEl.hidden = true;
+  }
+}
+
+// ---------- chart ----------
+const svgNS = 'http://www.w3.org/2000/svg';
+function niceCeil(v){
+  if (v <= 0) return 1;
+  const mag = Math.pow(10, Math.floor(Math.log10(v)));
+  const norm = v / mag;
+  let step;
+  if (norm <= 1) step = 1; else if (norm <= 2) step = 2; else if (norm <= 5) step = 5; else step = 10;
+  return step * mag;
+}
+function fmtUSDShort(n){
+  const abs = Math.abs(n);
+  if (abs >= 1e6) return '$' + (abs / 1e6).toFixed(1) + 'M';
+  if (abs >= 1e3) return '$' + Math.round(abs / 1e3) + 'K';
+  return '$' + Math.round(abs);
+}
+
+function renderPremiumChart(m){
+  const svg = $('premiumChart');
+  const W = 1120, H = 360;
+  const padL = 66, padR = 16, padT = 16, padB = 34;
+  const plotW = W - padL - padR;
+  const plotH = H - padT - padB;
+  svg.innerHTML = '';
+
+  const xMin = 50, xMax = 500;
+  const yMax = niceCeil(m.benchmarkAnnual * 1.05);
+  const xAt = pct => padL + ((pct - xMin) / (xMax - xMin)) * plotW;
+  const yAt = val => padT + plotH - (Math.min(val, yMax) / yMax) * plotH;
+
+  // cliff zone shading (original rules only)
+  if (m.tableKey === 'original' && xMax > 400){
+    const rect = document.createElementNS(svgNS, 'rect');
+    rect.setAttribute('x', xAt(400));
+    rect.setAttribute('y', padT);
+    rect.setAttribute('width', xAt(xMax) - xAt(400));
+    rect.setAttribute('height', plotH);
+    rect.setAttribute('class', 'hcb-chart-cliff');
+    svg.appendChild(rect);
+    const label = document.createElementNS(svgNS, 'text');
+    label.setAttribute('x', xAt(400) + 6);
+    label.setAttribute('y', padT + 14);
+    label.setAttribute('class', 'hcb-chart-axis-label');
+    label.setAttribute('fill', 'var(--danger)');
+    label.textContent = 'No subsidy above 400% FPL';
+    svg.appendChild(label);
+  }
+
+  // y gridlines + labels
+  const ySteps = 5;
+  for (let i = 0; i <= ySteps; i++){
+    const val = (yMax / ySteps) * i;
+    const y = yAt(val);
+    const line = document.createElementNS(svgNS, 'line');
+    line.setAttribute('x1', padL); line.setAttribute('x2', W - padR);
+    line.setAttribute('y1', y); line.setAttribute('y2', y);
+    line.setAttribute('class', 'hcb-chart-grid');
+    svg.appendChild(line);
+    const text = document.createElementNS(svgNS, 'text');
+    text.setAttribute('x', padL - 8); text.setAttribute('y', y + 4);
+    text.setAttribute('text-anchor', 'end');
+    text.setAttribute('class', 'hcb-chart-axis-label');
+    text.textContent = fmtUSDShort(val);
+    svg.appendChild(text);
+  }
+
+  // x axis labels
+  [100, 200, 300, 400, 500].forEach(pct => {
+    const x = xAt(pct);
+    const text = document.createElementNS(svgNS, 'text');
+    text.setAttribute('x', x); text.setAttribute('y', H - padB + 20);
+    text.setAttribute('text-anchor', 'middle');
+    text.setAttribute('class', 'hcb-chart-axis-label');
+    text.textContent = pct + '%';
+    svg.appendChild(text);
+  });
+
+  // the curve
+  const points = m.curve.map(p => xAt(p.fplPct) + ',' + yAt(p.netAnnual));
+  const path = document.createElementNS(svgNS, 'path');
+  path.setAttribute('d', 'M' + points.join(' L'));
+  path.setAttribute('class', 'hcb-chart-line');
+  svg.appendChild(path);
+
+  // "you are here" marker
+  const cx = xAt(Math.min(Math.max(m.current.fplPct, xMin), xMax));
+  const cy = yAt(m.current.netAnnual);
+  const guide = document.createElementNS(svgNS, 'line');
+  guide.setAttribute('x1', cx); guide.setAttribute('x2', cx);
+  guide.setAttribute('y1', cy); guide.setAttribute('y2', padT + plotH);
+  guide.setAttribute('class', 'hcb-chart-guide');
+  svg.appendChild(guide);
+  const dot = document.createElementNS(svgNS, 'circle');
+  dot.setAttribute('cx', cx); dot.setAttribute('cy', cy); dot.setAttribute('r', 6);
+  dot.setAttribute('class', 'hcb-chart-dot');
+  const title = document.createElementNS(svgNS, 'title');
+  title.textContent = `Your plan: ${fmtNum(m.current.fplPct)}% of FPL, ${fmtUSD2(m.current.netMonthly)}/mo`;
+  dot.appendChild(title);
+  svg.appendChild(dot);
+}
+
+// ---------- render ----------
+function render(){
+  const m = compute();
+
+  // status strip
+  const strip = $('statusStrip');
+  strip.innerHTML = '';
+  const add = (k, v, cls) => {
+    const div = document.createElement('div');
+    div.className = 'stat';
+    div.innerHTML = `<div class="k">${k}</div><div class="v ${cls||''}">${v}</div>`;
+    strip.appendChild(div);
+  };
+  add('Household FPL (100%)', fmtUSD(m.fpl));
+  add('Your MAGI', fmtUSD(m.magi));
+  add('MAGI as % of FPL', fmtNum(m.current.fplPct) + '%', 'target');
+  add('Expected contribution', m.current.noSubsidy ? 'No subsidy' : fmtNum(m.current.pct) + '% of income', m.current.noSubsidy ? '' : 'jade');
+  add('Net premium / month', fmtUSD2(m.current.netMonthly), m.current.noSubsidy ? '' : 'jade');
+  add('Bridge years (to Medicare)', fmtNum(m.bridgeYears));
+  add('Total bridge healthcare cost', fmtUSD(m.totalBridgeCost));
+
+  // cliff warning
+  const warn = $('cliffWarning');
+  if (m.current.noSubsidy){
+    warn.style.display = 'block';
+    warn.innerHTML = `Your estimated MAGI (${fmtUSD(m.magi)}) puts you at ${fmtNum(m.current.fplPct)}% of the Federal Poverty Level — above the 400% cutoff modeled under "Original ACA" rules. You're paying the full ${fmtUSD2(m.benchmarkAnnual/12)}/mo premium with no subsidy. Managing MAGI down (e.g. timing Roth conversions or capital gains) below 400% FPL could restore a subsidy — see the Roth Conversion Ladder calculator for one way to shape taxable income during these years.`;
+  } else {
+    warn.style.display = 'none';
+  }
+
+  // reference-point cards
+  const CARD_CLS = { 150: 'gold', 300: 'jade', 400: 'plum' };
+  const host = $('hcbScenarios');
+  host.innerHTML = '';
+  m.refPoints.forEach(s => {
+    const card = document.createElement('div');
+    card.className = 'hcb-scenario-card ' + CARD_CLS[s.fplPct];
+    const badgeCls = s.noSubsidy ? 'bad' : 'good';
+    const badgeText = s.noSubsidy ? 'No subsidy' : `${fmtNum(s.pct)}% of income`;
+    card.innerHTML = `
+      <div class="hcb-scenario-head">
+        <span class="hcb-scenario-tag">${s.fplPct}% of FPL</span>
+        <span class="hcb-scenario-badge ${badgeCls}">${badgeText}</span>
+      </div>
+      <div class="hcb-scenario-amt">${fmtUSD2(s.netMonthly)}/mo</div>
+      <div class="hcb-scenario-split">
+        <span>MAGI <b>${fmtUSD(s.magi)}</b></span>
+        <span>Subsidy <b>${fmtUSD(s.subsidy)}</b>/yr</span>
+      </div>
+      <div class="hcb-scenario-desc">At this MAGI, your household would pay ${fmtUSD(s.netAnnual)}/year for the benchmark plan${s.noSubsidy ? ', with no premium tax credit.' : '.'}</div>
+    `;
+    host.appendChild(card);
+  });
+
+  renderPremiumChart(m);
+
+  // detail table
+  const tbody = $('scenarioTableBody');
+  tbody.innerHTML = '';
+  m.scenarioRows.forEach(s => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="text-align:left;">${s.fplPct}%</td>
+      <td>${fmtUSD(s.magi)}</td>
+      <td>${s.noSubsidy ? '&mdash;' : fmtNum(s.pct) + '%'}</td>
+      <td>${fmtUSD(s.subsidy)}</td>
+      <td>${fmtUSD(s.netAnnual)}</td>
+      <td>${fmtUSD2(s.netMonthly)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  renderNotes(m);
+  updateHcbSummary(m);
+}
+
+// ---------- persistence ----------
+const STORAGE_KEY = 'healthcareBridgeInputs';
+const DEFAULTS = {
+  currentAge: '45', retireAge: '55', householdSize: '2', magi: '60000', benchmarkPremium: '14000',
+  subsidyRules: 'enhanced', fplBase: '15060', fplPerPerson: '5380'
+};
+const CURRENCY_FIELDS = ['magi', 'benchmarkPremium', 'fplBase', 'fplPerPerson'];
+const ALL_FIELDS = ['currentAge', 'retireAge', 'householdSize', 'magi', 'benchmarkPremium', 'subsidyRules', 'fplBase', 'fplPerPerson'];
+
+function saveInputs(){
+  const vals = {};
+  ALL_FIELDS.forEach(id => { vals[id] = $(id).value; });
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(vals)); } catch(e) { /* storage unavailable, ignore */ }
+  updateSaveStatus();
+}
+function loadInputs(){
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const vals = JSON.parse(raw);
+    Object.keys(vals).forEach(id => { if ($(id)) $(id).value = vals[id]; });
+  } catch(e) { /* storage unavailable or corrupt, ignore */ }
+}
+
+// Persisting on every keystroke means an interrupted edit — select-all a
+// field to retype it, then get pulled away before finishing — saves
+// whatever partial digits were typed so far as the permanent value.
+// render() still runs on every keystroke for instant visual feedback; only
+// the localStorage write is debounced, so a normal typing pause settles on
+// the finished number instead of a mid-edit fragment. blur still saves
+// immediately (the field is done being edited at that point).
+let saveDebounceTimer = null;
+function scheduleSave(){
+  if (saveDebounceTimer) clearTimeout(saveDebounceTimer);
+  saveDebounceTimer = setTimeout(saveInputs, 500);
+}
+
+ALL_FIELDS.forEach(id => {
+  if (CURRENCY_FIELDS.includes(id)) return; // wired separately below with sanitization
+  $(id).addEventListener('input', () => { scheduleSave(); render(); });
+});
+CURRENCY_FIELDS.forEach(id => {
+  $(id).addEventListener('input', () => { sanitizeCurrencyInput(id); scheduleSave(); render(); });
+  $(id).addEventListener('blur', () => { if (saveDebounceTimer) { clearTimeout(saveDebounceTimer); saveDebounceTimer = null; } formatCurrencyField(id); saveInputs(); });
+});
+
+$('resetBtn').addEventListener('click', () => {
+  Object.keys(DEFAULTS).forEach(id => { $(id).value = DEFAULTS[id]; });
+  if (window.FNProfileAutofill) window.FNProfileAutofill.apply(true);
+  CURRENCY_FIELDS.forEach(formatCurrencyField);
+  saveInputs();
+  render();
+});
+
+loadInputs();
+CURRENCY_FIELDS.forEach(formatCurrencyField);
+try { setInputsCollapsed(localStorage.getItem(COLLAPSE_KEY) === '1'); } catch(e) { setInputsCollapsed(false); }
+render();
+</script>
+</body>
+</html>

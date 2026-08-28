@@ -1115,27 +1115,27 @@
 <!-- Card-->
       <div class="version-card is-disabled">
         <div class="vc-badge">
-          <div class="vc-badge-main"><span class="vi-label">Beta</span><span class="vi-num">5.1</span></div>
+          <div class="vc-badge-main"><span class="vi-label">Beta</span><span class="vi-num">5.2</span></div>
           <span class="status-pill disabled">🚧 In Progress</span>
         </div>
         <div class="vc-main">
           <div class="vc-main-row">
             <div class="version-info">
-              <p class="name">Beta 5.1 - Neon Ninja</p>
-              <p class="path">/beta/v5.1</p>
-              <p class="version-dates">Created: 2026-08-26 18:03:22<br>Updated: 2026-08-26 18:04:25</p>
+              <p class="name">Beta 5.2 - Blazing Badger</p>
+              <p class="path">/beta/v5.2</p>
+              <p class="version-dates">Created: 2026-08-27 20:45:00<br>Updated: 2026-08-27 20:45:00</p>
             </div>
           </div>
-          <button type="button" class="changelog-modal-trigger" data-changelog-title="Beta 5.1 &mdash; Change Log" data-changelog-target="changelog-v5-1">Show Change Log</button>
-          <template id="changelog-v5-1">
+          <button type="button" class="changelog-modal-trigger" data-changelog-title="Beta 5.2 &mdash; Change Log" data-changelog-target="changelog-v5-2">Show Change Log</button>
+          <template id="changelog-v5-2">
             <ul>
-              <li>Branched from v5.0</li>
+              <li>Branched from v5.1</li>
               <li>Work in progress — nothing to preview yet</li>
             </ul>
             [EOF]
           </template>
         </div>
-        <a class="vc-link" href="v5.1/index.html" aria-disabled="true" tabindex="-1" onclick="return false;">
+        <a class="vc-link" href="v5.2/index.html" aria-disabled="true" tabindex="-1" onclick="return false;">
             <p class="cta-hint">Not ready to preview yet</p>
         </a>
       </div>
@@ -1144,8 +1144,65 @@
 <!-- Card-->
       <div class="version-card is-active is-live-green">
         <div class="vc-badge">
-          <div class="vc-badge-main"><span class="vi-label">Beta</span><span class="vi-num">5.0</span></div>
+          <div class="vc-badge-main"><span class="vi-label">Beta</span><span class="vi-num">5.1</span></div>
           <span class="status-pill active">✔ Current</span>
+        </div>
+        <div class="vc-main">
+          <div class="vc-main-row">
+            <div class="version-info">
+              <p class="name">Beta 5.1 - Neon Ninja</p>
+              <p class="path">/beta/v5.1</p>
+              <p class="version-dates">Created: 2026-08-26 18:03:22<br>Updated: 2026-08-27 20:45:00</p>
+            </div>
+          </div>
+          <button type="button" class="changelog-modal-trigger" data-changelog-title="Beta 5.1 &mdash; Change Log (everything since v5.0)" data-changelog-target="changelog-v5-1">Show Change Log</button>
+          <template id="changelog-v5-1">
+            <ul>
+            <li>Branched from v5.0</li>
+            <li>New "Reach FI By Age" tool in Journey Progress &mdash; drag a slider between ages 40 and 70 and see what monthly investment it'd take to hit your goal by then, computed live from your saved profile (works for anyone who's filled in "Your info," no need to have visited a specific calculator first)</li>
+            <li>"Your info" panel: clicking "Clear my info" now triggers the same fun full-screen trash-burst effect as Settings' "Reset this device" &mdash; particles, a pop-in trash icon, an "Info cleared" label &mdash; instead of clearing silently</li>
+            <li>"Your info" panel: reorganized the icon rows &mdash; Share now floats alone on the left of the top row (next to the panel title), with Save, Snapshot, and Load grouped on the right; Export, Import, and "Clear my info" (the trash icon) moved down together into the bottom-right corner of the panel</li>
+            <li>Profile Manager: moved "Delete snapshots older than 90 days" and the automatic-snapshot frequency control up next to the storage usage graphic near the top of the page, since both are storage-management actions rather than list-selection ones &mdash; also fixed a bug (pre-existing for the snapshot list's own selection bar too) where the <code>hidden</code> attribute silently failed to hide these elements</li>
+            <li>Profile Manager: added a "Select all" button to Saved profiles' bulk selection tools &mdash; toggles to "Deselect all" once everything's checked</li>
+            <li>Profile Manager: "Let's set up your profile first" no longer nags once you've entered or loaded any profile data &mdash; previously it stuck around until all four required fields (birthday, savings, goal, retirement age) were filled in, so a partial or freshly-imported profile still saw it</li>
+            <li>Profile Manager: added a storage-used graphic near the top of the page &mdash; a colored bar (green/gold/red, same thresholds as the storage-size notification) showing how close you are to the ~5MB most browsers guarantee per site, updating live as you save, delete, or import</li>
+            <li>New automatic local snapshot &mdash; every 7 days by default (if there's real data), quietly saves an in-browser safety copy of your profile, recoverable via "Load saved profile." Doesn't replace exporting a real backup file (lives in the same browser storage), and says so when it happens. Frequency is configurable from Profile Manager &mdash; Hourly, Daily, Every 3 days, Every 7 days, Every 14 days, or Every 28 days</li>
+            <li>New storage-size warning &mdash; a plain informational heads-up at 50% of what browsers typically allow per site, escalating to warning at 70% and urgent at 90%, before a save can silently start failing</li>
+            <li>New per-type notification muting in Settings &mdash; uncheck Urgent, Warning, Informational, or Achievement to hide that type from the bell entirely; the underlying checks still run, so un-muting later surfaces anything that fired while muted</li>
+            <li>"Import profiles" (both the "Your info" panel's and Profile Manager's) now warns before loading a file that's older than what's already here &mdash; compares the file's own export time against your current data's last-changed time, not against when you happen to open the file</li>
+            <li>Profile Manager: saved profiles can now be bulk-deleted &mdash; select individual snapshots to delete, or clear everything older than 90 days in one click &mdash; since the backup reminder and the new automatic snapshots both actively add to that list over time</li>
+            <li>Profile Manager: "Full raw backup" section can now import as well as export &mdash; restores every key from a previously-exported raw dump straight back into local storage (merging, not replacing &mdash; keys the file doesn't mention are left alone), with its own status message and the same pre-restore safety backup "Import profiles" uses</li>
+            <li>"Your info" panel: the new download/upload buttons now take a snapshot and show the camera-flash cue immediately on click, before the download or file dialog even opens &mdash; export's is a plain snapshot, import's is the real pre-overwrite safety net (fires even if the file dialog gets cancelled)</li>
+            <li>Moved the "Your info" panel's download/upload icons up next to the share icon, out of the busier save/snapshot/load/clear row</li>
+            <li>"Your info" panel: added Export and Import icon buttons doing the exact same thing as Profile Manager's own Export/Import profiles buttons (same file format, round-trips through either)</li>
+            <li>New backup-reminder system notification &mdash; warns (escalating to urgent) once it's been a while since your last export, or you've added a fair amount of new data since then; tracked via a new shared <code>window.FNBackupTracker</code>, written to by every export button on the site</li>
+            <li>Notifications: admin JSON entries can now be scheduled for a future date <em>and time</em> (not just a day) &mdash; stays completely out of the list and badge count until that moment arrives</li>
+            <li>Notifications: added a "Clear all" button to the panel head</li>
+            <li>Notifications: each item can now be individually hidden for good, not just marked read</li>
+            <li>Notifications: added a "type" field &mdash; urgent (rust triangle), warning (gold circle-!), info (azure circle-i, the default), and achievement (jade award ribbon, for genuine milestones) &mdash; each with its own icon; Journey Progress milestones and the SS Bridge "funded" check now fire as achievements instead of plain info</li>
+            <li>Homepage: removed "New!" ribbons that were actually years stale (kept only on Contribution Limits, the one genuinely new page this version); removed all "Updated" ribbons, which had drifted to flag some barely-touched pages while missing the ones with the biggest real changes; added a new &starf; badge marking the handful of calculators most people are likely to return to regularly (FI Snapshot, Net Worth, Budget Calculator, Time to FI)</li>
+           </ul>
+            [EOF]
+          </template>
+        </div>
+        <a class="vc-link" href="v5.1/index.html">
+            <p class="cta-hint">Click to open the current build</p>
+          <span class="vc-arrow" aria-hidden="true">&rarr;</span>
+        </a>
+      </div>
+<!-- /Card-->
+
+    </div>
+
+    <details class="archive-toggle">
+      <summary>Archive <span class="archive-count">(v5.0 and earlier)</span></summary>
+      <div class="versions">
+
+<!-- Card-->
+      <div class="version-card is-active is-live-orange">
+        <div class="vc-badge">
+          <div class="vc-badge-main"><span class="vi-label">Beta</span><span class="vi-num">5.0</span></div>
+          <span class="status-pill active">View</span>
         </div>
         <div class="vc-main">
           <div class="vc-main-row">
@@ -1163,7 +1220,7 @@
             <li>New: "Notifications" bell in the nav bar &mdash; merges an admin-editable JSON feed (<code>assets/data/notifications.json</code>) with system-generated alerts (Journey Progress milestones, an RMD age reminder, a Social Security/Pension Bridge "funded" check, etc.) behind an unread-count badge, with read state and the whole feed carried along in your saved-data exports</li>
             <li>New calculator: Contribution Limits — a full IRS annual-limit tracker for 401(k)/403(b)/457(b), HSA, and IRA accounts, including SECURE 2.0's 2025+ age-60&ndash;63 "super catch-up." Shows your limits at a glance, tracks year-to-date progress toward the max with remaining-per-paycheck math, flags free employer-match money left on the table, estimates your tax savings, warns on limit overages, and projects your contributions to retirement with its own growth chart &mdash; plus a second chart showing how every limit has grown 2023&ndash;2026</li>
             <li>Journey Progress dashboard grew from 6 cards to 8 (added Budget Calculator and FIRE Milestones), and the modal itself is now resizable, movable, and has a maximize/restore button on desktop, with a persistent titlebar</li>
-            <li>Journey Progress's Financial Foundations checklist upgraded from a plain done/not-done marker to a 3-state red/yellow/green health indicator, plus a wave of accuracy fixes: the catch-up-contribution reminder now persists instead of firing once on your exact birthday year, Net Worth and Budget Calculator cards no longer miss live-but-unsaved data, the Debt card's cold-start messaging was corrected, and a 5th accent color ("azure") was activated so two cards stop sharing a color</li> 
+            <li>Journey Progress's Financial Foundations checklist upgraded from a plain done/not-done marker to a 3-state red/yellow/green health indicator, plus a wave of accuracy fixes: the catch-up-contribution reminder now persists instead of firing once on your exact birthday year, Net Worth and Budget Calculator cards no longer miss live-but-unsaved data, the Debt card's cold-start messaging was corrected, and a 5th accent color ("azure") was activated so two cards stop sharing a color</li>
             <li>Every calculator's chart hover-tooltips are now keyboard-accessible instead of mouse-only &mdash; bars, dots, and hit-targets are focusable with proper labels and a visible focus ring, and TimeToFI's and Loan Calculator's line charts support full arrow-key scrubbing (12 pages touched: TimeToFI, Loan Calculator, Coast &amp; Barista FIRE, Crossover Point, Emergency Fund, FI Snapshot, Monte Carlo, RMD, Rent vs. Buy, Roth Conversion Ladder, SS &amp; Pension Bridge, and Compound Interest &amp; Wealth Multiplier)</li>
             <li>New shared Bars &harr; Line/Area chart-mode toggle, rolled out to TimeToFI, RMD, Roth Conversion Ladder, SS &amp; Pension Bridge, Compound Interest &amp; Wealth Multiplier, and Crossover Point</li>
             <li>TimeToFI: Line mode is a new continuous every-1% (not just every-5%) two-series trend chart with a life-expectancy reference line; added a separate "marginal years saved" diminishing-returns chart, a marginal-dollar picker (what an extra $100&ndash;$500/mo buys you), a return-rate sensitivity note, a plain-English "what your goal actually buys" translation, a highlighted current-savings-rate row, and a "since your last visit" trend history</li>
@@ -1194,23 +1251,17 @@
             <li>Profile Manager: fixed "Load Example Data" duplicating a snapshot on repeat clicks instead of replacing it, and extended the example data to cover Contribution Limits</li>
             <li>Nav bar polish: hover/focus tooltips on every icon-only button, a small "(i)" info-dot pattern for short stat explanations, and a table &Delta;-column color rework that stays legible in every theme instead of assuming a light background</li>
             <li>Fixed two broken Glossary deep-links on the F.A.Q. page, removed a stray unreferenced React draft file from Loan Calculator, removed a couple of unnecessary script includes, and cleaned out some dead CSS</li>
-            <li>and more good stuff...</li> 
+            <li>and more good stuff...</li>
            </ul>
             [EOF]
           </template>
         </div>
         <a class="vc-link" href="v5.0/index.html">
-            <p class="cta-hint">Click to open the current build</p>
+            <p class="cta-hint">Click to open this build</p>
           <span class="vc-arrow" aria-hidden="true">&rarr;</span>
         </a>
       </div>
 <!-- /Card-->
-
-    </div>
-
-    <details class="archive-toggle">
-      <summary>Archive <span class="archive-count">(v4.11 and earlier)</span></summary>
-      <div class="versions">
 
 <!-- Card-->
       <div class="version-card is-disabled">
@@ -1771,7 +1822,7 @@
           <li style="color:var(--accent)">No promises are made or implied.</li>
           <li style="color:var(--text-dim)">Always consult a licensed professional before making any changes, decisions, or actions.</li>
           <li style="color:goldenrod;">This site uses cookies, but no information is used for tracking purposes, and all information stays on your local device.</li>
-          <li style="color:var(--green-bright);">Page Last Updated: 2026-08-26</li>
+          <li style="color:var(--green-bright);">Page Last Updated: 2026-08-27</li>
       </ul>
       </footer>
 
